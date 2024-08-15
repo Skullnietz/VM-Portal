@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class CheckVendingDeactivations extends Command
 {
@@ -32,12 +33,17 @@ class CheckVendingDeactivations extends Command
      */
     public function handle()
     {
+        // Establecer la zona horaria de Ciudad de México
+        $timezone = 'America/Mexico_City';
         // Obtener todos los usuarios con planta asignada
         $usuarios = DB::table('Cat_Usuarios')->whereNotNull('id_planta')->get();
 
         foreach ($usuarios as $usuario) {
             $plantaId = $usuario->Id_Planta;
             $userId = $usuario->Id_Usuario; // ID del usuario actual para el registro de notificaciones
+
+            // Obtener la fecha y hora actuales con Carbon en la zona horaria especificada
+            $currentDateTime = DB::selectOne("SELECT CONVERT(DATETIME, GETDATE()) as currentDateTime")->currentDateTime;
 
             // Obtener máquinas vending desactivadas en los últimos 5 minutos
             $desactivadas = DB::table('Stat_Mquinas')
@@ -52,7 +58,7 @@ class CheckVendingDeactivations extends Command
                 DB::table('vending_notifications')
                     ->where('Id_Maquina', $maquina->Id_Maquina)
                     ->where('User_Id', $userId)
-                    ->whereRaw('DATEDIFF(MINUTE, Fecha, GETDATE()) <= 5')
+                    ->where('description', 'Sin conexión de Internet')
                     ->delete();
 
                 // Registrar la nueva notificación
@@ -62,7 +68,8 @@ class CheckVendingDeactivations extends Command
                     'Id_Maquina' => $maquina->Id_Maquina,
                     'Txt_Nombre' => $maquina->Txt_Nombre,
                     'Txt_Estatus' => $maquina->Txt_Estatus,
-                    'Fecha' => now(),
+                    'description'=> 'Sin conexión de Internet',
+                    'Fecha' => $currentDateTime,
                     'Fecha_Reg' => $maquina->Fecha_Reg,
                     'read_at' => null,
                 ]);
