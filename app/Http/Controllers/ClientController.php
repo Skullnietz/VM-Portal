@@ -9,6 +9,7 @@ use DateTime;
 use Yajra\DataTables\DataTables;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\EmpleadosExport;
+use Illuminate\Support\Facades\Log;
 
 
 class ClientController extends Controller
@@ -34,9 +35,62 @@ class ClientController extends Controller
         return view('cliente.empleados', compact('areas'));
     }
 
+    public function checkPermission(Request $request)
+    {
+        session_start();
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+        try {
+            $existingPermission = DB::table('Ctrl_Permisos_x_Area')
+            ->where('Id_Area', $request->input('Id_Area'))
+            ->where('Id_Articulo', $request->input('Id_Articulo'))
+            ->where('Id_Planta', $idPlanta)
+            ->exists();
+
+        return response()->json(['exists' => $existingPermission]);
+        } catch (\Exception $e) {
+            Log::error('Error en la función store: ' . $e->getMessage());
+            return response()->json(['error' => 'Error en el proceso.'], 500);
+        }
+
+        
+    }
+    
+    public function addPermission(Request $request)
+    {
+        session_start();
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+        try {
+            DB::table('Ctrl_Permisos_x_Area')->insert([
+                'Id_Area' => $request->input('Id_Area'),
+                'Id_Articulo' => $request->input('Id_Articulo'),
+                'Frecuencia' => $request->input('Frecuencia'),
+                'Cantidad' => $request->input('Cantidad'),
+                'Id_Planta' => $idPlanta,
+                'Status' => 'Alta',
+            ]);
+    
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Error en la función store: ' . $e->getMessage());
+            return response()->json(['error' => 'Error en el proceso.'], 500);
+        }
+
+        
+    }
+
     public function PermisosArticulos(){
         session_start();
-        return view('cliente.permisos');
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+    
+    $areas = DB::table('Cat_Area')
+                ->where('Id_Planta', $idPlanta)
+                ->get();
+
+    $articulos = DB::table('Cat_Articulos')
+                ->where('Id_Planta', $idPlanta)
+                ->get();
+                //dd($articulos);
+        return view('cliente.permisos', compact('areas', 'articulos'));
 
     }
     public function getPermisosArticulos(Request $request)

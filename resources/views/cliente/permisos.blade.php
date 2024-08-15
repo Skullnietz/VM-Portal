@@ -6,18 +6,66 @@
 @section('title', __('Permisos de articulo'))
 
 @section('content_header')
-    <div class="container">
-        <div class="row">
-            <div class=" col-md-9 col-9">
-                <h4><a href="#" onclick="goBack()" class="border rounded">&nbsp;<i
-                            class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de articulo') }}</h4>
+<div class="container">
+    <div class="row">
+        <div class="col-9">
+            <h4><a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de Articulo') }}</h4>
+        </div>
+        <div class="col-3 ml-auto">
+            <div class="btn-group" role="group" aria-label="Basic example">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPermissionModal">Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i></button>
+                <a href="{{ url('export-excel-employees') }}" type="button" class="btn btn-success">Reporte <i class="fas fa-file-excel"></i></a>
             </div>
-            <div class="col-md-3 col-3 ml-auto">
-            </div>
-
-
         </div>
     </div>
+</div>
+
+<!-- Modal para Agregar Permiso -->
+<div class="modal fade" id="addPermissionModal" tabindex="-1" role="dialog" aria-labelledby="addPermissionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="addPermissionForm" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPermissionModalLabel">Agregar Permiso</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="area">Área</label>
+                        <select name="Id_Area" class="form-control select3" required>
+                            @foreach($areas as $area)
+                                <option value="{{ $area->Id_Area }}">{{ $area->Txt_Nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="articulo">Artículo</label>
+                        <select name="Id_Articulo" class="form-control select3" required>
+                            @foreach($articulos as $articulo)
+                                <option value="{{ $articulo->Id_Articulo }}">{{ $articulo->Txt_Descripcion}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="frecuencia">Frecuencia (días)</label>
+                        <input type="number" name="Frecuencia" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cantidad">Cantidad (pzas)</label>
+                        <input type="number" name="Cantidad" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" id="submitBtn" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('content')
@@ -56,7 +104,6 @@
                     <table class="table table-bordered" id="permisos-articulos-table">
             <thead>
                 <tr>
-                    <th>Clave</th>
                     <th>Nombre</th>
                     <th>Artículo</th>
                     <th>Frecuencia</th>
@@ -78,12 +125,85 @@
 @section('css')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @stop
 
 @section('js')
 <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+    <!-- Incluir SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Incluir CSS de Select2 -->
+
+
+<!-- Incluir JavaScript de Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Script para inicializar Select2 -->
+<!-- Script para inicializar Select2 y manejar la confirmación -->
+<!-- Script para inicializar Select2 y manejar la confirmación en tiempo real -->
+<script type="text/javascript">
+    $(document).ready(function() {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
+        $('.select3').select2({
+            width: '100%' // Ajusta el ancho según sea necesario
+        });
+
+        $('#submitBtn').click(function(e) {
+            e.preventDefault();
+
+            let form = $('#addPermissionForm');
+            let actionUrl = "{{ url('add-permission') }}";
+
+            // Verificar si ya existe el permiso antes de enviar
+            $.ajax({
+                url: "{{ url('check-permission') }}", // Ruta que verifica duplicados
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    if(response.exists) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Este artículo ya está registrado para esta área.',
+                        });
+                    } else {
+                        // Si no existe el permiso, enviamos el formulario por AJAX
+                        $.ajax({
+                            url: actionUrl,
+                            method: 'POST',
+                            data: form.serialize(),
+                            success: function(result) {
+                                if(result.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Éxito',
+                                        text: 'Permiso agregado exitosamente.',
+                                    }).then(() => {
+                                        // Actualizar la tabla de permisos sin recargar la página
+                                        $('#permisos-articulos-table').DataTable().ajax.reload();
+                                        $('#addPermissionModal').modal('hide'); // Cerrar el modal
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: 'Hubo un problema al agregar el permiso.',
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    });
+</script>
     <script type="text/javascript">
 $(document).ready(function() {
     $.ajaxSetup({
@@ -105,7 +225,6 @@ $(document).ready(function() {
             }
         },
         columns: [
-            { data: 'Clave' },
             { data: 'Nombre' },
             { data: 'Articulo' },
             { 

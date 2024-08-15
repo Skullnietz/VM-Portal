@@ -58,7 +58,7 @@
         @foreach($unreadNotifications as $notification)
             <div class="alert alert-info">
                 <p>{{ $notification->Txt_Nombre }} se desactivó.</p>
-                <p><small>{{ \Carbon\Carbon::parse($notification->Fecha)->diffForHumans() }}</small></p>
+                <p><small>Dia: {{ \Carbon\Carbon::parse($notification->Fecha)->format('d-m-Y') }} | Hora: {{ \Carbon\Carbon::parse($notification->Fecha)->format('H:i') }}</small></p>
                 <a href="{{ route('markNotificationAsRead', $notification->id) }}" class="btn btn-primary">Marcar como leída</a>
             </div>
         @endforeach
