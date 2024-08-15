@@ -24,7 +24,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('vending:register-notifications')->everyFiveMinutes();
+        $schedule->command('vending:register-notifications');
     }
 
     /**
