@@ -22,6 +22,19 @@ class NotificationController extends Controller
     return response()->json($notifications);
      }
 
+     public function listNotifications()
+     {
+        session_start();
+        $userId = $_SESSION['usuario']->Id_Usuario;
+        $unreadNotifications = DB::table('vending_notifications')
+        ->where('User_Id', $userId)
+        ->whereNull('read_at')
+        ->orderBy('Fecha', 'desc')
+        ->get();
+
+        return view('cliente.notificaciones', compact('unreadNotifications'));
+     }
+
     
 
     public function markAsRead($id)
