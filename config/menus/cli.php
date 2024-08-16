@@ -26,9 +26,15 @@ return[
         ],
         [
             'text' => 'Permisos Articulo',
-            'icon' => 'fas fa-fw fa-people-carry',
+            'icon' => 'fas fa-fw fa-user-lock',
             'icon_color' => 'cyan',
             'url' => '/cli/permisos-cli',
+        ],
+        [
+            'text' => 'Areas',
+            'icon' => 'fas fa-fw fa-grip-horizontal',
+            'icon_color' => 'cyan',
+            'url' => '/cli/areas-cli',
         ],
         ['header' => 'REPORTES'],
         [

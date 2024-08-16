@@ -9,6 +9,7 @@ use DateTime;
 use Yajra\DataTables\DataTables;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\EmpleadosExport;
+use App\Exports\PermisosExport;
 use Illuminate\Support\Facades\Log;
 
 
@@ -53,6 +54,15 @@ class ClientController extends Controller
         }
 
         
+    }
+
+    public function exportPermisos(Request $request)
+    {
+        // Puedes personalizar el nombre del archivo que se descargará
+        $fileName = 'Reporte_Permisos_' . now()->format('Ymd_His') . '.xlsx';
+
+        // Generar y descargar el archivo Excel
+        return Excel::download(new PermisosExport, $fileName);
     }
     
     public function addPermission(Request $request)
@@ -455,6 +465,28 @@ class ClientController extends Controller
         ]);
     
         return response()->json(['success' => true], 200);
+    }
+
+    public function Areas(){
+        session_start();
+        return view('cliente.areas');
+    }
+
+    public function getDataAreas()
+    {
+        session_start();
+        $data=array();
+        $Areas = DB::table('Cat_Area')->select('Id_Area','Id_Planta','Txt_Nombre','Txt_Estatus','Fecha_Alta','Fecha_Modificacion','Fecha_Baja')->where('Id_Planta',$_SESSION['usuario']->Id_Planta)->get();
+        foreach ($Areas as $area) {
+            $ModFecha = Date::parse($area->Fecha_Alta);
+            $AltaFecha = Date::parse($area->Fecha_Modificacion);
+            $AFecha = $AltaFecha->format('l, j F Y H:i:s');
+            $MFecha = $ModFecha->format('l, j F Y H:i:s');
+            $area->AFecha = $AFecha;
+            $area->MFecha = $MFecha;
+            array_push($data, $area);
+        }
+        return DataTables::of($data)->make(true);
     }
 
     

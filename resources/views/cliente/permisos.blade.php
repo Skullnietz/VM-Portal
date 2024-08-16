@@ -13,8 +13,8 @@
         </div>
         <div class="col-3 ml-auto">
             <div class="btn-group" role="group" aria-label="Basic example">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPermissionModal">Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i></button>
-                <a href="{{ url('export-excel-employees') }}" type="button" class="btn btn-success">Reporte <i class="fas fa-file-excel"></i></a>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPermissionModal">Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-lock"></i></button>
+                <a href="{{ url('export-excel-permissions') }}" type="button" class="btn btn-success">Reporte <i class="fas fa-file-excel"></i></a>
             </div>
         </div>
     </div>

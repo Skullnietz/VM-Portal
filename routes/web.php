@@ -30,15 +30,14 @@ Route::prefix('{language}')->group(function () {
     //////////////////////////////////////////////////////////////////////////////////////////// 
     //////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////
     Route::get('/notifications/list', [NotificationController::class, 'listNotifications'])->name('listNotifications');
+    ///////////////////////////////////// AREAS ////////////////////////////////////////////
+    Route::get('/areas-cli', [ClientController::class, 'Areas'])->name('areas-cli');
     
 });
 
 
 
-// JSON GET DATA (SIN PREFIJO /CLI/)
-Route::get('empleados/data', 'ClientController@getDataEmpleados')->name('empleados.data');
-// DESACTIVAR/ACTIVAR STATUS
-Route::post('empleado/toggle-status/{id}', 'ClientController@toggleStatus');
+
 // VISTA DEL LOGIN
 Route::get('/login', function () {
     return view('login');
@@ -49,6 +48,8 @@ Route::get('vm-status', 'StatusController@GetStatus')->name('getstatus');
 Route::get('vm-rconsum', 'StatusController@ConsumosGet')->name('getconsum');
 Route::get('vm-graphs', 'StatusController@getConsumoGraph')->name('getgraph');
 ///////////////////////////////////////// EMPLEADOS TOOLS ///////////////////////////////////////////////////
+Route::post('empleado/toggle-status/{id}', 'ClientController@toggleStatus');
+Route::get('empleados/data', 'ClientController@getDataEmpleados')->name('empleados.data');
 Route::get('export-csv-employees', 'ClientController@exportCSV');
 Route::post('import-csv-employees', 'ClientController@importCSV');
 Route::get('empleado/delete/{Id_Empleado}','ClientController@destroyEmployee')->name('empleado.delete');
@@ -63,6 +64,9 @@ Route::post('/update-permiso-articulo/{id}', 'ClientController@updatePermisoArti
 Route::post('/toggle-status-permiso-articulo/{id}', 'ClientController@toggleStatusPermiso')->name('toggle.status.permiso.articulo');
 Route::post('check-permission', [ClientController::class, 'checkPermission']);
 Route::post('add-permission', [ClientController::class, 'addPermission']);
+Route::get('export-excel-permissions', [ClientController::class, 'exportPermisos'])->name('exportar.permisos');
+///////////////////////////////////////// AREAS TOOLS ///////////////////////////////////////////////////////
+Route::get('get-areas/data', 'ClientController@getDataAreas')->name('get-areas.data');
 
 ///////////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////////////////
 
