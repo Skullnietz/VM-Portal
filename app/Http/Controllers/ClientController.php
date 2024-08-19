@@ -10,6 +10,7 @@ use Yajra\DataTables\DataTables;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\EmpleadosExport;
 use App\Exports\PermisosExport;
+use App\Exports\AreasExport;
 use Illuminate\Support\Facades\Log;
 
 
@@ -488,6 +489,107 @@ class ClientController extends Controller
         }
         return DataTables::of($data)->make(true);
     }
+    
+
+    public function updateNameArea(Request $request)
+{
+    $idArea = $request->input('id_area');
+    $newName = $request->input('new_name');
+
+    $area = DB::table('Cat_Area')->where('Id_Area', $idArea)->update(['Txt_Nombre' => $newName]);
+
+    if ($area) {
+        return response()->json(['success' => true]);
+    } else {
+        return response()->json(['success' => false]);
+    }
+}
+
+public function updateStatusArea(Request $request)
+{
+    // Obtén los datos del request
+    $idArea = $request->input('id_area');
+    $newStatus = $request->input('new_status');
+
+    try {
+        // Actualiza el estado del área en la base de datos
+        $updated = DB::table('Cat_Area')
+            ->where('Id_Area', $idArea)
+            ->update(['Txt_Estatus' => $newStatus]);
+
+        // Verifica si se actualizó algún registro
+        if ($updated) {
+            return response()->json(['success' => true, 'new_status' => $newStatus]);
+        } else {
+            return response()->json(['success' => false, 'message' => 'No se encontró el área o no se actualizó.']);
+        }
+    } catch (\Exception $e) {
+        // En caso de error, captura la excepción y devuelve un mensaje de error
+        return response()->json(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
+public function addArea(Request $request)
+{
+    session_start();
+    $newName = $request->input('new_name');
+    $currentDate = now(); // Obtiene la fecha actual
+    $userId = $_SESSION['usuario']->Id_Usuario; // Obtiene el Id del usuario desde la sesión
+    $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
+
+    // Insertar el nuevo área en la base de datos
+    $idArea = DB::table('Cat_Area')->insertGetId([
+        'Id_Planta' => $plantaId,
+        'Txt_Nombre' => $newName,
+        'Fecha_Alta' => $currentDate,
+        'Txt_Estatus' => 'Alta',
+        'Fecha_Modificacion' => null,
+        'Fecha_Baja' => null,
+        'Id_Usuario_Alta' => $userId,
+        'Id_Usuario_Modificacion' => null,
+        'Id_Usuario_Baja' => null
+    ]);
+
+    if ($idArea) {
+        return response()->json(['success' => true]);
+    } else {
+        return response()->json(['success' => false]);
+    }
+}
+
+public function deleteArea(Request $request)
+{
+    $idArea = $request->input('id_area');
+
+    // Comprobar si existen registros en Ctrl_Permisos_x_Area
+    $permisosCount = DB::table('Ctrl_Permisos_x_Area')->where('Id_Area', $idArea)->count();
+    
+    // Comprobar si existen registros en Cat_Empleados
+    $empleadosCount = DB::table('Cat_Empleados')->where('Id_Area', $idArea)->count();
+
+    // Mensaje de alerta según los registros encontrados
+    if ($permisosCount > 0 && $empleadosCount > 0) {
+        return response()->json(['success' => false, 'message' => 'Reasigne los empleados y permisos a otra área.']);
+    } elseif ($permisosCount > 0) {
+        return response()->json(['success' => false, 'message' => 'Reasigne los permisos a otra área.']);
+    } elseif ($empleadosCount > 0) {
+        return response()->json(['success' => false, 'message' => 'Reasigne los empleados a otra área.']);
+    }
+
+    // Proceder a eliminar el área si no hay registros asociados
+    $deleted = DB::table('Cat_Area')->where('Id_Area', $idArea)->delete();
+
+    if ($deleted) {
+        return response()->json(['success' => true]);
+    } else {
+        return response()->json(['success' => false, 'message' => 'Error al eliminar el área.']);
+    }
+}
+
+public function exportExcelAreas() {
+    return Excel::download(new AreasExport, 'areas.xlsx');
+}
+
 
     
 }

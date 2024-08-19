@@ -79,9 +79,13 @@ class StatusController extends Controller
     public function getConsumoGraph()
     {
         session_start();
+        $currentMonth = date('m');
+        $currentYear = date('Y');
         $consumoData = DB::table('Ctrl_Consumos')
         ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
         ->select(DB::raw('Cat_Articulos.Id_Articulo as id, Cat_Articulos.Txt_Codigo as nombre, SUM(Ctrl_Consumos.Cantidad) as total_cantidad'))
+        ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+        ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
         ->groupBy('Cat_Articulos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
         ->orderBy('total_cantidad', 'DESC')
         ->take(5)
@@ -93,12 +97,16 @@ class StatusController extends Controller
     public function getIndexDash(){
         session_start();
         $plantaId = $_SESSION['usuario']->Id_Planta;
+        $currentMonth = date('m');
+        $currentYear = date('Y');
 
         // Obtener Producto más consumido
         $productoMasConsumido = DB::table('Ctrl_Consumos')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->select('Cat_Articulos.Txt_Codigo')
             ->where('Cat_Articulos.Id_Planta', $plantaId)
+            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
             ->orderByRaw('COUNT(Ctrl_Consumos.Id_Articulo) DESC')
             ->limit(1)
@@ -111,6 +119,8 @@ class StatusController extends Controller
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->select('Cat_Area.Txt_Nombre')
             ->where('Cat_Empleados.Id_Planta', $plantaId)
+            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->groupBy('Cat_Empleados.Id_Area', 'Cat_Area.Txt_Nombre')
             ->orderByRaw('COUNT(Cat_Empleados.Id_Area) DESC')
             ->limit(1)
@@ -129,6 +139,8 @@ class StatusController extends Controller
         $articulosConsumidos = DB::table('Ctrl_Consumos')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->where('Cat_Articulos.Id_Planta', $plantaId)
+            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->sum('Ctrl_Consumos.cantidad');
 
         return response()->json([

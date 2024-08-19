@@ -6,17 +6,30 @@
 @section('title', __('Empleados'))
 
 @section('content_header')
-    <div class="container">
+<div class="container">
         <div class="row">
-            <div class="col-2">
-                <h4><a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Empleados') }}</h4>
+            <!-- Columna de la izquierda con alineación a la izquierda -->
+            <div class="col-2 d-flex align-items-center">
+                <h4 class="mb-0">
+                    <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Empleados') }}
+                </h4>
             </div>
-            <div class="col-5 ml-auto">
+
+            <!-- Columna de la derecha con alineación a la derecha -->
+            <div class="col-10 d-flex justify-content-end align-items-center">
                 <div class="btn-group" role="group" aria-label="Basic example">
-                    <a type="button" href="{{ url('export-csv-employees') }}" class="btn btn-secondary">Descarga .CSV <i class="fas fa-file-csv"></i> <i class="fas fa-download"> </i></a>
-                    <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#uploadCsvModal"> Subida .CSV <i class="fas fa-file-csv"></i> <i class="fas fa-cloud-upload-alt"> </i></button>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addEmployeeModal">Agregar Empleado &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i></button>
-                    <a href="{{ url('export-excel-employees') }}" type="button" class="btn btn-success">Reporte <i class="fas fa-file-excel"></i></a>
+                    <a type="button" href="{{ url('export-csv-employees') }}" class="btn btn-secondary">
+                        Descarga .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-download"></i>
+                    </a>
+                    <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#uploadCsvModal">
+                        Subida .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-cloud-upload-alt"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addEmployeeModal">
+                        Agregar Empleado &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i>
+                    </button>
+                    <a href="{{ url('export-excel-employees') }}" type="button" class="btn btn-success">
+                        Reporte &nbsp;&nbsp;&nbsp;<i class="fas fa-file-excel"></i>
+                    </a>
                 </div>
             </div>
         </div>

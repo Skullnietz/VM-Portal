@@ -7,18 +7,27 @@
 
 @section('content_header')
 <div class="container">
-    <div class="row">
-        <div class="col-9">
-            <h4><a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de Articulo') }}</h4>
-        </div>
-        <div class="col-3 ml-auto">
-            <div class="btn-group" role="group" aria-label="Basic example">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPermissionModal">Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-lock"></i></button>
-                <a href="{{ url('export-excel-permissions') }}" type="button" class="btn btn-success">Reporte <i class="fas fa-file-excel"></i></a>
+        <div class="row">
+            <!-- Columna de la izquierda con contenido alineado a la izquierda -->
+            <div class="col-9 d-flex align-items-center">
+                <h4 class="mb-0">
+                    <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de Articulo') }}
+                </h4>
+            </div>
+
+            <!-- Columna de la derecha con contenido alineado a la derecha -->
+            <div class="col-3 d-flex justify-content-end align-items-center">
+                <div class="btn-group" role="group" aria-label="Basic example">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPermissionModal">
+                        Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-lock"></i>
+                    </button>
+                    <a href="{{ url('export-excel-permissions') }}" type="button" class="btn btn-success">
+                        Reporte <i class="fas fa-file-excel"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <!-- Modal para Agregar Permiso -->
 <div class="modal fade" id="addPermissionModal" tabindex="-1" role="dialog" aria-labelledby="addPermissionModalLabel" aria-hidden="true">
@@ -126,6 +135,20 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+        #areasTable {
+    width: 100% !important; /* Asegura que la tabla ocupe todo el ancho disponible */
+}
+
+.dataTables_scroll {
+    overflow-x: auto; /* Permite el desplazamiento horizontal si es necesario */
+}
+
+.dataTables_scrollHead,
+.dataTables_scrollBody {
+    overflow-x: auto; /* Asegura que el scroll horizontal esté disponible */
+}
+    </style>
 @stop
 
 @section('js')
@@ -133,7 +156,7 @@
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
     <!-- Incluir SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Incluir CSS de Select2 -->
 
 
@@ -270,10 +293,12 @@ $(document).ready(function() {
                 orderable: false, 
                 searchable: false, 
                 render: function(data, type, row) {
-                    return `<button class="btn btn-danger btn-xs delete-btn" data-id="${row.Clave}">Eliminar</button>`;
+                    return `<button class="btn btn-danger btn-xs delete-btn" data-id="${row.Clave}">&nbsp;&nbsp;&nbsp; Eliminar &nbsp;&nbsp;&nbsp;<i class="fas fa-trash"></i></button>`;
                 }
             }
         ],
+            responsive: true,
+            scrollX: true,
         language: {
             processing: "Procesando...",
             search: "Buscar:",

@@ -66,7 +66,13 @@ Route::post('check-permission', [ClientController::class, 'checkPermission']);
 Route::post('add-permission', [ClientController::class, 'addPermission']);
 Route::get('export-excel-permissions', [ClientController::class, 'exportPermisos'])->name('exportar.permisos');
 ///////////////////////////////////////// AREAS TOOLS ///////////////////////////////////////////////////////
-Route::get('get-areas/data', 'ClientController@getDataAreas')->name('get-areas.data');
+Route::get('/get-areas/data', 'ClientController@getDataAreas')->name('get-areas.data');
+Route::post('/areas/update-name', [ClientController::class, 'updateNameArea'])->name('areas.update-name');
+Route::post('/areas/update-status', [ClientController::class, 'updateStatusArea'])->name('areas.update-status');
+Route::post('areas/add', [ClientController::class, 'addArea']);
+Route::post('/areas/delete', [ClientController::class, 'deleteArea']);
+Route::get('export-excel-areas', [ClientController::class, 'exportExcelAreas']);
+
 
 ///////////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////////////////
 
