@@ -299,7 +299,7 @@
                     data: null,
                     name: 'Permisos',
                     render: function(data, type, row) {
-                        return `<a href="/empleado/permisos/${row.Id_Empleado}" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
+                        return `<a href="/cli/areas/permissions/${row.Id_Area}" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
                     }
                 },
                 {

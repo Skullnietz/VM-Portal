@@ -23,6 +23,8 @@ Route::prefix('{language}')->group(function () {
     Route::get('/empleados-cli', 'ClientController@Empleados')->name('empleados-cli'); // Administracion Empleados
     //PERMISOS DE EMPLEADO
     Route::get('/permisos-cli', 'ClientController@PermisosArticulos')->name('permisos-cli'); // Asignacion de permiso
+    // PERMISOS FILTRADO POR AREA
+    Route::get('areas/permissions/{areaId}', 'ClientController@PermisosArticulosFilter')->name('permisos-cli'); // Asignacion de permiso
     ////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////// LOGIN CONTROLLER //////////////////////////////////////
     // LOGIN

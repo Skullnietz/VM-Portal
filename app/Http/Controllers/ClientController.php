@@ -104,6 +104,29 @@ class ClientController extends Controller
         return view('cliente.permisos', compact('areas', 'articulos'));
 
     }
+
+    public function PermisosArticulosFilter($lang,$areaId){
+        session_start();
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+    $QAreaName = DB::table('Cat_Area')
+    ->where('Id_Planta', $idPlanta)
+    ->where('Id_Area', $areaId)
+    ->first();
+    $areaName= $QAreaName->Txt_Nombre;
+    
+    
+    $areas = DB::table('Cat_Area')
+                ->where('Id_Planta', $idPlanta)
+                ->get();
+
+    $articulos = DB::table('Cat_Articulos')
+                ->where('Id_Planta', $idPlanta)
+                ->get();
+                //dd($articulos);
+        return view('cliente.perarea', compact('areas', 'articulos','areaId','areaName'));
+
+    }
+
     public function getPermisosArticulos(Request $request)
     {
         session_start();
@@ -134,7 +157,7 @@ class ClientController extends Controller
         }
     }
 
-    public function getPermisosPorArea($Id)
+    public function getPermisosPorArea($areaId)
     {
         session_start();
         try {
@@ -153,7 +176,8 @@ class ClientController extends Controller
                             'Ctrl_Permisos_x_Area.Frecuencia'
                         )
                         ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
-                        ->where('Id_Area', $areaId)->get();
+                        ->where('Ctrl_Permisos_x_Area.Id_Area', $areaId)
+                        ->get();
 
                     return DataTables::of($data)->make(true);
                

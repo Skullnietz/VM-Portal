@@ -3,7 +3,7 @@
 @section('usermenu_body')
 @stop
 
-@section('title', __('Permisos de articulo'))
+@section('title', __('Permisos de articulos'))
 
 @section('content_header')
 <div class="container">
@@ -11,7 +11,7 @@
             <!-- Columna de la izquierda con contenido alineado a la izquierda -->
             <div class="col-9 d-flex align-items-center">
                 <h4 class="mb-0">
-                    <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de Articulo') }}
+                    <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de Articulos') }}
                 </h4>
             </div>
 
