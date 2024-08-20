@@ -1,13 +1,13 @@
 @extends('adminlte::page')
 
-@section('title', __('Áreas'))
+@section('title', __('Areas'))
 
 @section('content_header')
 <div class="container">
     <div class="row">
         <div class="col text-left">
             <h4>
-                <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Áreas') }}
+                <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Areas') }}
             </h4>
         </div>
         <div class="col text-right">
@@ -16,7 +16,7 @@
                     Habilitar Edición &nbsp;&nbsp;&nbsp;<i class="fas fa-edit"></i>
                 </button>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addAreaModal">
-                    Agregar Área &nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-plus-circle fa-xs"></i> <i class="fas fa-square"></i>
+                    Agregar Area &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i>
                 </button>
                 <a href="{{ url('export-excel-areas') }}" type="button" class="btn btn-success">
                     Reporte de Áreas &nbsp;&nbsp;&nbsp;<i class="fas fa-file-excel"></i>
@@ -55,7 +55,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title">Áreas</h5>
+                        <h5 class="card-title">Areas</h5>
                     </div>
                     <div class="card-body">
                         <table id="areasTable" class="table table-bordered table-striped">
@@ -141,7 +141,10 @@
     var table = $('#areasTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ url("get-areas/data") }}',
+        ajax: {
+        url: '/get-permisos-articulos/{{ $areaId }}', // Incluir el área en la URL
+        type: 'GET',
+            },
         columns: [
             { data: 'Id_Area' },
             {
@@ -165,7 +168,7 @@
             {
                 data: null,
                 render: function(data, type, row) {
-                    return '<button class="btn btn-sm btn-danger delete-area" data-id="' + row.Id_Area + '"><i class="fas fa-trash"></i></button> ' + ' <button class="btn btn-sm btn-warning refresh-permissions" data-id="' + row.Id_Area + '"><i class="fas fa-sync-alt"></i></button>';
+                    return '<button class="btn btn-danger delete-area" data-id="' + row.Id_Area + '"><i class="fas fa-trash"></i></button>';
                 },
                 orderable: false,
                 searchable: false
@@ -244,55 +247,6 @@
             }
         });
     });
-
-    $('#areasTable').on('click', '.refresh-permissions', function() {
-    var idArea = $(this).data('id');
-
-    Swal.fire({
-        title: 'Confirmar actualización',
-        text: "¿Estás seguro de que deseas generar los permisos de artículos faltantes?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, actualizar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                url: '{{ url("areas/generate-permissions") }}', // Ajusta la URL según la ruta de tu controlador
-                method: 'POST',
-                data: {
-                    id_area: idArea,
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire(
-                            'Actualizado',
-                            'Los permisos de artículos faltantes se han generado correctamente.',
-                            'success'
-                        );
-                        table.ajax.reload(); // Recargar la tabla si es necesario
-                    } else {
-                        Swal.fire(
-                            'Error',
-                            'No se pudieron generar los permisos de artículos faltantes.',
-                            'error'
-                        );
-                    }
-                },
-                error: function() {
-                    Swal.fire(
-                        'Error',
-                        'Error en la solicitud AJAX.',
-                        'error'
-                    );
-                }
-            });
-        }
-    });
-});
 
     // Manejar la eliminación de un área
     $('#areasTable').on('click', '.delete-area', function() {

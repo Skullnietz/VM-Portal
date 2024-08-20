@@ -134,6 +134,36 @@ class ClientController extends Controller
         }
     }
 
+    public function getPermisosPorArea($Id)
+    {
+        session_start();
+        try {
+            
+                if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+                    $idPlanta = $_SESSION['usuario']->Id_Planta;
+                    $data = DB::table('Ctrl_Permisos_x_Area')
+                        ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
+                        ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+                        ->select(
+                            'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
+                            'Cat_Area.Txt_Nombre as Nombre',
+                            DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
+                            'Ctrl_Permisos_x_Area.Status as Estatus',
+                            'Ctrl_Permisos_x_Area.Cantidad',
+                            'Ctrl_Permisos_x_Area.Frecuencia'
+                        )
+                        ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
+                        ->where('Id_Area', $areaId)->get();
+
+                    return DataTables::of($data)->make(true);
+               
+            }
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo los permisos de artículos: ' . $e->getMessage());
+            return response()->json(['error' => 'Error obteniendo los permisos de artículos'], 500);
+        }
+    }
+
     public function deletePermisoArticulo(Request $request, $id)
     {
         try {
@@ -159,17 +189,32 @@ class ClientController extends Controller
     }
 
     public function toggleStatusPermiso(Request $request, $id)
-    {
-        try {
-            $currentStatus = DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->value('Status');
-            $newStatus = $currentStatus == 'Alta' ? 'Baja' : 'Alta';
-            DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->update(['Status' => $newStatus]);
-            return response()->json(['success' => 'Estado actualizado con éxito']);
-        } catch (\Exception $e) {
-            Log::error('Error actualizando el estado del permiso de artículo: ' . $e->getMessage());
-            return response()->json(['error' => 'Error actualizando el estado del permiso de artículo'], 500);
+{
+    try {
+        // Obtener el Id_Area asociado al permiso
+        $idArea = DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->value('Id_Area');
+
+        // Verificar si el estado del área es "Baja"
+        $areaStatus = DB::table('Cat_Area')->where('Id_Area', $idArea)->value('Txt_Estatus');
+        if ($areaStatus == 'Baja') {
+            return response()->json(['error' => 'No se puede cambiar el estado del permiso porque el área está dada de baja. Cambie el estado del área antes de continuar.'], 400);
         }
+
+        // Obtener el estado actual del permiso
+        $currentStatus = DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->value('Status');
+        
+        // Determinar el nuevo estado
+        $newStatus = $currentStatus == 'Alta' ? 'Baja' : 'Alta';
+        
+        // Actualizar el estado del permiso
+        DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->update(['Status' => $newStatus]);
+
+        return response()->json(['success' => 'El estado del permiso se ha actualizado con éxito.']);
+    } catch (\Exception $e) {
+        Log::error('Error al actualizar el estado del permiso de artículo: ' . $e->getMessage());
+        return response()->json(['error' => 'Hubo un error al intentar actualizar el estado del permiso de artículo. Por favor, intente nuevamente más tarde.'], 500);
     }
+}
     
     public function getDataEmpleados()
     {
@@ -507,27 +552,55 @@ class ClientController extends Controller
 
 public function updateStatusArea(Request $request)
 {
+    session_start();
     // Obtén los datos del request
     $idArea = $request->input('id_area');
     $newStatus = $request->input('new_status');
+    $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
 
     try {
+        // Inicia la transacción
+        DB::beginTransaction();
+
         // Actualiza el estado del área en la base de datos
         $updated = DB::table('Cat_Area')
             ->where('Id_Area', $idArea)
+            ->where('Id_Planta', $plantaId)
             ->update(['Txt_Estatus' => $newStatus]);
 
-        // Verifica si se actualizó algún registro
+        // Verifica si se actualizó algún registro en Cat_Area
         if ($updated) {
+            // Verifica si existen registros en Ctrl_Permisos_x_Area para el Id_Area
+            $hasPermissions = DB::table('Ctrl_Permisos_x_Area')
+                ->where('Id_Area', $idArea)
+                ->where('Id_Planta', $plantaId)
+                ->exists();
+
+            // Si hay permisos asociados, actualiza su estado
+            if ($hasPermissions) {
+                DB::table('Ctrl_Permisos_x_Area')
+                    ->where('Id_Area', $idArea)
+                    ->where('Id_Planta', $plantaId)
+                    ->update(['Status' => $newStatus]);
+            }
+
+            // Confirma la transacción
+            DB::commit();
+
             return response()->json(['success' => true, 'new_status' => $newStatus]);
         } else {
+            // Si no se actualizó, revierte la transacción
+            DB::rollBack();
+
             return response()->json(['success' => false, 'message' => 'No se encontró el área o no se actualizó.']);
         }
     } catch (\Exception $e) {
-        // En caso de error, captura la excepción y devuelve un mensaje de error
+        // En caso de error, revierte la transacción y captura la excepción
+        DB::rollBack();
         return response()->json(['success' => false, 'error' => $e->getMessage()]);
     }
 }
+
 
 public function addArea(Request $request)
 {
@@ -536,6 +609,16 @@ public function addArea(Request $request)
     $currentDate = now(); // Obtiene la fecha actual
     $userId = $_SESSION['usuario']->Id_Usuario; // Obtiene el Id del usuario desde la sesión
     $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
+
+    // Verificar si el área ya existe en la misma planta
+    $existingArea = DB::table('Cat_Area')
+        ->where('Id_Planta', $plantaId)
+        ->where('Txt_Nombre', $newName)
+        ->first();
+
+    if ($existingArea) {
+        return response()->json(['success' => false, 'message' => 'El área ya existe.']);
+    }
 
     // Insertar el nuevo área en la base de datos
     $idArea = DB::table('Cat_Area')->insertGetId([
@@ -551,9 +634,35 @@ public function addArea(Request $request)
     ]);
 
     if ($idArea) {
-        return response()->json(['success' => true]);
+        // Obtener todos los artículos de la misma planta
+        $articulos = DB::table('Cat_Articulos')
+            ->where('Id_Planta', $plantaId)
+            ->where('Txt_Estatus', 'Alta')
+            ->get();
+
+        foreach ($articulos as $articulo) {
+            // Verificar si ya existe un permiso para este área y artículo
+            $existingPermiso = DB::table('Ctrl_Permisos_x_Area')
+                ->where('Id_Area', $idArea)
+                ->where('Id_Articulo', $articulo->Id_Articulo)
+                ->first();
+
+            if (!$existingPermiso) {
+                // Insertar un nuevo permiso en la tabla Ctrl_Permisos_x_Area
+                DB::table('Ctrl_Permisos_x_Area')->insert([
+                    'Id_Area' => $idArea,
+                    'Id_Articulo' => $articulo->Id_Articulo,
+                    'Frecuencia' => 0,
+                    'Cantidad' => 0,
+                    'Id_Planta' => $plantaId,
+                    'Status' => 'Alta',
+                ]);
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
     } else {
-        return response()->json(['success' => false]);
+        return response()->json(['success' => false, 'message' => 'Error al crear el área.']);
     }
 }
 
@@ -590,6 +699,46 @@ public function exportExcelAreas() {
     return Excel::download(new AreasExport, 'areas.xlsx');
 }
 
+public function generateMissingPermissions()
+{
+    session_start();
+    $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
 
+    // Obtener todas las áreas de la planta
+    $areas = DB::table('Cat_Area')
+        ->where('Id_Planta', $plantaId)
+        ->where('Txt_Estatus', 'Alta')
+        ->get();
+
+    // Obtener todos los artículos de la planta
+    $articulos = DB::table('Cat_Articulos')
+        ->where('Id_Planta', $plantaId)
+        ->where('Txt_Estatus', 'Alta')
+        ->get();
+
+    foreach ($areas as $area) {
+        foreach ($articulos as $articulo) {
+            // Verificar si el permiso ya existe para el área y el artículo
+            $existingPermiso = DB::table('Ctrl_Permisos_x_Area')
+                ->where('Id_Area', $area->Id_Area)
+                ->where('Id_Articulo', $articulo->Id_Articulo)
+                ->first();
+
+            // Si no existe, lo insertamos con Frecuencia y Cantidad en 0
+            if (!$existingPermiso) {
+                DB::table('Ctrl_Permisos_x_Area')->insert([
+                    'Id_Area' => $area->Id_Area,
+                    'Id_Articulo' => $articulo->Id_Articulo,
+                    'Frecuencia' => 0,
+                    'Cantidad' => 0,
+                    'Id_Planta' => $plantaId,
+                    'Status' => 'Alta',
+                ]);
+            }
+        }
+    }
+
+    return response()->json(['success' => true, 'message' => 'Permisos faltantes generados correctamente.']);
+}
     
 }

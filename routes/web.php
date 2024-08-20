@@ -65,6 +65,8 @@ Route::post('/toggle-status-permiso-articulo/{id}', 'ClientController@toggleStat
 Route::post('check-permission', [ClientController::class, 'checkPermission']);
 Route::post('add-permission', [ClientController::class, 'addPermission']);
 Route::get('export-excel-permissions', [ClientController::class, 'exportPermisos'])->name('exportar.permisos');
+Route::get('/get-permisos-articulos/{Id}', [ClientController::class, 'getPermisosPorArea'])->name('getPermisosPorArea');
+Route::post('/areas/generate-permissions', [ClientController::class, 'generateMissingPermissions']);
 ///////////////////////////////////////// AREAS TOOLS ///////////////////////////////////////////////////////
 Route::get('/get-areas/data', 'ClientController@getDataAreas')->name('get-areas.data');
 Route::post('/areas/update-name', [ClientController::class, 'updateNameArea'])->name('areas.update-name');

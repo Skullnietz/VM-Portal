@@ -154,9 +154,9 @@
 @section('js')
 <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+    
     <!-- Incluir SweetAlert2 -->
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Incluir CSS de Select2 -->
 
 
@@ -323,110 +323,128 @@ $(document).ready(function() {
         }
     });
 
-    // Función para eliminar un permiso
-    $('#permisos-articulos-table').on('click', '.delete-btn', function() {
-        var id = $(this).data('id');
-        swal({
-            title: "¿Estás seguro?",
-            text: "Una vez eliminado, no podrás recuperar este permiso.",
-            icon: "warning",
-            buttons: true,
-            dangerMode: true,
-        }).then((willDelete) => {
-            if (willDelete) {
-                $.ajax({
-                    url: `/delete-permiso-articulo/${id}`,
-                    type: 'DELETE',
-                    success: function(result) {
-                        table.ajax.reload();
-                        swal("Permiso eliminado con éxito", {
-                            icon: "success",
-                        });
-                    },
-                    error: function(xhr, status, error) {
-                        swal("Error eliminando el permiso: " + xhr.responseText, {
-                            icon: "error",
-                        });
-                    }
-                });
-            }
-        });
+ // Función para eliminar un permiso
+$('#permisos-articulos-table').on('click', '.delete-btn', function() {
+    var id = $(this).data('id');
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: 'Una vez eliminado, no podrás recuperar este permiso.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminarlo',
+        cancelButtonText: 'Cancelar',
+        dangerMode: true,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/delete-permiso-articulo/${id}`,
+                type: 'DELETE',
+                success: function(result) {
+                    $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+                    Swal.fire(
+                        'Eliminado',
+                        'Permiso eliminado con éxito',
+                        'success'
+                    );
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire(
+                        'Error',
+                        `Error eliminando el permiso: ${xhr.responseJSON.error || xhr.responseText}`,
+                        'error'
+                    );
+                }
+            });
+        }
     });
+});
 
-    // Función para cambiar el estado
-    $('#permisos-articulos-table').on('click', '.toggle-status', function() {
-        var id = $(this).data('id');
-        var status = $(this).data('status');
-        var newStatus = status === 'Alta' ? 'Baja' : 'Alta';
-        $.ajax({
-            url: `/toggle-status-permiso-articulo/${id}`,
-            type: 'POST',
-            data: {
-                status: newStatus
-            },
-            success: function(result) {
-                table.ajax.reload();
-                swal("Estado actualizado con éxito", {
-                    icon: "success",
-                });
-            },
-            error: function(xhr, status, error) {
-                swal("Error actualizando el estado: " + xhr.responseText, {
-                    icon: "error",
-                });
-            }
-        });
+// Función para cambiar el estado
+$('#permisos-articulos-table').on('click', '.toggle-status', function() {
+    var id = $(this).data('id');
+    var status = $(this).data('status');
+    var newStatus = status === 'Alta' ? 'Baja' : 'Alta';
+    $.ajax({
+        url: `/toggle-status-permiso-articulo/${id}`,
+        type: 'POST',
+        data: {
+            status: newStatus
+        },
+        success: function(result) {
+            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+            Swal.fire(
+                'Actualizado',
+                'Estado actualizado con éxito',
+                'success'
+            );
+        },
+        error: function(xhr, status, error) {
+            Swal.fire(
+                'Error',
+                `Error actualizando el estado: ${xhr.responseJSON.error || xhr.responseText}`,
+                'error'
+            );
+        }
     });
+});
 
-    // Función para actualizar la cantidad en tiempo real
-    $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
-        var id = $(this).data('id');
-        var value = $(this).val();
-        $.ajax({
-            url: `/update-permiso-articulo/${id}`,
-            type: 'POST',
-            data: {
-                field: 'Cantidad',
-                value: value
-            },
-            success: function(result) {
-                table.ajax.reload();
-                swal("Cantidad actualizada con éxito", {
-                    icon: "success",
-                });
-            },
-            error: function(xhr, status, error) {
-                swal("Error actualizando la cantidad: " + xhr.responseText, {
-                    icon: "error",
-                });
-            }
-        });
+// Función para actualizar la cantidad en tiempo real
+$('#permisos-articulos-table').on('change', '.update-cantidad', function() {
+    var id = $(this).data('id');
+    var value = $(this).val();
+    $.ajax({
+        url: `/update-permiso-articulo/${id}`,
+        type: 'POST',
+        data: {
+            field: 'Cantidad',
+            value: value
+        },
+        success: function(result) {
+            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+            Swal.fire(
+                'Actualizado',
+                'Cantidad actualizada con éxito',
+                'success'
+            );
+        },
+        error: function(xhr, status, error) {
+            Swal.fire(
+                'Error',
+                `Error actualizando la cantidad: ${xhr.responseJSON.error || xhr.responseText}`,
+                'error'
+            );
+        }
     });
+});
 
-    // Función para actualizar la frecuencia en tiempo real
-    $('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
-        var id = $(this).data('id');
-        var value = $(this).val();
-        $.ajax({
-            url: `/update-permiso-articulo/${id}`,
-            type: 'POST',
-            data: {
-                field: 'Frecuencia',
-                value: value
-            },
-            success: function(result) {
-                table.ajax.reload();
-                swal("Frecuencia actualizada con éxito", {
-                    icon: "success",
-                });
-            },
-            error: function(xhr, status, error) {
-                swal("Error actualizando la frecuencia: " + xhr.responseText, {
-                    icon: "error",
-                });
-            }
-        });
+// Función para actualizar la frecuencia en tiempo real
+$('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
+    var id = $(this).data('id');
+    var value = $(this).val();
+    $.ajax({
+        url: `/update-permiso-articulo/${id}`,
+        type: 'POST',
+        data: {
+            field: 'Frecuencia',
+            value: value
+        },
+        success: function(result) {
+            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+            Swal.fire(
+                'Actualizado',
+                'Frecuencia actualizada con éxito',
+                'success'
+            );
+        },
+        error: function(xhr, status, error) {
+            Swal.fire(
+                'Error',
+                `Error actualizando la frecuencia: ${xhr.responseJSON.error || xhr.responseText}`,
+                'error'
+            );
+        }
     });
+});
 });
 
 
