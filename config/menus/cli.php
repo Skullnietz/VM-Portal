@@ -25,16 +25,16 @@ return[
             'url' => '/cli/empleados-cli',
         ],
         [
-            'text' => 'Permisos Articulo',
-            'icon' => 'fas fa-fw fa-user-lock',
-            'icon_color' => 'cyan',
-            'url' => '/cli/permisos-cli',
-        ],
-        [
             'text' => 'Areas',
             'icon' => 'fas fa-fw fa-grip-horizontal',
             'icon_color' => 'cyan',
             'url' => '/cli/areas-cli',
+        ],
+        [
+            'text' => 'Permisos Articulo',
+            'icon' => 'fas fa-fw fa-user-lock',
+            'icon_color' => 'cyan',
+            'url' => '/cli/permisos-cli',
         ],
         ['header' => 'REPORTES'],
         [
@@ -51,7 +51,7 @@ return[
                 [
                     'text' => 'Consumo por Empleado',
                     'icon_color' => 'green',
-                    'url' => '#',
+                    'url' => '/cli/reporte/consumoxempleado',
                 ],
                 [
                     'text' => 'Consumo por Vending',

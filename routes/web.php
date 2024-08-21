@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InicioController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportesClienteController;
+
 
 // REDIRECCIONAMIENTO BASICO
 Route::redirect('/', 'inicio');
@@ -34,6 +36,11 @@ Route::prefix('{language}')->group(function () {
     Route::get('/notifications/list', [NotificationController::class, 'listNotifications'])->name('listNotifications');
     ///////////////////////////////////// AREAS ////////////////////////////////////////////
     Route::get('/areas-cli', [ClientController::class, 'Areas'])->name('areas-cli');
+
+    ///////////////////////////////////// REPORTES DE CONSUMO //////////////////////////////
+    Route::get('/reporte/consumoxempleado', [ReportesClienteController::class, 'indexConsumoxEmpleado'])->name('consumosxempleado.index');
+    
+
     
 });
 
@@ -76,6 +83,9 @@ Route::post('/areas/update-status', [ClientController::class, 'updateStatusArea'
 Route::post('areas/add', [ClientController::class, 'addArea']);
 Route::post('/areas/delete', [ClientController::class, 'deleteArea']);
 Route::get('export-excel-areas', [ClientController::class, 'exportExcelAreas']);
+/////////////////////////////////////////// REPORTES DE CONSUMO ///////////////////////////////////////////
+Route::get('/getconsumoxempleado/data', [ReportesClienteController::class, 'getConsumoxEmpleado'])->name('consumosxempleado.data');
+Route::get('/export/consumoxempleado', [ReportesClienteController::class, 'exportConsumoxEmpleado'])->name('export.consumoxempleado');
 
 
 ///////////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////////////////
