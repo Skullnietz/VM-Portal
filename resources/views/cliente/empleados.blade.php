@@ -261,6 +261,7 @@
         </div>
     </div>
 </div>
+
 @stop
 
 @section('right-sidebar')

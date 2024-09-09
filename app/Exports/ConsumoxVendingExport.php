@@ -11,8 +11,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-
-class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, ShouldAutoSize
+class ConsumoxVendingExport implements FromCollection, WithHeadings, WithEvents, ShouldAutoSize
 {
     protected $request;
     protected $idPlanta;
@@ -28,26 +27,39 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
         ob_end_clean();
         ob_start();
 
-        $data = DB::table('Ctrl_Consumos')
-            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
-            ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-            ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
-            ->select(
-                'Cat_Area.Txt_Nombre as Area',
-                DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
-                DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
-                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
-                'Cat_Articulos.Txt_Descripcion as Producto',
-                'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
-                'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
-                DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo')
-            )
-            ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno');
+        // Consulta para obtener la información agrupada por máquina (nombre), producto, área y fecha del último consumo
+    $data = DB::table('Ctrl_Consumos')
+    ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+    ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+    ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+    ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina') // Se une la tabla de máquinas
+    ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
+    ->groupBy(
+        'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
+        'Ctrl_Consumos.Id_Articulo', 
+        'Cat_Articulos.Txt_Descripcion', 
+        'Cat_Articulos.Txt_Codigo_Cliente', 
+        'Cat_Articulos.Txt_Codigo', 
+        'Cat_Area.Txt_Nombre'
+    )
+    ->select(
+        'Ctrl_Mquinas.Txt_Nombre as Maquina', // Se selecciona el nombre de la máquina
+        DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'), // Total de consumos del producto en la vending
+        DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado) as No_Empleados'), // Número de empleados distintos consumiendo el producto
+        'Cat_Articulos.Txt_Descripcion as Producto',
+        'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
+        'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
+        'Cat_Area.Txt_Nombre as Area', // Nombre del área
+        DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo') // Fecha del último consumo
+    );
 
         // Aplicar filtros
         if ($this->request->filled('area')) {
             $data->where('Cat_Area.Txt_Nombre', 'like', "%{$this->request->area}%");
+        }
+
+        if ($this->request->filled('vending')) {
+            $data->where('Ctrl_Consumos.Id_Maquina', '=', "{$this->request->vending}");
         }
 
         if ($this->request->filled('product')) {
@@ -94,12 +106,13 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
     public function headings(): array
     {
         return [
-            'Área',
+            'VM',
             'Consumo (veces)',
             'Empleados Consumiendo',
             'Producto',
             'Código Cliente',
             'Código Urvina',
+            'Área',
             'Ultimo Consumo',
         ];
     }
@@ -124,7 +137,7 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
 
                 // Título
                 $sheet->mergeCells('A1:H1');
-                $sheet->setCellValue('A1', 'Reporte de Consumos por Area');
+                $sheet->setCellValue('A1', 'Reporte de Consumos por Vending Machine');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 

@@ -56,7 +56,7 @@ return[
                 [
                     'text' => 'Consumo por Vending',
                     'icon_color' => 'green',
-                    'url' => '#',
+                    'url' => '/cli/reporte/consumoxvending',
                 ],
             ]
         ],

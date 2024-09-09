@@ -7,6 +7,7 @@ use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Exports\ConsumoxEmpleadoExport;
 use App\Exports\ConsumoxAreaExport;
+use App\Exports\ConsumoxVendingExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportesClienteController extends Controller
@@ -20,6 +21,11 @@ class ReportesClienteController extends Controller
     {
         session_start();
         return view('cliente.reportes.consumoxarea');
+    }
+    public function indexConsumoxVending()
+    {
+        session_start();
+        return view('cliente.reportes.consumoxvending');
     }
 
     public function getConsumoxEmpleado(Request $request)
@@ -165,14 +171,80 @@ public function exportConsumoxEmpleado(Request $request)
     session_start();
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
-    return Excel::download(new ConsumoxEmpleadoExport($request, $idPlanta), 'consumos.xlsx');
+    return Excel::download(new ConsumoxEmpleadoExport($request, $idPlanta), 'consumos-empleado.xlsx');
 }
 public function exportConsumoxArea(Request $request)
 {
     session_start();
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
-    return Excel::download(new ConsumoxAreaExport($request, $idPlanta), 'consumos.xlsx');
+    return Excel::download(new ConsumoxAreaExport($request, $idPlanta), 'consumos-area.xlsx');
+}
+
+public function getConsumoxVending(Request $request)
+{
+    session_start();
+    $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+   // Consulta para obtener la información agrupada por máquina (nombre), producto, área y fecha del último consumo
+    $data = DB::table('Ctrl_Consumos')
+    ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+    ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+    ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+    ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina') // Se une la tabla de máquinas
+    ->where('Cat_Empleados.Id_Planta', $idPlanta)
+    ->groupBy(
+        'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
+        'Ctrl_Consumos.Id_Articulo', 
+        'Cat_Articulos.Txt_Descripcion', 
+        'Cat_Articulos.Txt_Codigo_Cliente', 
+        'Cat_Articulos.Txt_Codigo', 
+        'Cat_Area.Txt_Nombre'
+    )
+    ->select(
+        'Ctrl_Mquinas.Txt_Nombre as Maquina', // Se selecciona el nombre de la máquina
+        DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'), // Total de consumos del producto en la vending
+        DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado) as No_Empleados'), // Número de empleados distintos consumiendo el producto
+        'Cat_Articulos.Txt_Descripcion as Producto',
+        'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
+        'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
+        'Cat_Area.Txt_Nombre as Area', // Nombre del área
+        DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo') // Fecha del último consumo
+    );
+
+
+
+    // Aplicar filtros si están presentes
+    if ($request->filled('area')) {
+        $data->where('Cat_Area.Txt_Nombre', 'like', "%{$request->area}%");
+    }
+
+    if ($request->filled('product')) {
+        $data->where(function($query) use ($request) {
+            $query->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$request->product}%")
+                ->orWhere('Cat_Articulos.Txt_Codigo', 'like', "%{$request->product}%")
+                ->orWhere('Cat_Articulos.Txt_Codigo_Cliente', 'like', "%{$request->product}%");
+        });
+    }
+
+    if ($request->filled('vending')) {
+        $data->where('Ctrl_Consumos.Id_Maquina', '=', "{$request->vending}");
+    }
+
+    // Filtros de fecha
+    if ($request->filled('startDate') && $request->filled('endDate')) {
+        $data->whereBetween('Ctrl_Consumos.Fecha_Consumo', [$request->startDate, $request->endDate]);
+    }
+
+    // Devolver datos para DataTable
+    return DataTables::of($data)->make(true);
+}
+public function exportConsumoxVending(Request $request)
+{
+    session_start();
+    $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+    return Excel::download(new ConsumoxVendingExport($request, $idPlanta), 'vending-consumos.xlsx');
 }
 
 }

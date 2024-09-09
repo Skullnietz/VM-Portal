@@ -40,6 +40,7 @@ Route::prefix('{language}')->group(function () {
     ///////////////////////////////////// REPORTES DE CONSUMO //////////////////////////////
     Route::get('/reporte/consumoxempleado', [ReportesClienteController::class, 'indexConsumoxEmpleado'])->name('consumosxempleado.index');
     Route::get('/reporte/consumoxarea', [ReportesClienteController::class, 'indexConsumoxArea'])->name('consumosxarea.index');
+    Route::get('/reporte/consumoxvending', [ReportesClienteController::class, 'indexConsumoxVending'])->name('consumosxvending.index');
     
 
     
@@ -89,6 +90,8 @@ Route::get('/getconsumoxempleado/data', [ReportesClienteController::class, 'getC
 Route::get('/export/consumoxempleado', [ReportesClienteController::class, 'exportConsumoxEmpleado'])->name('export.consumoxempleado');
 Route::get('/getconsumoxarea/data', [ReportesClienteController::class, 'getConsumoxArea'])->name('consumosxarea.data');
 Route::get('/export/consumoxarea', [ReportesClienteController::class, 'exportConsumoxArea'])->name('export.consumoxarea');
+Route::get('/getconsumoxvending/data', [ReportesClienteController::class, 'getConsumoxVending'])->name('consumosxvending.data');
+Route::get('/export/consumoxvending', [ReportesClienteController::class, 'exportConsumoxVending'])->name('export.consumoxvending');
 
 ///////////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////////////////
 
