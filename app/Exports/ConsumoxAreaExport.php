@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Exports;
 
 use Illuminate\Support\Facades\DB;
@@ -10,7 +11,8 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents, ShouldAutoSize
+
+class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, ShouldAutoSize
 {
     protected $request;
     protected $idPlanta;
@@ -25,21 +27,23 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
     {
         ob_end_clean();
         ob_start();
-        
+
         $data = DB::table('Ctrl_Consumos')
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
             ->select(
-                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
-                'Cat_Empleados.No_Empleado as Numero_de_empleado',
                 'Cat_Area.Txt_Nombre as Area',
+                DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
+                DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
+                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
                 'Cat_Articulos.Txt_Descripcion as Producto',
                 'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
                 'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
-                'Ctrl_Consumos.Fecha_Real as Fecha'
-            );
+                DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo')
+            )
+            ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno');
 
         // Aplicar filtros
         if ($this->request->filled('area')) {
@@ -51,13 +55,6 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
                 $query->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$this->request->product}%")
                     ->orWhere('Cat_Articulos.Txt_Codigo', 'like', "%{$this->request->product}%")
                     ->orWhere('Cat_Articulos.Txt_Codigo_Cliente', 'like', "%{$this->request->product}%");
-            });
-        }
-
-        if ($this->request->filled('employee')) {
-            $data->where(function($query) {
-                $query->where(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), 'like', "%{$this->request->employee}%")
-                    ->orWhere('Cat_Empleados.No_Empleado', 'like', "%{$this->request->employee}%");
             });
         }
 
@@ -97,12 +94,12 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
     public function headings(): array
     {
         return [
-            'Empleado', // Esta columna será oculta en Excel
-            'No.Empleado',
-            'Area',
-            'Descripción del Artículo',
-            'Código de Cliente',
-            'Código de Urvina',
+            'Área',
+            'Consumo (veces)',
+            'Empleado',
+            'Producto',
+            'Código Cliente',
+            'Código Urvina',
             'Fecha de Consumo',
         ];
     }
@@ -127,7 +124,7 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
 
                 // Título
                 $sheet->mergeCells('A1:H1');
-                $sheet->setCellValue('A1', 'Reporte de Consumos por Empleado');
+                $sheet->setCellValue('A1', 'Reporte de Consumos por Area');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 

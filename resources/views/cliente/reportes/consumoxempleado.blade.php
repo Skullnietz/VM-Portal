@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', __('Reporte Consumo'))
+@section('title', __('Reporte Consumo por Empleado'))
 
 @section('content_header')
 <div class="container">
@@ -32,6 +32,17 @@
     <div class="row mb-2">
         
         <div class="card">
+        <div class="card-header">
+                        <h5 class="card-title">Tabla de Consumos por Empleado</h5>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
             <div class="card-body">
                 <div class="row">
                     <!-- Inputs para el rango de fechas -->
@@ -126,6 +137,12 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
+    <style>
+        .dataTables_filter {
+    display: none;
+}
+
+    </style>
 @stop
 
 @section('js')
@@ -306,6 +323,8 @@ $(document).ready(function() {
                 consumptionChart.data.datasets[0].data.push(parseInt(cantidad));
             }
         });
+
+        
 
         // Actualiza la gráfica
         consumptionChart.update();

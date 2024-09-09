@@ -46,7 +46,7 @@ return[
                 [
                     'text' => 'Consumo por Area',
                     'icon_color' => 'green',
-                    'url' => '#',
+                    'url' => '/cli/reporte/consumoxarea',
                 ],
                 [
                     'text' => 'Consumo por Empleado',
