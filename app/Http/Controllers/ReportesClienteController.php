@@ -15,17 +15,66 @@ class ReportesClienteController extends Controller
     public function indexConsumoxEmpleado()
     {
         session_start();
-        return view('cliente.reportes.consumoxempleado');
+         // Obtener las áreas de la tabla Cat_Area
+        $areas = DB::table('Cat_Area')
+            ->select('Id_Area', 'Txt_Nombre')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+            ->get();
+        // Obtener los productos de la tabla Cat_Articulos
+        $productos = DB::table('Cat_Articulos')
+                ->select('Id_Articulo', 'Txt_Descripcion')
+                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+                ->get();
+        // Obtener los productos de la tabla Cat_Articulos
+        $empleados = DB::table('Cat_Empleados')
+                ->select('Id_Empleado', 'Nombre', 'APaterno', 'AMaterno')
+                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+                ->get();
+
+        // Pasar las áreas, productos y máquinas a la vista
+        return view('cliente.reportes.consumoxempleado', compact('areas', 'productos','empleados'));
     }
     public function indexConsumoxArea()
     {
         session_start();
-        return view('cliente.reportes.consumoxarea');
+         // Obtener las áreas de la tabla Cat_Area
+        $areas = DB::table('Cat_Area')
+            ->select('Id_Area', 'Txt_Nombre')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+            ->get();
+
+        // Obtener los productos de la tabla Cat_Articulos
+        $productos = DB::table('Cat_Articulos')
+                ->select('Id_Articulo', 'Txt_Descripcion')
+                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+                ->get();
+
+        // Pasar las áreas, productos y máquinas a la vista
+        return view('cliente.reportes.consumoxarea', compact('areas', 'productos'));
     }
     public function indexConsumoxVending()
     {
         session_start();
-        return view('cliente.reportes.consumoxvending');
+         // Obtener las áreas de la tabla Cat_Area
+        $areas = DB::table('Cat_Area')
+            ->select('Id_Area', 'Txt_Nombre')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+            ->get();
+
+        // Obtener los productos de la tabla Cat_Articulos
+        $productos = DB::table('Cat_Articulos')
+                ->select('Id_Articulo', 'Txt_Descripcion')
+                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+                ->get();
+
+        // Obtener las máquinas de la tabla Ctrl_Mquinas
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->select('Id_Maquina', 'Txt_Nombre')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
+            ->get();
+
+        // Pasar las áreas, productos y máquinas a la vista
+        return view('cliente.reportes.consumoxvending', compact('areas', 'productos', 'maquinas'));
     }
 
     public function getConsumoxEmpleado(Request $request)
@@ -50,24 +99,38 @@ class ReportesClienteController extends Controller
             'Ctrl_Consumos.Cantidad'
         );
 
-    // Aplicar filtros si están presentes
+    // Aplicar filtros de área si están presentes
     if ($request->filled('area')) {
-        $data->where('Cat_Area.Txt_Nombre', 'like', "%{$request->area}%");
+        // Si es un array, usar whereIn
+        if (is_array($request->area)) {
+            $data->whereIn('Cat_Area.Txt_Nombre', $request->area);
+        } else {
+            $data->where('Cat_Area.Txt_Nombre', '=', "$request->area");
+        }
     }
 
-    if ($request->filled('product')) {
-        $data->where(function($query) use ($request) {
-            $query->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$request->product}%")
-                ->orWhere('Cat_Articulos.Txt_Codigo', 'like', "%{$request->product}%")
-                ->orWhere('Cat_Articulos.Txt_Codigo_Cliente', 'like', "%{$request->product}%");
-        });
+     // Aplicar filtros de producto si están presentes
+     if ($request->filled('product')) {
+        // Si es un array, usar whereIn para múltiples productos
+        if (is_array($request->product)) {
+            $data->where(function($query) use ($request) {
+                $query->whereIn('Cat_Articulos.Txt_Descripcion', $request->product);
+            });
+        } else {
+            $data->where(function($query) use ($request) {
+                $query->where('Cat_Articulos.Txt_Descripcion', '=', $products[0]);
+            });
+        }
     }
 
     if ($request->filled('employee')) {
-        $data->where(function($query) use ($request) {
-            $query->where(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), 'like', "%{$request->employee}%")
-                ->orWhere('Cat_Empleados.No_Empleado', 'like', "%{$request->employee}%");
-        });
+        $selectedEmployees = $request->input('employee'); // Obtén las combinaciones seleccionadas
+        
+        // Aseguramos que haya empleados seleccionados
+        if (!empty($selectedEmployees)) {
+            // Usamos whereIn con una subconsulta de concatenación
+            $data->whereIn(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), $selectedEmployees);
+        }
     }
 
     // Filtros de fecha
@@ -83,6 +146,7 @@ public function getConsumoxArea(Request $request)
 {
     session_start();
     $idPlanta = $_SESSION['usuario']->Id_Planta;
+    
 
     // Consulta base para la DataTable enfocada en consumos por área
     $consumos = DB::table('Ctrl_Consumos')
@@ -102,17 +166,28 @@ public function getConsumoxArea(Request $request)
         )
         ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno');
 
-    // Aplicar filtros si están presentes
+    // Aplicar filtros de área si están presentes
     if ($request->filled('area')) {
-        $consumos->where('Cat_Area.Txt_Nombre', 'like', "%{$request->area}%");
+        // Si es un array, usar whereIn
+        if (is_array($request->area)) {
+            $consumos->whereIn('Cat_Area.Txt_Nombre', $request->area);
+        } else {
+            $consumos->where('Cat_Area.Txt_Nombre', '=', "$request->area");
+        }
     }
 
-    if ($request->filled('product')) {
-        $consumos->where(function($query) use ($request) {
-            $query->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$request->product}%")
-                ->orWhere('Cat_Articulos.Txt_Codigo', 'like', "%{$request->product}%")
-                ->orWhere('Cat_Articulos.Txt_Codigo_Cliente', 'like', "%{$request->product}%");
-        });
+     // Aplicar filtros de producto si están presentes
+     if ($request->filled('product')) {
+        // Si es un array, usar whereIn para múltiples productos
+        if (is_array($request->product)) {
+            $consumos->where(function($query) use ($request) {
+                $query->whereIn('Cat_Articulos.Txt_Descripcion', $request->product);
+            });
+        } else {
+            $consumos->where(function($query) use ($request) {
+                $query->where('Cat_Articulos.Txt_Descripcion', '=', $request->product);
+            });
+        }
     }
 
     // Aplicar filtro de rango de fechas
@@ -143,20 +218,7 @@ public function getConsumoxArea(Request $request)
         ];
     });
 
-    // Aplicar filtros si están presentes
-    if ($request->filled('area')) {
-        $data = $data->filter(function($item) use ($request) {
-            return stripos($item['Area'], $request->area) !== false;
-        });
-    }
-
-    if ($request->filled('product')) {
-        $data = $data->filter(function($item) use ($request) {
-            return stripos($item['Producto'], $request->product) !== false ||
-                   stripos($item['Codigo_Urvina'], $request->product) !== false ||
-                   stripos($item['Codigo_Cliente'], $request->product) !== false;
-        });
-    }
+    
 
     // Devolver datos para DataTable
     return response()->json([
@@ -214,21 +276,38 @@ public function getConsumoxVending(Request $request)
 
 
 
-    // Aplicar filtros si están presentes
+    // Aplicar filtros de área si están presentes
     if ($request->filled('area')) {
-        $data->where('Cat_Area.Txt_Nombre', 'like', "%{$request->area}%");
+        // Si es un array, usar whereIn
+        if (is_array($request->area)) {
+            $data->whereIn('Cat_Area.Txt_Nombre', $request->area);
+        } else {
+            $data->where('Cat_Area.Txt_Nombre', '=', "$request->area");
+        }
     }
 
-    if ($request->filled('product')) {
-        $data->where(function($query) use ($request) {
-            $query->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$request->product}%")
-                ->orWhere('Cat_Articulos.Txt_Codigo', 'like', "%{$request->product}%")
-                ->orWhere('Cat_Articulos.Txt_Codigo_Cliente', 'like', "%{$request->product}%");
-        });
+     // Aplicar filtros de producto si están presentes
+     if ($request->filled('product')) {
+        // Si es un array, usar whereIn para múltiples productos
+        if (is_array($request->product)) {
+            $data->where(function($query) use ($request) {
+                $query->whereIn('Cat_Articulos.Txt_Descripcion', $request->product);
+            });
+        } else {
+            $data->where(function($query) use ($request) {
+                $query->where('Cat_Articulos.Txt_Descripcion', '=', $request->product);
+            });
+        }
     }
 
+    // Aplicar filtros de vending si están presentes
     if ($request->filled('vending')) {
-        $data->where('Ctrl_Consumos.Id_Maquina', '=', "{$request->vending}");
+        // Si es un array, usar whereIn para múltiples máquinas vending
+        if (is_array($request->vending)) {
+            $data->whereIn('Ctrl_Consumos.Id_Maquina', $request->vending);
+        } else {
+            $data->where('Ctrl_Consumos.Id_Maquina', '=', "{$request->vending}");
+        }
     }
 
     // Filtros de fecha

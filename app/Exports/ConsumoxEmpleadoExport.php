@@ -22,77 +22,128 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
     }
 
     public function collection()
-    {
-        ob_end_clean();
-        ob_start();
-        
-        $data = DB::table('Ctrl_Consumos')
-            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
-            ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-            ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
-            ->select(
-                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
-                'Cat_Empleados.No_Empleado as Numero_de_empleado',
-                'Cat_Area.Txt_Nombre as Area',
-                'Cat_Articulos.Txt_Descripcion as Producto',
-                'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
-                'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
-                'Ctrl_Consumos.Fecha_Real as Fecha'
-            );
+{
+    // Limpia el buffer de salida para evitar problemas con el export
+    ob_end_clean();
+    ob_start();
+    
+    // Construye la consulta base
+    $data = DB::table('Ctrl_Consumos')
+        ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+        ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+        ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+        ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
+        ->select(
+            DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
+            'Cat_Empleados.No_Empleado as Numero_de_empleado',
+            'Cat_Area.Txt_Nombre as Area',
+            'Cat_Articulos.Txt_Descripcion as Producto',
+            'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
+            'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
+            'Ctrl_Consumos.Fecha_Consumo as Fecha',
+            'Ctrl_Consumos.Cantidad'
+        );
 
-        // Aplicar filtros
-        if ($this->request->filled('area')) {
-            $data->where('Cat_Area.Txt_Nombre', 'like', "%{$this->request->area}%");
-        }
-
-        if ($this->request->filled('product')) {
-            $data->where(function($query) {
-                $query->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$this->request->product}%")
-                    ->orWhere('Cat_Articulos.Txt_Codigo', 'like', "%{$this->request->product}%")
-                    ->orWhere('Cat_Articulos.Txt_Codigo_Cliente', 'like', "%{$this->request->product}%");
+    // Aplicar filtros si están presentes
+    if ($this->request->filled('area')) {
+        $areas = $this->request->input('area');
+        if (is_array($areas)) {
+            $areas = array_filter($areas, function($value) {
+                return !empty($value) && $value !== 'null';
             });
-        }
-
-        if ($this->request->filled('employee')) {
-            $data->where(function($query) {
-                $query->where(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), 'like', "%{$this->request->employee}%")
-                    ->orWhere('Cat_Empleados.No_Empleado', 'like', "%{$this->request->employee}%");
-            });
-        }
-
-        if ($this->request->filled('dateRange')) {
-            $dates = explode(' - ', $this->request->input('dateRange'));
-    
-            // Verificar si se han proporcionado exactamente dos fechas
-            if (count($dates) === 2) {
-                $startDate = trim($dates[0]);
-                $endDate = trim($dates[1]);
-    
-                // Verificar que las fechas no estén vacías
-                if (!empty($startDate) && !empty($endDate)) {
-                    $startDate = date('Y-m-d', strtotime($startDate));
-                    $endDate = date('Y-m-d', strtotime($endDate));
-    
-                    // Asegurarse de que las fechas sean válidas
-                    if ($startDate && $endDate && $startDate <= $endDate) {
-                        $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
-                    } else {
-                        // Si las fechas no son válidas, mostrar un mensaje de error y no aplicar el filtro de fechas
-                        //dd('Fechas no válidas:', $dates);
-                    }
+            if (!empty($areas)) {
+                if (count($areas) > 1) {
+                    $data->whereIn('Cat_Area.Txt_Nombre', $areas);
                 } else {
-                    // Si alguna de las fechas está vacía, mostrar un mensaje de error y no aplicar el filtro de fechas
-                    //dd('Fechas vacías:', $dates);
+                    $data->where('Cat_Area.Txt_Nombre', 'like', "%{$areas[0]}%");
                 }
-            } else {
-                // Si el formato de dateRange no es válido, mostrar un mensaje de error y no aplicar el filtro de fechas
-                //dd('El formato de dateRange no es válido:', $this->request->input('dateRange'));
+            }
+        } elseif (is_string($areas) && !empty($areas) && $areas !== 'null') {
+            $areaArray = array_filter(array_map('trim', explode(',', $areas)), function($value) {
+                return !empty($value);
+            });
+            if (!empty($areaArray)) {
+                if (count($areaArray) > 1) {
+                    $data->whereIn('Cat_Area.Txt_Nombre', $areaArray);
+                } else {
+                    $data->where('Cat_Area.Txt_Nombre', 'like', "%{$areaArray[0]}%");
+                }
             }
         }
-        
-        return $data->get();
     }
+
+    if ($this->request->filled('product')) {
+        $products = $this->request->input('product');
+        if (is_array($products)) {
+            $products = array_filter($products, function($value) {
+                return !empty($value) && $value !== 'null';
+            });
+            if (!empty($products)) {
+                if (count($products) > 1) {
+                    $data->whereIn('Cat_Articulos.Txt_Descripcion', $products);
+                } else {
+                    $data->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$products[0]}%");
+                }
+            }
+        } elseif (is_string($products) && !empty($products) && $products !== 'null') {
+            $productArray = array_filter(array_map('trim', explode(',', $products)), function($value) {
+                return !empty($value);
+            });
+            if (!empty($productArray)) {
+                if (count($productArray) > 1) {
+                    $data->whereIn('Cat_Articulos.Txt_Descripcion', $productArray);
+                } else {
+                    $data->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$productArray[0]}%");
+                }
+            }
+        }
+    }
+
+    if ($this->request->filled('employee')) {
+        $selectedEmployees = $this->request->input('employee');
+        if (is_array($selectedEmployees)) {
+            $selectedEmployees = array_filter($selectedEmployees, function($value) {
+                return !empty($value) && $value !== 'null';
+            });
+            if (!empty($selectedEmployees)) {
+                if (count($selectedEmployees) > 1) {
+                    $data->whereIn(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), $selectedEmployees);
+                } else {
+                    $data->where(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), 'like', "%{$selectedEmployees[0]}%");
+                }
+            }
+        } elseif (is_string($selectedEmployees) && !empty($selectedEmployees) && $selectedEmployees !== 'null') {
+            $employeeArray = array_filter(array_map('trim', explode(',', $selectedEmployees)), function($value) {
+                return !empty($value);
+            });
+            if (!empty($employeeArray)) {
+                if (count($employeeArray) > 1) {
+                    $data->whereIn(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), $employeeArray);
+                } else {
+                    $data->where(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), 'like', "%{$employeeArray[0]}%");
+                }
+            }
+        }
+    }
+
+    if ($this->request->filled('dateRange')) {
+        $dates = explode(' - ', $this->request->input('dateRange'));
+        if (count($dates) === 2) {
+            $startDate = trim($dates[0]);
+            $endDate = trim($dates[1]);
+            if (!empty($startDate) && !empty($endDate)) {
+                $startDate = date('Y-m-d', strtotime($startDate));
+                $endDate = date('Y-m-d', strtotime($endDate));
+                if ($startDate && $endDate && $startDate <= $endDate) {
+                    $data->whereBetween('Ctrl_Consumos.Fecha_Consumo', [$startDate, $endDate]);
+                }
+            }
+        }
+    }
+    
+    return $data->get();
+}
+
 
     public function headings(): array
     {

@@ -13,8 +13,8 @@
         <div class="col text-right">
         <form id="export-form" action="{{ route('export.consumoxempleado') }}" method="GET">
     <!-- Campos ocultos que se actualizarán -->
-    <input type="hidden" name="area" id="filter-area" value="{{ request()->input('area') }}">
-    <input type="hidden" name="product" id="filter-product" value="{{ request()->input('product') }}">
+    <input type="hidden" name="area[]" id="filter-area" value="{{ request()->input('area') }}">
+    <input type="hidden" name="product[]" id="filter-product" value="{{ request()->input('product') }}">
     <input type="hidden" name="employee" id="filter-employee" value="{{ request()->input('employee') }}">
     <input type="hidden" name="dateRange" id="filter-dateRange" value="{{ request()->input('dateRange') }}">
 
@@ -55,16 +55,32 @@
                 <input type="text" id="endDate" class="form-control" placeholder="AAAA-MM-DD">
             </div>
             <div class="col-md-2">
-                <label for="filterArea">Área:</label>
-                <input type="text" id="filterArea" class="form-control" placeholder="Filtrar por Área">
+            <label for="filterArea">Área:</label>
+                <!-- Select para las áreas -->
+                <select id="filterArea" name="area[]" class="form-control select2" multiple>
+                    <option value="">Seleccione un área</option>
+                    @foreach($areas as $area)
+                        <option value="{{ $area->Txt_Nombre }}">{{ $area->Txt_Nombre }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-3">
-                <label for="filterProduct">Producto:</label>
-                <input type="text" id="filterProduct" class="form-control" placeholder="Filtrar por Producto">
+            <label for="filterProduct">Producto:</label>
+                <select id="filterProduct" name="producto[]" class="form-control select2" multiple>
+                    <option value="">Seleccione un producto</option>
+                    @foreach($productos as $producto)
+                        <option value="{{ $producto->Txt_Descripcion }}">{{ $producto->Txt_Descripcion }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-3">
-                <label for="filterEmployee">Empleado:</label>
-                <input type="text" id="filterEmployee" class="form-control" placeholder="Filtrar por Empleado">
+            <label for="filterEmployee">Empleado:</label>
+            <select id="filterEmployee" name="employee[]" class="form-control select2" multiple>
+                    <option value="">Seleccione empleados</option>
+                    @foreach($empleados as $empleado)
+                        <option value="{{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}">{{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}</option>
+                    @endforeach
+                </select>
             </div>
                 </div><br>
                 
@@ -137,6 +153,8 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
+    <!-- Incluir CSS de Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .dataTables_filter {
     display: none;
@@ -153,6 +171,49 @@
 <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Incluir JavaScript de Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Inicializa Select2 en el selector de Área
+        $('#filterArea').select2({
+            placeholder: 'Selecciona áreas',
+            allowClear: true,
+           
+        });
+
+        // Inicializa Select2 en el selector de Producto
+        $('#filterProduct').select2({
+            placeholder: 'Selecciona productos',
+            allowClear: true,
+            
+        });
+
+        // Inicializa Select2 en el selector de Producto
+        $('#filterEmployee').select2({
+            placeholder: 'Selecciona empleados',
+            allowClear: true,
+            
+        });
+
+
+
+    // Inicializar el formulario de exportación
+    $('#export-form').on('submit', function() {
+    // Obtener los valores seleccionados de los filtros
+    var selectedProducts = $('#filterProduct').val() || []; // Array de productos seleccionados
+    var selectedAreas = $('#filterArea').val() || [];       // Array de áreas seleccionadas
+    var selectedEmployee = $('#filterEmployee').val() || [];       // Array de vending machines seleccionadas
+
+    // Actualizar los campos ocultos con los valores seleccionados como arrays
+    $('#filter-product').val(selectedProducts.join(','));    // Convertir el array en una cadena separada por comas
+    $('#filter-area').val(selectedAreas.join(','));          // Convertir el array en una cadena separada por comas
+    $('#filter-employee').val(selectedEmployee.join(','));          // Convertir el array en una cadena separada por comas
+    
+});
+
+    });
+</script>
 <script>
 $(document).ready(function() {
     $("#startDate").datepicker({
@@ -185,11 +246,19 @@ $(document).ready(function() {
     const filterEmployeeInput = document.getElementById('filterEmployee');
 
     // Función para actualizar los campos ocultos
+    // Función para actualizar los campos ocultos con los arrays seleccionados
     function updateHiddenFields() {
-        document.getElementById('filter-area').value = filterAreaInput.value;
-        document.getElementById('filter-product').value = filterProductInput.value;
-        document.getElementById('filter-employee').value = filterEmployeeInput.value;
-        document.getElementById('filter-dateRange').value = startDateInput.value + ' - ' + endDateInput.value;
+        const selectedAreas = Array.from(filterAreaInput.selectedOptions).map(option => option.value);
+        const selectedProducts = Array.from(filterProductInput.selectedOptions).map(option => option.value);
+        const selectedEmployee = Array.from(filterEmployeeInput.selectedOptions).map(option => option.value);
+        
+        document.getElementById('filter-area').value = selectedAreas;
+        document.getElementById('filter-product').value = selectedProducts;
+        document.getElementById('filter-employee').value = selectedEmployee;
+        // Si tienes un rango de fechas
+        if (startDateInput && endDateInput) {
+            document.getElementById('filter-dateRange').value = startDateInput.value + ' - ' + endDateInput.value;
+        }
     }
 
     // Evento de clic en el botón de exportación
@@ -272,8 +341,11 @@ $(document).ready(function() {
     });
 
     // Filtros personalizados
-    $('#filterArea, #filterProduct, #filterEmployee').on('keyup', function() {
-        table.draw();
+    $('#filterArea, #filterProduct, #filterEmployee, #startDate, #endDate').on('keyup change', function() {
+        table.ajax.reload(function() {
+        // Cambia el tamaño de la página al total de registros después de recargar
+        table.page.len(-1).draw(); // -1 indica mostrar todos los registros
+    });
     });
 
     // Inicializar Chart.js
