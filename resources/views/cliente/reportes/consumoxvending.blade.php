@@ -209,21 +209,21 @@
     $(document).ready(function() {
         // Inicializa Select2 en el selector de Área
         $('#filterArea').select2({
-            placeholder: 'Selecciona un área',
+            placeholder: 'Seleccione área(s)',
             allowClear: true,
            
         });
 
         // Inicializa Select2 en el selector de Producto
         $('#filterProduct').select2({
-            placeholder: 'Selecciona un producto',
+            placeholder: 'Seleccione producto(s)',
             allowClear: true,
             
         });
 
         // Inicializa Select2 en el selector de Máquina
         $('#filterVM').select2({
-            placeholder: 'Selecciona una máquina',
+            placeholder: 'Seleccione máquina(s)',
             allowClear: true,
             
         });
@@ -350,7 +350,7 @@
         table.ajax.reload(function() {
         // Cambia el tamaño de la página al total de registros después de recargar
         table.page.len(-1).draw(); // -1 indica mostrar todos los registros
-    }); 
+    });
     });
 
      // Gráfica de doughnut para máquinas con mayor consumo de productos

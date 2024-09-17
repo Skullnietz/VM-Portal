@@ -177,21 +177,21 @@
     $(document).ready(function() {
         // Inicializa Select2 en el selector de Área
         $('#filterArea').select2({
-            placeholder: 'Selecciona áreas',
+            placeholder: 'Seleccione área(s)',
             allowClear: true,
            
         });
 
         // Inicializa Select2 en el selector de Producto
         $('#filterProduct').select2({
-            placeholder: 'Selecciona productos',
+            placeholder: 'Seleccione producto(s)',
             allowClear: true,
             
         });
 
         // Inicializa Select2 en el selector de Producto
         $('#filterEmployee').select2({
-            placeholder: 'Selecciona empleados',
+            placeholder: 'Seleccione empleado(s)',
             allowClear: true,
             
         });

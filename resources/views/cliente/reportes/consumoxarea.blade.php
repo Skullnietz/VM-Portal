@@ -56,7 +56,7 @@
                 <label for="filterArea">Área:</label>
                 <!-- Select para las áreas -->
                 <select id="filterArea" name="area[]" class="form-control select2" multiple>
-                    <option value="">Seleccione un área</option>
+                    <option value="">Seleccione área(s)</option>
                     @foreach($areas as $area)
                         <option value="{{ $area->Txt_Nombre }}">{{ $area->Txt_Nombre }}</option>
                     @endforeach
@@ -189,14 +189,14 @@
     $(document).ready(function() {
         // Inicializa Select2 en el selector de Área
         $('#filterArea').select2({
-            placeholder: 'Selecciona un área',
+            placeholder: 'Seleccione área(s)',
             allowClear: true,
            
         });
 
         // Inicializa Select2 en el selector de Producto
         $('#filterProduct').select2({
-            placeholder: 'Selecciona un producto',
+            placeholder: 'Seleccione producto(s)',
             allowClear: true,
             
         });
