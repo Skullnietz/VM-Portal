@@ -11,7 +11,9 @@ use DateTime;
 class StatusController extends Controller
 {
     public function GetStatus(){
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $data=array();
         $Stats = DB::table('Stat_Mquinas')->select('Id_Maquina','Id_Planta','Per_Alm','Fecha_Reg')->where('Id_Planta',$_SESSION['usuario']->Id_Planta)->get();
         $currentDateTime = new DateTime(); // Obtenemos la fecha y hora actual
@@ -49,7 +51,9 @@ class StatusController extends Controller
     }
 
     public function ConsumosGet(){
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         // Obtener las máquinas de la planta del usuario
         $maquinas = DB::table('Ctrl_Mquinas')
         ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
@@ -78,7 +82,9 @@ class StatusController extends Controller
     }
     public function getConsumoGraph()
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $currentMonth = date('m');
         $currentYear = date('Y');
         $consumoData = DB::table('Ctrl_Consumos')
@@ -95,7 +101,9 @@ class StatusController extends Controller
     }
 
     public function getIndexDash(){
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $plantaId = $_SESSION['usuario']->Id_Planta;
         $currentMonth = date('m');
         $currentYear = date('Y');
@@ -146,6 +154,59 @@ class StatusController extends Controller
         return response()->json([
             'producto_mas_consumido' => $productoMasConsumido,
             'area_alto_consumo' => $areaAltoConsumo,
+            'vendings_activas' => $vendingsActivas,
+            'articulos_consumidos' => $articulosConsumidos
+        ]);
+    }
+
+    public function getAdminDash(){
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+        
+        $currentMonth = date('m');
+        $currentYear = date('Y');
+    
+        // Obtener Producto más consumido
+        $productoMasConsumido = DB::table('Ctrl_Consumos')
+            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->select('Cat_Articulos.Txt_Codigo')
+            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
+            ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
+            ->orderByRaw('COUNT(Ctrl_Consumos.Id_Articulo) DESC')
+            ->limit(1)
+            ->pluck('Cat_Articulos.Txt_Codigo')
+            ->first();
+    
+        // Obtener Planta de alto consumo
+        $plantaAltoConsumo = DB::table('Ctrl_Consumos')
+            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+            ->select('Cat_Empleados.Id_Planta')
+            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
+            ->groupBy('Cat_Empleados.Id_Planta')
+            ->orderByRaw('COUNT(Cat_Empleados.Id_Planta) DESC')
+            ->limit(1)
+            ->pluck('Cat_Empleados.Id_Planta')
+            ->first();
+    
+        // Obtener Vendings activas
+        $vendingsActivas = DB::table('Stat_Mquinas')
+            ->join('Ctrl_Mquinas', 'Stat_Mquinas.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+            ->whereRaw('DATEDIFF(MINUTE, Stat_Mquinas.Fecha_Reg, GETDATE()) <= 5')
+            ->count();
+    
+        // Obtener Artículos consumidos
+        $articulosConsumidos = DB::table('Ctrl_Consumos')
+            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
+            ->sum('Ctrl_Consumos.cantidad');
+    
+        return response()->json([
+            'producto_mas_consumido' => $productoMasConsumido,
+            'planta_alto_consumo' => $plantaAltoConsumo,
             'vendings_activas' => $vendingsActivas,
             'articulos_consumidos' => $articulosConsumidos
         ]);

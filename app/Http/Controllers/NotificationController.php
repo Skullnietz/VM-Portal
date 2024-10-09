@@ -11,7 +11,9 @@ class NotificationController extends Controller
     
      public function showNotifications()
      {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $userId = $_SESSION['usuario']->Id_Usuario;
         $notifications = DB::table('vending_notifications')
         ->where('User_Id', $userId)
@@ -24,7 +26,9 @@ class NotificationController extends Controller
 
      public function listNotifications()
      {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $userId = $_SESSION['usuario']->Id_Usuario;
         $unreadNotifications = DB::table('vending_notifications')
         ->where('User_Id', $userId)
@@ -39,7 +43,9 @@ class NotificationController extends Controller
 
     public function markAsRead($id)
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $userId = $_SESSION['usuario']->Id_Usuario;
 
         DB::table('vending_notifications')

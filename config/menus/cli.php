@@ -69,7 +69,7 @@ return[
                 [
                     'text' => 'Inventario Vendings',
                     'icon_color' => 'green',
-                    'url' => '#',
+                    'url' => '/cli/reporte/inventariovm',
                 ],
             ]
         ],

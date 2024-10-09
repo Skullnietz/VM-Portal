@@ -36,9 +36,9 @@ return[
                     'url' => '#',
                 ],
                 [
-                    'text' => 'Roles Usuarios',
+                    'text' => 'Administradores',
                     'icon_color' => 'red',
-                    'url' => '#',
+                    'url' => '/admin/administradores',
                 ],
             ]
         ],

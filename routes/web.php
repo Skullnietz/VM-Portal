@@ -2,7 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InicioController;
+use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportesClienteController;
 
@@ -12,7 +14,7 @@ Route::redirect('/', 'inicio');
 // REDIRECCIONAMIENTO SEGUN ROL
 Route::get('/inicio', 'InicioController@HomeRol')->name('homerol');
 Route::get('/home', 'InicioController@HomeRol')->name('homerol');
-Route::post('/logout', 'LoginController@logout');
+Route::get('/logout', 'LoginController@logout');
 
 
 
@@ -28,9 +30,23 @@ Route::prefix('{language}')->group(function () {
     // PERMISOS FILTRADO POR AREA
     Route::get('areas/permissions/{areaId}', 'ClientController@PermisosArticulosFilter')->name('permisos-cli'); // Asignacion de permiso
     ////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////// ADMIN CONTROLLER /////////////////////////////////////
+    // DASHBOARD | INICIO
+    Route::get('home-admin', 'AdminController@Home')->name('dash-admin'); // Dashboard de Administradores
+    // USUARIOS
+    Route::get('/usuarios', 'AdminController@Usuarios')->name('usuarios'); // Administracion Empleados
+    // ADMINISTRADORES
+    Route::get('/administradores', 'AdminController@AdminView')->name('administradores'); // Administracion Empleados
+    // PLANTAS
+    // PRODUCTOS
+    // VENDINGS
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////// LOGIN CONTROLLER //////////////////////////////////////
     // LOGIN
     Route::post('/validar-registro', 'LoginController@Login')->name('validar-registro');
+    // LOGIN
+    Route::post('/validar-admin', 'LoginController@ADMINLogin')->name('validar-admin');
     //////////////////////////////////////////////////////////////////////////////////////////// 
     //////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////
     Route::get('/notifications/list', [NotificationController::class, 'listNotifications'])->name('listNotifications');
@@ -41,6 +57,8 @@ Route::prefix('{language}')->group(function () {
     Route::get('/reporte/consumoxempleado', [ReportesClienteController::class, 'indexConsumoxEmpleado'])->name('consumosxempleado.index');
     Route::get('/reporte/consumoxarea', [ReportesClienteController::class, 'indexConsumoxArea'])->name('consumosxarea.index');
     Route::get('/reporte/consumoxvending', [ReportesClienteController::class, 'indexConsumoxVending'])->name('consumosxvending.index');
+    ///////////////////////////////////// REPORTE DE VENDINGS /////////////////////////////
+    Route::get('/reporte/inventariovm', [ReportesClienteController::class, 'indexInventarioVM'])->name('inventariovm.index');
     
 
     
@@ -53,7 +71,27 @@ Route::prefix('{language}')->group(function () {
 Route::get('/login', function () {
     return view('login');
 });
+Route::get('/adminlogin', function () {
+    return view('adminlogin');
+});
+
+// PROTECCION DE DATOS MIDDLEWARE
+Route::group(['middleware' => 'checkSession'], function() {
+/////////////////////////////////////// ADMINISTRADORES ///////////////////////////////////////////////////////
+//ADMINISTRADORES
+Route::get('get-administradores', [AdminController::class, 'getAdministradores'])->name('get-administradores');
+Route::post('/administrador/estatus', [AdminController::class, 'updateEstatus'])->name('update.administrador.estatus');
+Route::post('/administrador/add', [AdminController::class, 'agregarAdministrador'])->name('add.administrador');
+Route::delete('/administrador/{id}', [AdminController::class, 'destroyAdmin'])->name('administrador.destroy');
+//USUARIOS
+Route::get('get-usuarios', [AdminController::class, 'getUsuarios'])->name('get-usuarios');
+Route::post('/usuario/estatus', [AdminController::class, 'updateEstatusUser'])->name('update.user.estatus');
+
+Route::delete('/usuario/{id}', [AdminController::class, 'destroyUser'])->name('user.destroy');
+
+
 /////////////////////////////////////// REGISTRO DE ESTATUS ////////////////////////////////////////////////////
+Route::get('vm-admin', 'StatusController@getAdminDash')->name('getadmindash');
 Route::get('vm-dash', 'StatusController@getIndexDash')->name('getindexdash');
 Route::get('vm-status', 'StatusController@GetStatus')->name('getstatus');
 Route::get('vm-rconsum', 'StatusController@ConsumosGet')->name('getconsum');
@@ -92,7 +130,10 @@ Route::get('/getconsumoxarea/data', [ReportesClienteController::class, 'getConsu
 Route::get('/export/consumoxarea', [ReportesClienteController::class, 'exportConsumoxArea'])->name('export.consumoxarea');
 Route::get('/getconsumoxvending/data', [ReportesClienteController::class, 'getConsumoxVending'])->name('consumosxvending.data');
 Route::get('/export/consumoxvending', [ReportesClienteController::class, 'exportConsumoxVending'])->name('export.consumoxvending');
-
+/////////////////////////////////////////// REPORTES DE VENDINGS ///////////////////////////////////////////
+Route::get('/getinventariovm/data', [ReportesClienteController::class, 'getInventarioVM'])->name('inventariovm.data');
+Route::get('/getstockvm/data/{idMaquina}', [ReportesClienteController::class, 'getInvStock'])->name('stockvm.data');
+Route::get('/export-inventariovm', [ReportesClienteController::class, 'exportInventarioVM'])->name('export.inventariovm');
 ///////////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////////////////
 
 Route::get('/notifications/unread', [NotificationController::class, 'showNotifications'])->name('getUnreadNotifications');
@@ -100,9 +141,6 @@ Route::get('/mark-notification-as-read/{id}', [NotificationController::class, 'm
 
 
 ////////////////////////////////////      PRUEBAS     ///////////////////////////////
-
-
-
 
 Route::get('/layout-vm', function () {
     session_start();
@@ -113,5 +151,5 @@ Route::get('/online-vm', function () {
     
     return view('monitoreo.online-vending');
 });
-
+});
 

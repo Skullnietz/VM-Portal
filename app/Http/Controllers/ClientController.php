@@ -19,7 +19,9 @@ class ClientController extends Controller
     // Dashboard del Cliente (Estado de Vendings, Indicadores, Cosnumos Recientes, Graficas)
     public function Home(){
         
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $userId = $_SESSION['usuario']->Id_Usuario;
 
         $unreadNotifications = DB::table('vending_notifications')
@@ -32,14 +34,18 @@ class ClientController extends Controller
     } 
     // Tabla de Empleados con Opciones de Creación y Modificacion
     public function Empleados(){
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $areas = DB::table('Cat_Area')->select('Id_Area', 'Txt_Nombre')->get();
         return view('cliente.empleados', compact('areas'));
     }
 
     public function checkPermission(Request $request)
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $idPlanta = $_SESSION['usuario']->Id_Planta;
         try {
             $existingPermission = DB::table('Ctrl_Permisos_x_Area')
@@ -68,7 +74,9 @@ class ClientController extends Controller
     
     public function addPermission(Request $request)
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $idPlanta = $_SESSION['usuario']->Id_Planta;
         try {
             DB::table('Ctrl_Permisos_x_Area')->insert([
@@ -90,7 +98,9 @@ class ClientController extends Controller
     }
 
     public function PermisosArticulos(){
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $idPlanta = $_SESSION['usuario']->Id_Planta;
     
     $areas = DB::table('Cat_Area')
@@ -106,7 +116,9 @@ class ClientController extends Controller
     }
 
     public function PermisosArticulosFilter($lang,$areaId){
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $idPlanta = $_SESSION['usuario']->Id_Planta;
     $QAreaName = DB::table('Cat_Area')
     ->where('Id_Planta', $idPlanta)
@@ -129,7 +141,9 @@ class ClientController extends Controller
 
     public function getPermisosArticulos(Request $request)
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         try {
             
                 if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
@@ -159,7 +173,9 @@ class ClientController extends Controller
 
     public function getPermisosPorArea($areaId)
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         try {
             
                 if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
@@ -242,7 +258,9 @@ class ClientController extends Controller
     
     public function getDataEmpleados()
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $data=array();
         $Empleados = DB::table('Cat_Empleados')->select('Id_Empleado','Nombre','APaterno','AMaterno','No_Empleado','Nip','No_Tarjeta','Id_Area','Tipo_Acceso','Fecha_alta','Fecha_Modificacion','Txt_Estatus')->where('Id_Planta',$_SESSION['usuario']->Id_Planta)->get();
         foreach ($Empleados as $empleado) {
@@ -264,7 +282,9 @@ class ClientController extends Controller
     }
 
     public function exportCSV() {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $filename = "empleados_" . date('Ymd') . ".csv";
         $empleados = DB::table('Cat_Empleados')
             ->select('No_Empleado', 'Nip','No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'Id_Area', 'Txt_Estatus', 'Tipo_Acceso')
@@ -305,7 +325,9 @@ class ClientController extends Controller
     }
 
     public function importCSV(Request $request) {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $id_planta = $_SESSION['usuario']->Id_Planta;
         $usuario = $_SESSION['usuario']->Id_Usuario;
     
@@ -494,7 +516,9 @@ class ClientController extends Controller
     }
 
     public function storeemployee(Request $request) {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $id_planta = $_SESSION['usuario']->Id_Planta;
         $usuario = $_SESSION['usuario']->Id_Usuario;
 
@@ -538,13 +562,17 @@ class ClientController extends Controller
     }
 
     public function Areas(){
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         return view('cliente.areas');
     }
 
     public function getDataAreas()
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         $data=array();
         $Areas = DB::table('Cat_Area')->select('Id_Area','Id_Planta','Txt_Nombre','Txt_Estatus','Fecha_Alta','Fecha_Modificacion','Fecha_Baja')->where('Id_Planta',$_SESSION['usuario']->Id_Planta)->get();
         foreach ($Areas as $area) {
@@ -576,7 +604,9 @@ class ClientController extends Controller
 
 public function updateStatusArea(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     // Obtén los datos del request
     $idArea = $request->input('id_area');
     $newStatus = $request->input('new_status');
@@ -628,7 +658,9 @@ public function updateStatusArea(Request $request)
 
 public function addArea(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $newName = $request->input('new_name');
     $currentDate = now(); // Obtiene la fecha actual
     $userId = $_SESSION['usuario']->Id_Usuario; // Obtiene el Id del usuario desde la sesión
@@ -725,7 +757,9 @@ public function exportExcelAreas() {
 
 public function generateMissingPermissions()
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
 
     // Obtener todas las áreas de la planta

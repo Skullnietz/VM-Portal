@@ -8,13 +8,139 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\ConsumoxEmpleadoExport;
 use App\Exports\ConsumoxAreaExport;
 use App\Exports\ConsumoxVendingExport;
+use App\Exports\InventarioVM;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportesClienteController extends Controller
 {
+    public function indexInventarioVM()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+         // Obtener las áreas de la tabla Cat_Area
+         
+        return view('cliente.reportes.inventariovm');
+
+    }
+
+    public function getInvStock($idMaquina)
+{
+    if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+    $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+    // Paso 1: Obtener el nombre y serie de las máquinas vending de la planta y la máquina específica
+    $maquinas = DB::table('Ctrl_Mquinas')
+        ->where('Id_Planta', $idPlanta)
+        ->where('Id_Maquina', $idMaquina)
+        ->pluck('Txt_Nombre', 'Id_Maquina')
+        ->toArray();
+
+    // Paso 2: Obtener los datos de configuración y stock de las máquinas vending
+    $resultados = DB::table('Configuracion_Maquina')
+        ->select('Id_Articulo', 'Id_Maquina', DB::raw('SUM(Cantidad_Max) as Total_Cantidad_Max'), DB::raw('SUM(Stock) as Total_Stock'))
+        ->whereIn('Id_Maquina', array_keys($maquinas))
+        ->groupBy('Id_Articulo', 'Id_Maquina')
+        ->get();
+
+    // Paso 3: Obtener las descripciones de los artículos
+    $articulos = DB::table('Cat_Articulos')
+        ->pluck('Txt_Descripcion', 'Id_Articulo')
+        ->toArray();
+
+    // Paso 4: Procesar los datos
+    $data = $resultados->map(function ($item) use ($articulos, $maquinas) {
+        return [
+            'Nombre_Vending' => $maquinas[$item->Id_Maquina] ?? 'Desconocido',
+            'Articulo' => $articulos[$item->Id_Articulo] ?? 'Desconocido',
+            'Total_Cantidad_Max' => $item->Total_Cantidad_Max,
+            'Total_Stock' => $item->Total_Stock,
+        ];
+    });
+
+    // Si no hay registros, devuelve un JSON válido con data vacío
+    if ($data->isEmpty()) {
+        return response()->json([
+            'draw' => intval(request('draw')),
+            'recordsTotal' => 0,
+            'recordsFiltered' => 0,
+            'data' => []
+        ]);
+    }
+
+    // Si hay registros, devuelve los datos correctamente formateados
+    return response()->json([
+        'draw' => intval(request('draw')),
+        'recordsTotal' => $data->count(),
+        'recordsFiltered' => $data->count(),
+        'data' => $data
+    ]);
+}
+
+    public function getInventarioVM()
+{
+    if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+    // Obtener los datos de la consulta
+    $data = DB::table('Ctrl_Mquinas as cm')
+        ->leftJoin('Stat_Mquinas as sm', 'cm.Id_Maquina', '=', 'sm.Id_Maquina')
+        ->leftJoin('Cat_Dispositivo as cd', 'cm.Id_Dispositivo', '=', 'cd.Id_Dispositivo')
+        ->select(
+            'cm.Id_Maquina',
+            'cm.Id_Planta',
+            'cm.Id_Dispositivo',
+            'cm.Txt_Nombre',
+            'cm.Txt_Serie_Maquina',
+            'cm.Txt_Tipo_Maquina',
+            'cm.Txt_Estatus as Estatus_Maquina',
+            'cm.Capacidad',
+            'cm.Fecha_Alta',
+            'cm.Fecha_Modificacion',
+            'cm.Fecha_Baja',
+            'sm.Per_Alm as Almacenamiento',
+            'cd.Txt_Serie_Dispositivo',
+            'cd.Txt_Estatus as Estatus_Dispositivo'
+        )
+        ->where('cm.Id_Planta', $_SESSION['usuario']->Id_Planta)
+        ->get();
+
+    // Retornar los datos para DataTables
+    // Si no hay registros, devuelve un JSON válido con data vacío
+    if ($data->isEmpty()) {
+        return response()->json([
+            'draw' => intval(request('draw')),
+            'recordsTotal' => 0,
+            'recordsFiltered' => 0,
+            'data' => []
+        ]);
+    }
+
+    // Si hay registros, devuelve los datos correctamente formateados
+    return response()->json([
+        'draw' => intval(request('draw')),
+        'recordsTotal' => $data->count(),
+        'recordsFiltered' => $data->count(),
+        'data' => $data
+    ]);
+}
+    public function exportInventarioVM()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+        return Excel::download(new InventarioVM($idPlanta), 'InventarioVM.xlsx');
+    }
+
     public function indexConsumoxEmpleado()
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
          // Obtener las áreas de la tabla Cat_Area
         $areas = DB::table('Cat_Area')
             ->select('Id_Area', 'Txt_Nombre')
@@ -36,7 +162,9 @@ class ReportesClienteController extends Controller
     }
     public function indexConsumoxArea()
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
          // Obtener las áreas de la tabla Cat_Area
         $areas = DB::table('Cat_Area')
             ->select('Id_Area', 'Txt_Nombre')
@@ -54,7 +182,9 @@ class ReportesClienteController extends Controller
     }
     public function indexConsumoxVending()
     {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
          // Obtener las áreas de la tabla Cat_Area
         $areas = DB::table('Cat_Area')
             ->select('Id_Area', 'Txt_Nombre')
@@ -79,7 +209,9 @@ class ReportesClienteController extends Controller
 
     public function getConsumoxEmpleado(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
     // Consulta base para la DataTable
@@ -144,7 +276,9 @@ class ReportesClienteController extends Controller
 
 public function getConsumoxArea(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $idPlanta = $_SESSION['usuario']->Id_Planta;
     
 
@@ -230,14 +364,18 @@ public function getConsumoxArea(Request $request)
 }
 public function exportConsumoxEmpleado(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
     return Excel::download(new ConsumoxEmpleadoExport($request, $idPlanta), 'consumos-empleado.xlsx');
 }
 public function exportConsumoxArea(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
     return Excel::download(new ConsumoxAreaExport($request, $idPlanta), 'consumos-area.xlsx');
@@ -245,7 +383,9 @@ public function exportConsumoxArea(Request $request)
 
 public function getConsumoxVending(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
    // Consulta para obtener la información agrupada por máquina (nombre), producto, área y fecha del último consumo
@@ -320,7 +460,9 @@ public function getConsumoxVending(Request $request)
 }
 public function exportConsumoxVending(Request $request)
 {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
     return Excel::download(new ConsumoxVendingExport($request, $idPlanta), 'vending-consumos.xlsx');

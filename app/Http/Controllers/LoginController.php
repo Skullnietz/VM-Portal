@@ -8,54 +8,98 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    public function Login(Request $request){
-        if(isset($_SESSION['usuario'])){
+    public function Login(Request $request) {
+        if (isset($_SESSION['usuario'])) {
             return redirect()->route('home', app()->getLocale());
-        }else{
-            $consulta = DB::table('Cat_Usuarios')->select('Id_Usuario','Txt_Nombre','Txt_ApellidoP','Txt_ApellidoM','Nick_Usuario','Contrasenia','Txt_Puesto','Txt_Estatus','Id_Planta','Fecha_Alta','Txt_Rol','Img_URL')->where('Nick_Usuario',$request->usuario)->where('Contrasenia',$request->password)->get();
-            if(isset($consulta[0])){
+        } else {
+            $consulta = DB::table('Cat_Usuarios')
+                ->select('Id_Usuario','Txt_Nombre','Txt_ApellidoP','Txt_ApellidoM','Nick_Usuario','Contrasenia','Txt_Puesto','Txt_Estatus','Id_Planta','Fecha_Alta','Txt_Rol','Img_URL')
+                ->where('Nick_Usuario', $request->usuario)
+                ->where('Contrasenia', $request->password)
+                ->get();
+    
+            if (isset($consulta[0])) {
                 $user = $consulta[0];
-
-        
-                if($user->Nick_Usuario != $request->usuario){
+    
+                if ($user->Nick_Usuario != $request->usuario) {
                     $msg = "Usuario o Contraseña Incorrecta";
-                    return view('login')->with('msg', $msg);
+                    return redirect()->back()->withErrors(['msg' => $msg]);
                 }
-                if($user->Contrasenia != $request->password){
+                if ($user->Contrasenia != $request->password) {
                     $msg = "Contraseña Incorrecta";
-                    return view('login')->with('msg', $msg);
-                }else{
-                    
+                    return redirect()->back()->withErrors(['msg' => $msg]);
+                } else {
                     session_start();
                     $_SESSION['usuario'] = $user;
-                    if($_SESSION['usuario']->Txt_Rol == "cliente"){
-        
-                        return redirect()->route('dash-cli','cli')->with('usuario', $user);
+    
+                    if ($_SESSION['usuario']->Txt_Rol == "cliente") {
+                        return redirect()->route('dash-cli', 'cli')->with('usuario', $user);
                     }
-                    if($_SESSION['usuario']->Txt_Rol == "administrador"){
-        
+                    if ($_SESSION['usuario']->Txt_Rol == "administrador") {
                         return redirect()->route('dash-admin')->with('usuario', $user);
                     }
-                    if($_SESSION['usuario']->Txt_Rol == "operador"){
-        
+                    if ($_SESSION['usuario']->Txt_Rol == "operador") {
                         return redirect()->route('dash-op')->with('usuario', $user);
                     }
+    
                     return redirect()->route('salir', app()->getLocale())->with('usuario', $user);
                 }
+            } else {
+                $msg = "Usuario o Contraseña Incorrecta";
+                return redirect()->back()->withErrors(['msg' => $msg]);
             }
-            
+        }
+    } 
+
+    public function ADMINLogin(Request $request) {
+        if (isset($_SESSION['usuario'])) {
+            return redirect()->route('home', app()->getLocale());
+        } else {
+            $consulta = DB::table('Cat_Usuarios_Administradores')
+                ->select('Id_Usuario_Admon','Txt_Nombre','Txt_ApellidoP','Txt_ApellidoM','Nick','Contrasenia','Txt_Estatus','Fecha_Alta')
+                ->where('Nick', $request->usuario)
+                ->where('Contrasenia', $request->password)
+                ->get();
+    
+            if (isset($consulta[0])) {
+                $user = $consulta[0];
+    
+                if ($user->Nick != $request->usuario) {
+                    $msg = "Usuario o Contraseña Incorrecta";
+                    return redirect()->back()->withErrors(['msg' => $msg]);
+                }
+                if ($user->Contrasenia != $request->password) {
+                    $msg = "Contraseña Incorrecta";
+                    return redirect()->back()->withErrors(['msg' => $msg]);
+                } else {
+                    session_start();
+                    $_SESSION['usuario'] = $user;
+                    $_SESSION['usuario']->Img_URL = '/Images/Usuarios/urvina.png';
+                    return redirect()->route('dash-admin', ['language' => 'admin'])->with('usuario', $user);
+                }
+            } else {
+                $msg = "Usuario o Contraseña Incorrecta";
+                return redirect()->back()->withErrors(['msg' => $msg]);
+            }
         }
     }
+    
 
     public function logout()
     {
         // Borrar solo la variable 'usuario'
-        session()->forget('usuario');
+        //session()->forget('usuario');
 
         // O si necesitas verificar y borrar
         // if (session()->has('usuario')) {
         //     session()->forget('usuario');
         // }
-        return redirect()->back()->with('status', 'Variable de sesión "usuario" borrada exitosamente.');
+        
+            session_start();
+            unset($_SESSION['usuario']);
+            session_destroy();
+            return redirect()->route('homerol');
+       
+        //return redirect()->back()->with('status', 'Variable de sesión "usuario" borrada exitosamente.');
     }
 }
