@@ -217,6 +217,8 @@
                 }
             });
 
+           
+
             
         });
 
@@ -224,7 +226,7 @@
         function deleteAdmin(id) {
             if (confirm('¿Estás seguro de que deseas eliminar este administrador?')) {
                 $.ajax({
-                    url: `/usuario/${id}`, // Asegúrate de que esta URL sea correcta
+                    url: `/administrador/${id}`, // Asegúrate de que esta URL sea correcta
                     type: 'DELETE',
                     data: {
                         _token: '{{ csrf_token() }}' // Incluyendo el token CSRF
@@ -243,7 +245,7 @@
     <script>
         function toggleEstatus(id, nuevoEstatus) {
                 $.ajax({
-                    url: '{{ url("/usuario/estatus") }}',
+                    url: '{{ url("/administrador/estatus") }}',
                     method: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}',

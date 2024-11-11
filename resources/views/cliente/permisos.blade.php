@@ -255,7 +255,7 @@ $(document).ready(function() {
                 render: function(data, type, row) {
                     return `
                         <div class="input-group">
-                            <input type="number" class="form-control update-frecuencia" data-id="${row.Clave}" value="${data}">
+                            <input type="number" max="360" min="0" class="form-control update-frecuencia" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
                                 <span class="input-group-text">Días</span>
                             </div>
@@ -268,7 +268,7 @@ $(document).ready(function() {
                 render: function(data, type, row) {
                     return `
                         <div class="input-group">
-                            <input type="number" class="form-control update-cantidad" data-id="${row.Clave}" value="${data}">
+                            <input type="number" max="360" min="0" class="form-control update-cantidad" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
                                 <span class="input-group-text">Cantidad</span>
                             </div>

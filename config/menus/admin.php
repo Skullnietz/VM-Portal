@@ -33,7 +33,7 @@ return[
                 [
                     'text' => 'Usuarios',
                     'icon_color' => 'red',
-                    'url' => '#',
+                    'url' => '/admin/usuarios',
                 ],
                 [
                     'text' => 'Administradores',
@@ -44,7 +44,7 @@ return[
         ],
         [
             'text' => 'Plantas',
-            'url' => 'admin/pages',
+            'url' => '/admin/plantas',
             'icon_color' => 'red',
             'icon' => 'fas fa-fw fa-industry',
             'label_color' => 'success',
@@ -52,51 +52,21 @@ return[
                 [
                     'text' => 'Plantas',
                     'icon_color' => 'red',
-                    'url' => '#',
+                    'url' => '/admin/plantas',
                 ],
-                [
-                    'text' => 'Empleados',
-                    'url' => 'admin/pages',
-                    'icon' => 'fas fa-fw fa-users',
-                    'icon_color' => 'red',
-                    'label_color' => 'success',
-                    'submenu' => [
-                        [
-                            'text' => 'Áreas Empleado',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'Departamentos',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'Empleados',
-                            'url' => '#',
-                        ],
-                    ]
-                ],
+                
 
             ]
         ],
         [
-            'text' => 'Productos',
+            'text' => 'Articulos',
             'url' => 'admin/pages',
             'icon' => 'fas fa-fw fa-boxes',
             'icon_color' => 'red',
             'label_color' => 'success',
             'submenu' => [
                 [
-                    'text' => 'Categoría Productos',
-                    'icon_color' => 'red',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Proveedores Productos',
-                    'icon_color' => 'red',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Productos',
+                    'text' => 'Articulos',
                     'icon_color' => 'red',
                     'url' => '#',
                 ],
@@ -111,26 +81,6 @@ return[
             'submenu' => [
                 [
                     'text' => 'Modulos',
-                    'icon_color' => 'red',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Categorias',
-                    'icon_color' => 'red',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Marcas',
-                    'icon_color' => 'red',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Modelos',
-                    'icon_color' => 'red',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Carriles',
                     'icon_color' => 'red',
                     'url' => '#',
                 ],
@@ -154,32 +104,7 @@ return[
             'icon_color' => 'red',
             'label_color' => 'success',
         ],
-        ['header' => 'OPERACIÓN'],
-        [
-            'text' => 'Vendings',
-            'url' => 'admin/settings',
-            'icon_color' => 'yellow',
-            'icon' => 'fas fa-fw fa-building',
-            'submenu' => [
-                [
-                    'text' => 'Planograma',
-                    'icon_color' => 'yellow',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Resurtidos',
-                    'icon_color' => 'yellow',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Permisos Producto',
-                    'icon_color' => 'yellow',
-                    'url' => '#',
-                ],
-            ]
-        ],
-
-
+        
         ['header' => 'REPORTES'],
         [
             'text' => 'Empleados',

@@ -36,9 +36,13 @@ Route::prefix('{language}')->group(function () {
     // USUARIOS
     Route::get('/usuarios', 'AdminController@Usuarios')->name('usuarios'); // Administracion Empleados
     // ADMINISTRADORES
-    Route::get('/administradores', 'AdminController@AdminView')->name('administradores'); // Administracion Empleados
+    Route::get('/administradores', 'AdminController@AdminView')->name('administradores'); // Administracion Administradores
     // PLANTAS
-    // PRODUCTOS
+    Route::get('/plantas', 'AdminController@Plantas')->name('plantas'); // Administracion Empleados
+    Route::get('/plantas/PlantaView/{id}', [AdminController::class, 'PlantaView']);
+    
+    // ARTICULOS
+    Route::get('/articulos', 'AdminController@Articulos')->name('artticulos'); // Administracion Empleados
     // VENDINGS
 
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,8 +90,35 @@ Route::delete('/administrador/{id}', [AdminController::class, 'destroyAdmin'])->
 //USUARIOS
 Route::get('get-usuarios', [AdminController::class, 'getUsuarios'])->name('get-usuarios');
 Route::post('/usuario/estatus', [AdminController::class, 'updateEstatusUser'])->name('update.user.estatus');
-
+Route::post('/guardar-usuario', [AdminController::class, 'guardarUsuario']);
 Route::delete('/usuario/{id}', [AdminController::class, 'destroyUser'])->name('user.destroy');
+//PLANTAS
+Route::get('/getPlantas', [AdminController::class, 'getPlantas']);
+Route::get('/getPlantasInfo', [AdminController::class, 'getPlantasInfo'])->name('getPlantasInfo');
+Route::post('/guardar-planta', [AdminController::class, 'guardarPlanta'])->name('guardarPlanta');
+Route::delete('/planta/{id}', [AdminController::class, 'destroyPlanta'])->name('planta.destroy');
+Route::post('/planta/estatus', [AdminController::class, 'updateEstatusPlanta'])->name('update.planta.estatus');
+Route::post('/planta/update', [AdminController::class, 'updatePlanta'])->name('updatePlanta');
+Route::delete('/planta/release/{id}', [AdminController::class, 'releaseRelatedRecords']);
+//PLANTA AREA
+Route::post('/plantable/{id}', [AdminController::class, 'TablasPlant']);
+Route::post('/planta/areas/update-status', [AdminController::class, 'updateStatusArea'])->name('admin-areas.update-status');
+Route::post('/planta/areas/generate-permissions', [AdminController::class, 'generateMissingPermissions']);
+Route::post('/planta/areas/add', [AdminController::class, 'addArea']);
+Route::get('/planta/export-excel-areas', [AdminController::class, 'exportExcelAreas']);
+//PLANTA PERMISOS
+Route::get('/planta/get-permisos-articulos/{idPlanta}', 'AdminController@getPermisosArticulos')->name('admin-get.permisos.articulos'); // Asignacion de permisos
+Route::delete('/planta/delete-permiso-articulo/{id}', 'AdminController@deletePermisoArticulo')->name('admin-delete.permiso.articulo');
+Route::post('/planta/update-permiso-articulo/{id}', 'AdminController@updatePermisoArticulo')->name('admin-update.permiso.articulo');
+Route::post('/planta/toggle-status-permiso-articulo/{id}', 'AdminController@toggleStatusPermiso')->name('admin-toggle.status.permiso.articulo');
+Route::post('/planta/check-permission', [AdminController::class, 'checkPermission']);
+Route::post('/planta/add-permission', [AdminController::class, 'addPermission']);
+Route::get('/planta/export-excel-permissions', [AdminController::class, 'exportPermisos'])->name('admin-exportar.permisos');
+//ARTICULOS
+
+
+//AREAS
+Route::get('/getAreas', [AdminController::class, 'getAreas']);
 
 
 /////////////////////////////////////// REGISTRO DE ESTATUS ////////////////////////////////////////////////////
