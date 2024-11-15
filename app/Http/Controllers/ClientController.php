@@ -494,26 +494,28 @@ class ClientController extends Controller
     }
 
     public function destroyEmployee($Id_Empleado)
-    {
-        try {
-            // Encuentra el empleado por Id_Empleado
-            $empleado = DB::table('Cat_Empleados')->where('Id_Empleado', $Id_Empleado)->first();
+{
+    try {
+        // Elimina consumos relacionados primero
+        DB::table('Ctrl_Consumos')->where('Id_Empleado', $Id_Empleado)->delete();
 
-            if ($empleado) {
-                // Elimina al empleado
-                DB::table('Cat_Empleados')->where('Id_Empleado', $Id_Empleado)->delete();
+        // Ahora elimina al empleado
+        DB::table('Cat_Empleados')->where('Id_Empleado', $Id_Empleado)->delete();
 
-                // Devuelve una respuesta exitosa
-                return response()->json(['message' => 'Empleado eliminado con éxito.'], 200);
-            } else {
-                // Empleado no encontrado
-                return response()->json(['message' => 'Empleado no encontrado.'], 404);
-            }
-        } catch (\Exception $e) {
-            // Maneja cualquier error que pueda ocurrir
-            return response()->json(['message' => 'No se pudo eliminar el empleado.'], 500);
-        }
+        return response()->json(['message' => 'Empleado eliminado con éxito.'], 200);
+    } catch (\Exception $e) {
+        Log::error('Error al eliminar el empleado', [
+            'Id_Empleado' => $Id_Empleado,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return response()->json([
+            'message' => 'No se pudo eliminar el empleado.',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
 
     public function storeemployee(Request $request) {
         if (session_status() == PHP_SESSION_NONE) {
@@ -523,7 +525,7 @@ class ClientController extends Controller
         $usuario = $_SESSION['usuario']->Id_Usuario;
 
         $validated = $request->validate([
-            'no_empleado' => 'required|integer|unique:Cat_Empleados,No_Empleado',
+            'no_empleado' => 'required|unique:Cat_Empleados,No_Empleado',
             'nip' => 'nullable|integer|max:9999',
             'no_tarjeta' => 'nullable|integer|unique:Cat_Empleados,No_Tarjeta',
             'nombre' => 'required|string|max:255',

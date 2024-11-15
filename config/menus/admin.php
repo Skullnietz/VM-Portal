@@ -68,7 +68,7 @@ return[
                 [
                     'text' => 'Articulos',
                     'icon_color' => 'red',
-                    'url' => '#',
+                    'url' => '/admin/articulos',
                 ],
             ]
         ],

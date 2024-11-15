@@ -108,12 +108,15 @@ Route::post('/planta/areas/add', [AdminController::class, 'addArea']);
 Route::get('/planta/export-excel-areas', [AdminController::class, 'exportExcelAreas']);
 //PLANTA PERMISOS
 Route::get('/planta/get-permisos-articulos/{idPlanta}', 'AdminController@getPermisosArticulos')->name('admin-get.permisos.articulos'); // Asignacion de permisos
-Route::delete('/planta/delete-permiso-articulo/{id}', 'AdminController@deletePermisoArticulo')->name('admin-delete.permiso.articulo');
-Route::post('/planta/update-permiso-articulo/{id}', 'AdminController@updatePermisoArticulo')->name('admin-update.permiso.articulo');
-Route::post('/planta/toggle-status-permiso-articulo/{id}', 'AdminController@toggleStatusPermiso')->name('admin-toggle.status.permiso.articulo');
 Route::post('/planta/check-permission', [AdminController::class, 'checkPermission']);
 Route::post('/planta/add-permission', [AdminController::class, 'addPermission']);
 Route::get('/planta/export-excel-permissions', [AdminController::class, 'exportPermisos'])->name('admin-exportar.permisos');
+//PLANTA EMPLEADOS
+Route::get('/planta/empleados/data/{idPlanta}', 'AdminController@getDataEmpleados')->name('admin-empleados.data');
+Route::get('/planta/export-csv-employees', 'AdminController@exportCSV');
+Route::post('/planta/import-csv-employees', 'AdminController@importCSV');
+Route::get('/planta/export-excel-employees', 'AdminController@exportExcel');
+Route::post('/planta/empleado/add', 'AdminController@storeemployee');
 //ARTICULOS
 
 
