@@ -3,7 +3,7 @@
 @section('usermenu_body')
 @stop
 
-@section('title', __('Example'))
+@section('title', __('Ajustes Planta'))
 
 
 
@@ -1106,7 +1106,6 @@ $('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
     });
 });
 // Detectar el clic en el botón de permisos
-// Detectar el clic en el botón de permisos
 $('#areas').on('click', '.btn-info', function(e) {
         e.preventDefault();
         
@@ -1132,13 +1131,8 @@ $('#areas').on('click', '.btn-info', function(e) {
         Permisotable.search(data.Txt_Nombre).draw();
     });
 
-});
-
-
-</script>
-<script>
-    $(document).ready(function() {
-        var table = $('#empleados-table').DataTable({
+    
+    var table = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
             ajax: {
@@ -1162,7 +1156,7 @@ $('#areas').on('click', '.btn-info', function(e) {
                     data: null,
                     name: 'Permisos',
                     render: function(data, type, row) {
-                        return `<a href="/cli/areas/permissions/${row.Id_Area}" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
+                        return `<a href="#" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
                     }
                 },
                 {
@@ -1362,7 +1356,39 @@ $('#areas').on('click', '.btn-info', function(e) {
 
             openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, area);
         });
+
+        // Detectar el clic en el botón de permisos
+$('#empleados').on('click', '.btn-info', function(e) {
+        e.preventDefault();
+        
+        // Obtiene los datos de la fila en la que se hizo clic
+        var data = table.row($(this).parents('tr')).data();
+        
+        // Cambia al tab-pane "empleados"
+        $('#linkpermiso').tab('show');
+
+        // Asegúrate de que todos los enlaces <a> dentro de #myTab no tengan la clase 'active'
+        $('#myTab .nav-link').removeClass('active');
+        $('#myTab .nav-item').removeClass('active'); // Remueve la clase active de todos los <li>
+
+        // Agrega la clase 'active' al enlace y al <li> con id "linkempleado"
+        $('#linkpermiso').addClass('active');
+        $('#linkpermiso').closest('.nav-item').addClass('active'); // Agrega active al <li> que contiene el enlace
+
+        // Asegúrate de que solo el tab-pane 'empleados' tenga la clase 'active'
+        $('.tab-pane').removeClass('active');
+        $('#permisos').addClass('active');
+
+        // Realiza la búsqueda en la tabla #permisos-articulos-table usando Txt_Nombre
+        Permisotable.search(data.NArea).draw();
     });
+
+
+});
+
+
+
+    
 
     function openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, idArea) {
         // Llenar el formulario con los datos del empleado

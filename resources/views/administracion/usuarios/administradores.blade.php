@@ -21,6 +21,8 @@
     </div>
 </div>
 @stop
+
+@section('content')
 <!-- Modal -->
 <div class="modal fade" id="addAdminModal" tabindex="-1" role="dialog" aria-labelledby="addAdminModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -67,7 +69,6 @@
         </div>
     </div>
 </div>
-@section('content')
     <div class="container">
         <div class="row">
             <div class="col">

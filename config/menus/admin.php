@@ -48,51 +48,31 @@ return[
             'icon_color' => 'red',
             'icon' => 'fas fa-fw fa-industry',
             'label_color' => 'success',
-            'submenu' => [
-                [
-                    'text' => 'Plantas',
-                    'icon_color' => 'red',
-                    'url' => '/admin/plantas',
-                ],
-                
-
-            ]
         ],
         [
             'text' => 'Articulos',
-            'url' => 'admin/pages',
+            'url' => '/admin/articulos',
             'icon' => 'fas fa-fw fa-boxes',
             'icon_color' => 'red',
             'label_color' => 'success',
-            'submenu' => [
-                [
-                    'text' => 'Articulos',
-                    'icon_color' => 'red',
-                    'url' => '/admin/articulos',
-                ],
-            ]
         ],
         [
-            'text' => 'Vendings',
-            'url' => 'admin/pages',
+            'text' => 'Vending',
             'icon' => 'fas fa-fw fa-building',
             'icon_color' => 'red',
             'label_color' => 'success',
             'submenu' => [
                 [
-                    'text' => 'Modulos',
+                    'text' => 'Vending Machines',
                     'icon_color' => 'red',
-                    'url' => '#',
+                    'icon' => 'fas fa-fw fa-building',
+                    'url' => '/admin/vendings',
                 ],
                 [
-                    'text' => 'Planogramas',
+                    'text' => 'Dispositivos',
+                    'icon' => 'fas fa-fw  fa-tablet',
                     'icon_color' => 'red',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Vendings',
-                    'icon_color' => 'red',
-                    'url' => '#',
+                    'url' => '/admin/dispositivos',
                 ],
             ]
 

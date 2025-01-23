@@ -21,6 +21,9 @@
     </div>
 @stop
 
+
+
+@section('content')
 <!-- Modal -->
 <div class="modal fade" id="addAdminModal" tabindex="-1" role="dialog" aria-labelledby="addAdminModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -72,8 +75,6 @@
     </div>
 </div>
 
-
-@section('content')
     <div class="container">
         <div class="row">
             <div class="col">
@@ -314,10 +315,7 @@ function resetImagePreview() {
     }
 
     function submitForm() {
-        if (imageUpload.files.length === 0) {
-            alert('Por favor, selecciona una imagen antes de guardar.');
-            return;
-        }
+        
 
         let plantId = $('#plantId').val();
         let url = plantId ? '{{ route("updatePlanta") }}' : '{{ route("guardarPlanta") }}';

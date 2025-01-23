@@ -108,7 +108,6 @@ class ClientController extends Controller
                 ->get();
 
     $articulos = DB::table('Cat_Articulos')
-                ->where('Id_Planta', $idPlanta)
                 ->get();
                 //dd($articulos);
         return view('cliente.permisos', compact('areas', 'articulos'));
@@ -132,7 +131,6 @@ class ClientController extends Controller
                 ->get();
 
     $articulos = DB::table('Cat_Articulos')
-                ->where('Id_Planta', $idPlanta)
                 ->get();
                 //dd($articulos);
         return view('cliente.perarea', compact('areas', 'articulos','areaId','areaName'));
@@ -694,7 +692,6 @@ public function addArea(Request $request)
     if ($idArea) {
         // Obtener todos los artículos de la misma planta
         $articulos = DB::table('Cat_Articulos')
-            ->where('Id_Planta', $plantaId)
             ->where('Txt_Estatus', 'Alta')
             ->get();
 
@@ -772,7 +769,6 @@ public function generateMissingPermissions()
 
     // Obtener todos los artículos de la planta
     $articulos = DB::table('Cat_Articulos')
-        ->where('Id_Planta', $plantaId)
         ->where('Txt_Estatus', 'Alta')
         ->get();
 

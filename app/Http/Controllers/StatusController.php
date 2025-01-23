@@ -112,7 +112,6 @@ class StatusController extends Controller
         $productoMasConsumido = DB::table('Ctrl_Consumos')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->select('Cat_Articulos.Txt_Codigo')
-            ->where('Cat_Articulos.Id_Planta', $plantaId)
             ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
             ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
@@ -146,7 +145,6 @@ class StatusController extends Controller
         // Obtener Artículos consumidos
         $articulosConsumidos = DB::table('Ctrl_Consumos')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-            ->where('Cat_Articulos.Id_Planta', $plantaId)
             ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
             ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->sum('Ctrl_Consumos.cantidad');

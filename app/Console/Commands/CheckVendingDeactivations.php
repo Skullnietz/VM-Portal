@@ -58,7 +58,7 @@ class CheckVendingDeactivations extends Command
                 DB::table('vending_notifications')
                     ->where('Id_Maquina', $maquina->Id_Maquina)
                     ->where('User_Id', $userId)
-                    ->where('description', 'Sin conexión de Internet')
+                    ->where('description', 'No hay comunicacion con el Dispositivo')
                     ->delete();
 
                 // Registrar la nueva notificación
@@ -68,7 +68,7 @@ class CheckVendingDeactivations extends Command
                     'Id_Maquina' => $maquina->Id_Maquina,
                     'Txt_Nombre' => $maquina->Txt_Nombre,
                     'Txt_Estatus' => $maquina->Txt_Estatus,
-                    'description'=> 'Sin conexión de Internet',
+                    'description'=> 'No hay comunicacion con el Dispositivo',
                     'Fecha' => $currentDateTime,
                     'Fecha_Reg' => $maquina->Fecha_Reg,
                     'read_at' => null,

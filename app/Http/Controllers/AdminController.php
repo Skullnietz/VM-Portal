@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Jenssegers\Date\Date;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 use DateTime;
 use Yajra\DataTables\DataTables;
 use Maatwebsite\Excel\Facades\Excel;
@@ -13,6 +14,7 @@ use App\Exports\EmpleadosExportAdmin;
 use App\Exports\PermisosExportAdmin;
 use App\Exports\AreasExportAdmin;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -23,12 +25,120 @@ class AdminController extends Controller
         $userId = $_SESSION['usuario']->Id_Usuario_Admon;
         return view('administracion.home');
     }
+    public function Dispositivos(){
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+        return view('administracion.vendings.dispositivos');
+    }
     public function Plantas(){
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
         $userId = $_SESSION['usuario']->Id_Usuario_Admon;
         return view('administracion.plantas.plantas');
+    }
+    public function Planograma(Request $request, $lang, $id) {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+    
+        // Obtener el planograma
+        $planograma = DB::table('Configuracion_Maquina')
+            ->where('Id_Maquina', $id)
+            ->leftJoin('Cat_Articulos', 'Configuracion_Maquina.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->select(
+                'Configuracion_Maquina.Id_Configuracion',
+                'Configuracion_Maquina.Id_Articulo',
+                'Configuracion_Maquina.Cantidad_Max',
+                'Configuracion_Maquina.Cantidad_Min',
+                'Configuracion_Maquina.Seleccion',
+                'Configuracion_Maquina.Num_Charola',
+                'Cat_Articulos.Txt_Codigo',
+                'Cat_Articulos.Txt_Descripcion'
+            )
+            ->get()
+            ->groupBy('Num_Charola');
+    
+        if ($planograma->isEmpty()) {
+            return response()->json(['message' => 'Vending no encontrada'], 404);
+        }
+    
+        // Si la solicitud incluye un término de búsqueda
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $articulos = DB::table('Cat_Articulos')
+                ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo')
+                ->where('Txt_Descripcion', 'LIKE', "%$search%")
+                ->orWhere('Txt_Codigo', 'LIKE', "%$search%")
+                ->limit(5) // Limitar a 5 resultados
+                ->get();
+    
+            return response()->json($articulos);
+        }
+    
+        // Obtener 4 artículos aleatorios para mostrar inicialmente
+        $articulos = DB::table('Cat_Articulos')
+            ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo')
+            ->inRandomOrder()
+            ->limit(4)
+            ->get();
+    
+        return view('administracion.vendings.planograma')
+            ->with('planograma', $planograma)
+            ->with('articulos', $articulos);
+    }
+    public function Articulos(){
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+        return view('administracion.articulos.articulos');
+    }
+    public function Vendings(){
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+         // Consulta para obtener todas las plantas
+            $plantas = DB::select("
+            SELECT [Id_Planta],
+                [Txt_Nombre_Planta],
+                [Txt_Codigo_Cliente],
+                [Txt_Sitio],
+                [Txt_Estatus],
+                [Fecha_Alta],
+                [Fecha_Modificacion],
+                [Fecha_Baja],
+                [Id_Usuario_Admon_Alta],
+                [Id_Usuario_Admon_Modificacion],
+                [Id_Usuario_Admon_Baja],
+                [Ruta_Imagen]
+            FROM [Vending_Machine].[dbo].[Cat_Plantas]
+        ");
+
+        // Consulta para obtener dispositivos no asignados a ninguna máquina
+        $dispositivosNoAsignados = DB::select("
+            SELECT d.[Id_Dispositivo],
+                d.[Txt_Serie_Dispositivo],
+                d.[Txt_Estatus],
+                d.[Fecha_Alta],
+                d.[Fecha_Modificacion],
+                d.[Fecha_Baja],
+                d.[Id_Usuario_Admon_Alta],
+                d.[Id_Usuario_Admon_Modificacion],
+                d.[Id_Usuario_Admon_Baja]
+            FROM [Vending_Machine].[dbo].[Cat_Dispositivo] d
+            LEFT JOIN [Vending_Machine].[dbo].[Ctrl_Mquinas] m
+            ON d.[Id_Dispositivo] = m.[Id_Dispositivo]
+            WHERE m.[Id_Dispositivo] IS NULL
+        ");
+        return view('administracion.vendings.vendings', [
+            'plantas' => $plantas,
+            'dispositivosNoAsignados' => $dispositivosNoAsignados,
+        ]);
     }
     public function AdminView(){
         if (session_status() == PHP_SESSION_NONE) {
@@ -43,14 +153,6 @@ class AdminController extends Controller
         }
         $userId = $_SESSION['usuario']->Id_Usuario_Admon;
         return view('administracion.usuarios.usuarios');
-    }
-
-    public function Articulos(){
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
-        return view('administracion.articulos.articulos');
     }
 
     public function getPlantas()
@@ -101,14 +203,7 @@ class AdminController extends Controller
             if ($permisosAsignados) {
                 return response()->json(['message' => 'No se puede eliminar la planta porque tiene permisos asignados'], 400);
             }
-    
-            // Verificar si hay artículos asignados a la planta
-            $articulosAsignados = DB::table('Cat_Articulos')->where('Id_Planta', $id)->exists();
-            if ($articulosAsignados) {
-                return response()->json(['message' => 'No se puede eliminar la planta porque tiene artículos asignados'], 400);
-            }
-    
-            // Verificar si hay máquinas asignadas a la planta
+            // Verificar si hay maquinas asignadas a la planta
             $maquinasAsignadas = DB::table('Ctrl_Mquinas')->where('Id_Planta', $id)->exists();
             if ($maquinasAsignadas) {
                 return response()->json(['message' => 'No se puede eliminar la planta porque tiene máquinas asignadas'], 400);
@@ -141,9 +236,6 @@ class AdminController extends Controller
 
         // Eliminar permisos asignados a la planta
         DB::table('Ctrl_Permisos_x_Area')->where('Id_Planta', $id)->delete();
-
-        // Eliminar artículos asignados a la planta
-        DB::table('Cat_Articulos')->where('Id_Planta', $id)->delete();
 
         // Eliminar máquinas asignadas a la planta
         DB::table('Ctrl_Mquinas')->where('Id_Planta', $id)->delete();
@@ -402,6 +494,7 @@ public function guardarUsuario(Request $request)
         'Txt_ApellidoP' => $request->apellidoP,
         'Txt_ApellidoM' => $request->apellidoM,
         'Txt_Puesto' => $request->puesto,
+        'Txt_Rol' => 'cliente',
         'Id_Planta' => $request->planta,
         'Nick_Usuario' => $request->nick,
         'Contrasenia' => $request->password, // Asegúrate de hash la contraseña
@@ -430,28 +523,34 @@ public function guardarPlanta(Request $request) {
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validación de la imagen (opcional)
         ]);
 
-        // Manejar la carga de la imagen si está presente
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            // Verificar si el archivo es válido
-            if ($request->file('image')->isValid()) {
-                // Mover la imagen al directorio 'public/Images/Plantas'
-                $imagePath = $request->file('image')->move(public_path('/Images/Plantas'), $request->file('image')->getClientOriginalName());
-            } else {
-                return response()->json(['success' => false, 'message' => 'El archivo no es válido.'], 400);
-            }
-        }
-
-        // Insertar el nuevo registro en la base de datos
-        DB::table('Cat_Plantas')->insert([
+        // Insertar el nuevo registro en la base de datos sin la imagen
+        $idPlanta = DB::table('Cat_Plantas')->insertGetId([
             'Txt_Nombre_Planta' => $request->txtNombrePlanta,
             'Txt_Codigo_Cliente' => $request->txtCodigoCliente,
             'Txt_Sitio' => $request->txtSitio,
             'Txt_Estatus' => "Alta",
             'Fecha_Alta' => now(),
             'Id_Usuario_Admon_Alta' => $_SESSION['usuario']->Id_Usuario_Admon,
-            'Ruta_Imagen' => $imagePath ? '/Images/Plantas/' . $request->file('image')->getClientOriginalName() : null, // Guardar la ruta de la imagen en la base de datos si existe
+            'Ruta_Imagen' => null, // Inicialmente vacío
         ]);
+
+        // Manejar la carga de la imagen si está presente
+        if ($request->hasFile('image')) {
+            if ($request->file('image')->isValid()) {
+                // Generar el nuevo nombre de archivo basado en Id_Planta
+                $newImageName = $idPlanta . '.' . $request->file('image')->getClientOriginalExtension();
+
+                // Mover la imagen al directorio 'public/Images/Plantas' con el nuevo nombre
+                $imagePath = $request->file('image')->move(public_path('/Images/Plantas'), $newImageName);
+
+                // Actualizar la ruta de la imagen en el registro
+                DB::table('Cat_Plantas')->where('Id_Planta', $idPlanta)->update([
+                    'Ruta_Imagen' => '/Images/Plantas/' . $newImageName,
+                ]);
+            } else {
+                return response()->json(['success' => false, 'message' => 'El archivo no es válido.'], 400);
+            }
+        }
 
         return response()->json(['message' => 'Planta agregada con éxito']);
     } catch (\Exception $e) {
@@ -465,34 +564,64 @@ public function updatePlanta(Request $request) {
     }
 
     try {
-        // Encuentra el empleado por Id_Empleado
-        $empleado = DB::table('Cat_Empleados')->where('Id_Empleado', $Id_Empleado)->first();
+        // Validar los datos
+        Log::info('Iniciando el proceso de actualización de planta.');
 
-        if ($empleado) {
-            Log::info('Empleado encontrado: ' . json_encode($empleado));
-
-            // Elimina al empleado
-            DB::table('Cat_Empleados')->where('Id_Empleado', $Id_Empleado)->delete();
-
-            // Devuelve una respuesta exitosa
-            return response()->json(['message' => 'Empleado eliminado con éxito.'], 200);
-        } else {
-            // Empleado no encontrado
-            Log::warning("Empleado con Id_Empleado {$Id_Empleado} no encontrado.");
-            return response()->json(['message' => 'Empleado no encontrado.'], 404);
-        }
-    } catch (\Exception $e) {
-        // Registra el error en los logs
-        Log::error('Error al eliminar el empleado:', [
-            'Id_Empleado' => $Id_Empleado,
-            'error' => $e->getMessage(),
+        $request->validate([
+            'txtSitio' => 'required|string|max:255',
+            'txtCodigoCliente' => 'required|string|max:255',
+            'txtNombrePlanta' => 'required|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validación de la imagen (opcional)
         ]);
 
-        // Devuelve una respuesta con el mensaje de error
-        return response()->json([
-            'message' => 'No se pudo eliminar el empleado.',
-            'error' => $e->getMessage(),
-        ], 500);
+        // Obtener los datos actuales de la planta (si existe una imagen anterior)
+        $planta = DB::table('Cat_Plantas')->where('Id_Planta', $request->plantId)->first();
+        Log::info('Datos de la planta obtenidos: ', ['planta' => $request]);
+
+        // Si el archivo de imagen está presente, guardarlo en el directorio adecuado
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            Log::info('Se ha detectado una imagen para actualizar.');
+
+            // Eliminar la imagen anterior si existe
+            if ($planta && $planta->Ruta_Imagen && file_exists(public_path('/Images/Plantas/' . $planta->Ruta_Imagen))) {
+                Log::info('Eliminando la imagen anterior: ' . $planta->Ruta_Imagen);
+                unlink(public_path('/Images/Plantas/' . $planta->Ruta_Imagen)); // Eliminar la imagen anterior
+            } else {
+                Log::info('No se encontró una imagen anterior para eliminar.');
+            }
+
+            // Guardar la nueva imagen en el directorio 'public/Images/Plantas'
+            $imagePath = $request->file('image')->move(public_path('/Images/Plantas'), $request->file('image')->getClientOriginalName());
+            Log::info('Imagen guardada con éxito en: ' . $imagePath);
+        }
+
+        // Datos para actualizar
+        $dataToUpdate = [
+            'Txt_Nombre_Planta' => $request->txtNombrePlanta,
+            'Txt_Codigo_Cliente' => $request->txtCodigoCliente,
+            'Txt_Sitio' => $request->txtSitio,
+            'Txt_Estatus' => "Alta",
+            'Fecha_Modificacion' => now(),
+            'Id_Usuario_Admon_Modificacion' => $_SESSION['usuario']->Id_Usuario_Admon,
+        ];
+
+        // Si se cargó una nueva imagen, agregar la ruta de la imagen al array de datos
+        if ($imagePath) {
+            $dataToUpdate['Ruta_Imagen'] = '/Images/Plantas/' . $request->file('image')->getClientOriginalName();
+            Log::info('Ruta de la imagen añadida a los datos para actualizar: ' . $dataToUpdate['Ruta_Imagen']);
+        }
+
+        // Actualizar los datos en la base de datos
+        DB::table('Cat_Plantas')
+            ->where('Id_Planta', $request->plantId)
+            ->update($dataToUpdate);
+        Log::info('Planta actualizada con éxito en la base de datos.');
+
+        return response()->json(['message' => 'Planta actualizada con éxito']);
+    } catch (\Exception $e) {
+        Log::error('Error al actualizar la planta: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
 }
 
@@ -513,7 +642,6 @@ public function updatePlanta(Request $request) {
                 ->get();
 
             $articulos = DB::table('Cat_Articulos')
-                        ->where('Id_Planta', $id)
                         ->get();
                         //dd($articulos);
 
@@ -659,7 +787,6 @@ public function addArea(Request $request)
     if ($idArea) {
         // Obtener todos los artículos de la misma planta
         $articulos = DB::table('Cat_Articulos')
-            ->where('Id_Planta', $plantaId)
             ->where('Txt_Estatus', 'Alta')
             ->get();
 
@@ -704,7 +831,6 @@ public function generateMissingPermissions(Request $request)
 
     // Obtener todos los artículos de la planta
     $articulos = DB::table('Cat_Articulos')
-        ->where('Id_Planta', $plantaId)
         ->where('Txt_Estatus', 'Alta')
         ->get();
 
@@ -1064,6 +1190,440 @@ public function checkPermission(Request $request)
         $idPlanta = $request->query('idPlanta'); // Obtener 'idPlanta' desde la UR
         return Excel::download(new EmpleadosExportAdmin($idPlanta), 'empleados.xlsx');
     }
+
+
+    public function getArticulosDataTable(Request $request)
+    {
+        $articulos = DB::table('Cat_Articulos as ca')
+        ->leftJoin('Cat_Usuarios as cua', 'ca.Id_Usuario_Alta', '=', 'cua.Id_Usuario')
+        ->leftJoin('Cat_Usuarios as cub', 'ca.Id_Usuario_Baja', '=', 'cub.Id_Usuario')
+        ->leftJoin('Cat_Usuarios as cum', 'ca.Id_Usuario_Modificacion', '=', 'cum.Id_Usuario')
+        ->select([
+            'ca.Id_Articulo',
+            'ca.Txt_Descripcion',
+            'ca.Txt_Codigo',
+            'ca.Txt_Codigo_Cliente',
+            'ca.Txt_Estatus', 
+            'ca.Fecha_Alta',
+            'ca.Fecha_Modificacion',
+            'ca.Fecha_Baja',
+            DB::raw("CONCAT(COALESCE(cua.Txt_Nombre, ''), ' ', COALESCE(cua.Txt_ApellidoP, ''), ' ', COALESCE(cua.Txt_ApellidoM, '')) as UsuarioAlta"),
+            DB::raw("CONCAT(COALESCE(cub.Txt_Nombre, ''), ' ', COALESCE(cub.Txt_ApellidoP, ''), ' ', COALESCE(cub.Txt_ApellidoM, '')) as UsuarioBaja"),
+            DB::raw("CONCAT(COALESCE(cum.Txt_Nombre, ''), ' ', COALESCE(cum.Txt_ApellidoP, ''), ' ', COALESCE(cum.Txt_ApellidoM, '')) as UsuarioModificacion"),
+        ]);
+
+        // Retornar DataTable
+        return DataTables::of($articulos)
+            ->addColumn('Imagen', function ($articulo) {
+                // Generar la URL de la imagen dinámicamente
+                return '<img src="https://172.31.1.1/imagenes/Catalogo/' . $articulo->Txt_Codigo . '.jpg" alt="Imagen" width="50" height="50">';
+            })
+            ->rawColumns(['Imagen']) // Permite renderizar HTML en estas columnas
+            ->make(true);
+    }
+
+    public function cambiarEstatus(Request $request)
+    {
+        // Validar que los datos estén presentes
+        $request->validate([
+            'id' => 'required|exists:Cat_Articulos,Id_Articulo',
+            'status' => 'required|in:Alta,Baja',
+        ]);
+
+        // Realizar la actualización con DB::table()
+        $updated = DB::table('Cat_Articulos')
+            ->where('Id_Articulo', $request->id)
+            ->update(['Txt_Estatus' => $request->status]);
+
+        // Verificar si la actualización fue exitosa
+        if ($updated) {
+            return response()->json(['success' => true, 'message' => 'Estatus cambiado con éxito']);
+        }
+
+        // Si no se pudo actualizar, retornar un error
+        return response()->json(['success' => false, 'message' => 'Error al cambiar el estatus']);
+    }
+
+    public function storeArticulo(Request $request)
+{
+    // Validar los datos recibidos
+    $request->validate([
+        'Txt_Descripcion' => 'required|string|max:255',
+        'Txt_Codigo' => 'required|string|max:50',
+        'Txt_Codigo_Cliente' => 'required|string|max:50',
+    ]);
+
+    // Obtener la fecha actual
+    $fechaActual = Carbon::now();
+
+    // Insertar el nuevo artículo en la base de datos
+    DB::table('Cat_Articulos')->insert([
+        'Txt_Descripcion' => $request->Txt_Descripcion,
+        'Txt_Codigo' => $request->Txt_Codigo,
+        'Txt_Codigo_Cliente' => $request->Txt_Codigo_Cliente,
+        'Txt_Estatus' => 'Alta',  // El estatus es 'Alta' por defecto
+        'Fecha_Alta' => $fechaActual, // Fecha actual
+        'Fecha_Modificacion' => null,
+        'Fecha_Baja' => null,
+        'Id_Usuario_Alta' => 1, // Obtener el id del usuario autenticado
+        'Id_Usuario_Modificacion' => null,
+        'Id_Usuario_Baja' => null,
+    ]);
+
+    // Retornar respuesta en formato JSON
+    return response()->json(['success' => true, 'message' => 'Artículo agregado con éxito']);
+}
+
+public function deleteArticulo($id)
+{
+    // Verificar si el artículo existe
+    $articulo = DB::table('Cat_Articulos')->where('Id_Articulo', $id)->first();
+    if (!$articulo) {
+        return response()->json(['message' => 'Artículo no encontrado'], 404);
+    }
+
+    // Eliminar el artículo
+    DB::table('Cat_Articulos')->where('Id_Articulo', $id)->delete();
+
+    return response()->json(['message' => 'Artículo eliminado con éxito']);
+}
+
+public function editArticulo($id)
+{
+    // Obtener los datos del artículo
+    $articulo = DB::table('Cat_Articulos')->where('Id_Articulo', $id)->first();
+
+    if (!$articulo) {
+        return response()->json(['message' => 'Artículo no encontrado'], 404);
+    }
+
+    return response()->json($articulo);
+}
+
+public function updateArticulo(Request $request, $id)
+{
+    // Validar los datos
+    $validated = $request->validate([
+        'Txt_Descripcion' => 'required|string|max:255',
+        'Txt_Codigo' => 'required|string|max:50',
+        'Txt_Codigo_Cliente' => 'nullable|string|max:50',
+    ]);
+
+    // Actualizar el artículo
+    DB::table('Cat_Articulos')->where('Id_Articulo', $id)->update([
+        'Txt_Descripcion' => $validated['Txt_Descripcion'],
+        'Txt_Codigo' => $validated['Txt_Codigo'],
+        'Txt_Codigo_Cliente' => $validated['Txt_Codigo_Cliente'],
+        'Fecha_Modificacion' => now(),
+        'Id_Usuario_Modificacion' => 1
+    ]);
+
+    return response()->json(['message' => 'Artículo actualizado con éxito']);
+}
+   
+public function getVendingsData()
+{
+    // Comprobamos si la sesión está activa
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // Obtenemos el Id_Usuario_Admon desde la sesión
+    $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+
+    // Realizamos la consulta SQL con Facade DB
+    // Realizamos la consulta SQL con Facade DB utilizando JOIN
+     // Consulta para obtener los datos y agruparlos por planta
+     $vendingsData = DB::table('Ctrl_Mquinas')
+     ->join('Cat_Plantas', 'Ctrl_Mquinas.Id_Planta', '=', 'Cat_Plantas.Id_Planta')
+     ->select([
+         'Cat_Plantas.Txt_Nombre_Planta',
+         'Ctrl_Mquinas.Id_Maquina',
+         'Ctrl_Mquinas.Id_Dispositivo',
+         'Ctrl_Mquinas.Txt_Nombre',
+         'Ctrl_Mquinas.Txt_Serie_Maquina',
+         'Ctrl_Mquinas.Txt_Tipo_Maquina',
+         'Ctrl_Mquinas.Txt_Estatus',
+         'Ctrl_Mquinas.Capacidad',
+         'Ctrl_Mquinas.Fecha_Alta',
+         'Ctrl_Mquinas.Fecha_Modificacion',
+         'Ctrl_Mquinas.Fecha_Baja',
+         'Ctrl_Mquinas.Id_Usuario_Admon_Alta',
+         'Ctrl_Mquinas.Id_Usuario_Admon_Modificacion',
+         'Ctrl_Mquinas.Id_Usuario_Admon_Baja',
+         'Cat_Plantas.Ruta_Imagen'
+     ])
+     ->get()
+    ->groupBy('Txt_Nombre_Planta'); // Agrupamos por el nombre de la planta
+
+    // Devolvemos los datos como JSON para que AJAX los consuma
+    return response()->json($vendingsData);
+}
+
+public function changeStatusvm(Request $request)
+{
+    // Utilizamos el Facade DB para hacer la actualización directamente
+    $maquina = DB::table('Ctrl_Mquinas') // Reemplaza 'Maquinas' con el nombre de la tabla correspondiente
+                 ->where('Id_Maquina', $request->id_maquina)
+                 ->first();
+
+    if ($maquina) {
+        // Cambiamos el estatus entre "Alta" y "Baja"
+        $newStatus = $maquina->Txt_Estatus == 'Alta' ? 'Baja' : 'Alta';
+
+        // Actualizamos el estatus usando DB Facade
+        DB::table('Ctrl_Mquinas')
+            ->where('Id_Maquina', $request->id_maquina)
+            ->update(['Txt_Estatus' => $newStatus]);
+    }
+
+    return response()->json(['status' => 'success', 'new_status' => $newStatus]);
+}
+
+public function deletevm(Request $request)
+{
+    $hasConfig = DB::table('Configuracion_Maquina')
+                   ->where('Id_Maquina', $request->id_maquina)
+                   ->exists();
+
+    if ($hasConfig) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Reasigne la configuración a otra vending antes de eliminarla.'
+        ]);
+    }
+
+    // Si no tiene registros relacionados, procedemos a eliminar la máquina
+    DB::table('Ctrl_Mquinas')->where('Id_Maquina', $request->id_maquina)->delete();
+
+    return response()->json(['status' => 'success', 'message' => 'Máquina eliminada correctamente.']);
+}
+
+// Método para obtener los detalles de la máquina
+public function getVendingMachine($id)
+{
+    // Obtener los datos de la máquina, incluyendo el dispositivo asignado
+    $vendingMachine = DB::table('Ctrl_Mquinas')
+        ->join('Cat_Dispositivo', 'Ctrl_Mquinas.Id_Dispositivo', '=', 'Cat_Dispositivo.Id_Dispositivo')
+        ->where('Ctrl_Mquinas.Id_Maquina', $id)
+        ->select('Ctrl_Mquinas.*', 'Cat_Dispositivo.Txt_Serie_Dispositivo', 'Ctrl_Mquinas.Id_Dispositivo')
+        ->first();
+
+    // Verificar si se encontró la máquina
+    if ($vendingMachine) {
+        return response()->json($vendingMachine);
+    } else {
+        return response()->json(['error' => 'Máquina no encontrada'], 404);
+    }
+}
+
+public function updateVendingMachine(Request $request)
+{
+    try {
+        // Validamos los datos del formulario
+        $validated = $request->validate([
+            'Txt_Nombre' => 'required|string|max:255',
+            'Txt_Serie_Maquina' => 'required|string|max:255',
+            'Txt_Tipo_Maquina' => 'required|string|max:255',
+            'Txt_Estatus' => 'required|string|in:Alta,Baja',
+            'Capacidad' => 'required|integer|min:1',
+            'Id_Dispositivo' => 'required|exists:Cat_Dispositivo,Id_Dispositivo',
+        ]);
+
+        // Actualizamos los datos en la base de datos
+        DB::table('Ctrl_Mquinas')
+            ->where('Id_Maquina', $request->id_maquina)
+            ->update([
+                'Txt_Nombre' => $validated['Txt_Nombre'],
+                'Txt_Serie_Maquina' => $validated['Txt_Serie_Maquina'],
+                'Txt_Tipo_Maquina' => $validated['Txt_Tipo_Maquina'],
+                'Txt_Estatus' => $validated['Txt_Estatus'],
+                'Capacidad' => $validated['Capacidad'],
+                'Id_Dispositivo' => $validated['Id_Dispositivo'],
+            ]);
+
+        // Obtenemos el número de serie del dispositivo actualizado para devolverlo a la vista
+        $deviceSerie = DB::table('Cat_Dispositivo')
+            ->where('Id_Dispositivo', $validated['Id_Dispositivo'])
+            ->value('Txt_Serie_Dispositivo');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Datos actualizados correctamente.',
+            'dispositivoTxt' => $deviceSerie,
+        ]);
+    } catch (\Exception $e) {
+        // Manejo de errores
+        return response()->json([
+            'success' => false,
+            'message' => 'Ocurrió un error al actualizar los datos: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function getAvailableDevices($currentDeviceId = null)
+{
+    // Obtenemos los dispositivos disponibles y el actualmente asignado
+    $devices = DB::table('Cat_Dispositivo')
+        ->where(function ($query) use ($currentDeviceId) {
+            $query->whereNotIn('Id_Dispositivo', function ($subquery) {
+                $subquery->select('Id_Dispositivo')
+                    ->from('Ctrl_Mquinas')
+                    ->whereNotNull('Id_Dispositivo');
+            });
+
+            // Incluimos el dispositivo actualmente asignado, si se proporciona
+            if ($currentDeviceId) {
+                $query->orWhere('Id_Dispositivo', $currentDeviceId);
+            }
+        })
+        ->get(['Id_Dispositivo', 'Txt_Serie_Dispositivo']);
+
+    return response()->json(['devices' => $devices]);
+}
+
+public function storeVM(Request $request)
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    // Validación de los datos del formulario
+    $validator = Validator::make($request->all(), [
+        'Txt_Nombre' => 'required|string|max:255',
+        'Id_Planta' => 'required|integer',
+        'Txt_Serie_Maquina' => 'required|string|max:255|unique:Ctrl_Mquinas,Txt_Serie_Maquina',
+        'Txt_Tipo_Maquina' => 'required|string|max:255',
+        'Capacidad' => 'required|integer|min:1',
+        'Id_Dispositivo' => 'integer|nullable',
+    ]);
+
+    // Si la validación falla, devolver un error
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Los datos proporcionados son incorrectos.',
+            'errors' => $validator->errors(),
+        ], 400);
+    }
+
+    // Insertar la nueva máquina expendedora
+    try {
+        DB::table('Ctrl_Mquinas')->insert([
+            'Txt_Nombre' => $request->Txt_Nombre,
+            'Id_Planta' => $request->Id_Planta,
+            'Txt_Serie_Maquina' => $request->Txt_Serie_Maquina,
+            'Txt_Tipo_Maquina' => $request->Txt_Tipo_Maquina,
+            'Txt_Estatus' => 'Alta',
+            'Capacidad' => $request->Capacidad,
+            'Id_Dispositivo' => $request->Id_Dispositivo,
+            'Fecha_Alta' => now(), // Fecha actual
+            'Fecha_Modificacion' => null,
+            'Fecha_Baja' => null,
+            'Id_Usuario_Admon_Alta' => $_SESSION['usuario']->Id_Usuario_Admon, // Usuario en sesión
+            'Id_Usuario_Admon_Modificacion' => null,
+            'Id_Usuario_Admon_Baja' => null,
+        ]);
+
+        // Respuesta de éxito
+        return response()->json([
+            'success' => true,
+            'message' => 'Máquina expendedora agregada exitosamente.',
+        ], 200);
+
+    } catch (\Exception $e) {
+        // En caso de error
+        return response()->json([
+            'success' => false,
+            'message' => 'Hubo un problema al agregar la máquina.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function guardarCambiosPlano(Request $request)
+{
+    $data = $request->input('updatedData');
+
+    foreach ($data as $item) {
+        DB::table('Configuracion_Maquina')
+            ->where('Id_Configuracion', $item['idConfiguracion'])
+            ->update([
+                'Id_Articulo' => $item['idArticulo'],
+                'Cantidad_Max' => $item['cantidadMax'],
+                'Cantidad_Min' => $item['cantidadMin']
+            ]);
+    }
+
+    return response()->json(['success' => true, 'message' => 'Cambios guardados correctamente.']);
+}
+
+public function Surtir(Request $request, $lang, $id) {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+
+    // Obtener el planograma
+    $planograma = DB::table('Configuracion_Maquina')
+        ->where('Id_Maquina', $id)
+        ->leftJoin('Cat_Articulos', 'Configuracion_Maquina.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+        ->select(
+            'Configuracion_Maquina.Id_Configuracion',
+            'Configuracion_Maquina.Id_Articulo',
+            'Configuracion_Maquina.Stock',
+            'Configuracion_Maquina.Cantidad_Max',
+            'Configuracion_Maquina.Cantidad_Min',
+            'Configuracion_Maquina.Seleccion',
+            'Configuracion_Maquina.Num_Charola',
+            'Cat_Articulos.Txt_Codigo',
+            'Cat_Articulos.Txt_Descripcion'
+        )
+        ->get()
+        ->groupBy('Num_Charola');
+
+    if ($planograma->isEmpty()) {
+        return response()->json(['message' => 'Vending no encontrada'], 404);
+    }
+
+    // Si la solicitud incluye un término de búsqueda
+    if ($request->has('search')) {
+        $search = $request->input('search');
+        $articulos = DB::table('Cat_Articulos')
+            ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo')
+            ->where('Txt_Descripcion', 'LIKE', "%$search%")
+            ->orWhere('Txt_Codigo', 'LIKE', "%$search%")
+            ->limit(5) // Limitar a 5 resultados
+            ->get();
+
+        return response()->json($articulos);
+    }
+
+    // Obtener 4 artículos aleatorios para mostrar inicialmente
+    $articulos = DB::table('Cat_Articulos')
+        ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo')
+        ->inRandomOrder()
+        ->limit(4)
+        ->get();
+
+    return view('administracion.vendings.rellenar')->with('planograma', $planograma);
+}
+
+public function updateStock(Request $request)
+{
+    $updatedStock = $request->input('updatedStock');
+
+    foreach ($updatedStock as $stock) {
+        DB::table('Configuracion_Maquina')
+            ->where('Id_Configuracion', $stock['id'])
+            ->update(['Stock' => $stock['stock']]);
+    }
+
+    return response()->json(['message' => 'Stock actualizado correctamente']);
+}
+
+
+
+
 
 
 }

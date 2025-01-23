@@ -14,10 +14,10 @@ Route::redirect('/', 'inicio');
 // REDIRECCIONAMIENTO SEGUN ROL
 Route::get('/inicio', 'InicioController@HomeRol')->name('homerol');
 Route::get('/home', 'InicioController@HomeRol')->name('homerol');
-Route::get('/logout', 'LoginController@logout');
+Route::get('/logout', 'LoginController@logout')->name('salir');
 
 
-
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% INTERFAZ Y VISTAS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
 Route::prefix('{language}')->group(function () {
     // ------------> DENTRO DEL SISTEMA ADMINISTRATIVO <------------------
     //////////////////////////////////// CLIENT CONTROLLER ///////////////////////////////////// 
@@ -40,10 +40,18 @@ Route::prefix('{language}')->group(function () {
     // PLANTAS
     Route::get('/plantas', 'AdminController@Plantas')->name('plantas'); // Administracion Empleados
     Route::get('/plantas/PlantaView/{id}', [AdminController::class, 'PlantaView']);
-    
     // ARTICULOS
-    Route::get('/articulos', 'AdminController@Articulos')->name('artticulos'); // Administracion Empleados
+    Route::get('/articulos', 'AdminController@Articulos')->name('articulos'); // Administracion Empleados
     // VENDINGS
+    Route::get('/vendings', 'AdminController@Vendings')->name('vendings'); // Administracion Empleados
+    // DISPOSITIVOS
+    Route::get('/dispositivos', 'AdminController@Dispositivos')->name('dispositivos'); // Administracion Empleados
+    // PLANOGRAMA
+    Route::get('/config/plano/{id}', 'AdminController@Planograma')->name('planograma'); // Administracion Planograma
+    // RELLENAR
+    Route::get('/stock/rellenar/{id}', 'AdminController@Surtir')->name('rellenar'); // Administracion Surtido
+    
+    
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////// LOGIN CONTROLLER //////////////////////////////////////
@@ -63,9 +71,6 @@ Route::prefix('{language}')->group(function () {
     Route::get('/reporte/consumoxvending', [ReportesClienteController::class, 'indexConsumoxVending'])->name('consumosxvending.index');
     ///////////////////////////////////// REPORTE DE VENDINGS /////////////////////////////
     Route::get('/reporte/inventariovm', [ReportesClienteController::class, 'indexInventarioVM'])->name('inventariovm.index');
-    
-
-    
 });
 
 
@@ -81,7 +86,7 @@ Route::get('/adminlogin', function () {
 
 // PROTECCION DE DATOS MIDDLEWARE
 Route::group(['middleware' => 'checkSession'], function() {
-/////////////////////////////////////// ADMINISTRADORES ///////////////////////////////////////////////////////
+// °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° ADMINISTRADORES °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° //
 //ADMINISTRADORES
 Route::get('get-administradores', [AdminController::class, 'getAdministradores'])->name('get-administradores');
 Route::post('/administrador/estatus', [AdminController::class, 'updateEstatus'])->name('update.administrador.estatus');
@@ -118,18 +123,43 @@ Route::post('/planta/import-csv-employees', 'AdminController@importCSV');
 Route::get('/planta/export-excel-employees', 'AdminController@exportExcel');
 Route::post('/planta/empleado/add', 'AdminController@storeemployee');
 //ARTICULOS
+Route::get('/articulos-datatable', [AdminController::class, 'getArticulosDataTable']);
+Route::post('/cambiar-estatus-articulo', [AdminController::class, 'cambiarEstatus'])->name('cambiar.estatus.articulo');
+Route::post('/articulos/store', [AdminController::class, 'storeArticulo']);
+Route::delete('/articulos/{id}/delete', [AdminController::class, 'deleteArticulo']);
+Route::get('/articulos/{id}/edit', [AdminController::class, 'editArticulo']);
+Route::post('/articulos/{id}/update', [AdminController::class, 'updateArticulo']);
+//VENDINGS
+Route::get('/vendings/data', [AdminController::class, 'getVendingsData'])->name('vendings.data');
+Route::post('/vending/changeStatus', 'AdminController@changeStatusvm');
+Route::post('/vending/delete', 'AdminController@deletevm');
+Route::get('/vending/getDetails/{id}', [AdminController::class, 'getDetailsvm']);
+Route::get('/vending/devices/{currentDeviceId?}', [AdminController::class, 'getAvailableDevices']);
+Route::get('/vending/edit/{id}', [AdminController::class, 'getVendingMachine']);
+Route::post('/vending/update', [AdminController::class, 'updateVendingMachine']);
+Route::post('/vending/create', [AdminController::class, 'storeVM'])->name('vending.store');
+// PLANOGRAMA
+Route::post('/admin/config/plano/save', [AdminController::class, 'guardarCambiosPlano']);
+Route::post('/admin/config/plano/remove', [AdminController::class, 'eliminarArticuloPlano']);
+//RELLENAR
+Route::post('/update-stock', [AdminController::class, 'updateStock'])->name('update.stock');
+
+//DISPOSITIVOS
 
 
 //AREAS
 Route::get('/getAreas', [AdminController::class, 'getAreas']);
 
 
-/////////////////////////////////////// REGISTRO DE ESTATUS ////////////////////////////////////////////////////
+//##################################### REGISTRO DE ESTATUS ######################################################//
 Route::get('vm-admin', 'StatusController@getAdminDash')->name('getadmindash');
 Route::get('vm-dash', 'StatusController@getIndexDash')->name('getindexdash');
 Route::get('vm-status', 'StatusController@GetStatus')->name('getstatus');
 Route::get('vm-rconsum', 'StatusController@ConsumosGet')->name('getconsum');
 Route::get('vm-graphs', 'StatusController@getConsumoGraph')->name('getgraph');
+
+
+// °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° CLIENTES °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° //
 ///////////////////////////////////////// EMPLEADOS TOOLS ///////////////////////////////////////////////////
 Route::post('empleado/toggle-status/{id}', 'ClientController@toggleStatus');
 Route::get('empleados/data', 'ClientController@getDataEmpleados')->name('empleados.data');

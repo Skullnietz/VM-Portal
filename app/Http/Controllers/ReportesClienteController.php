@@ -149,7 +149,6 @@ class ReportesClienteController extends Controller
         // Obtener los productos de la tabla Cat_Articulos
         $productos = DB::table('Cat_Articulos')
                 ->select('Id_Articulo', 'Txt_Descripcion')
-                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
                 ->get();
         // Obtener los productos de la tabla Cat_Articulos
         $empleados = DB::table('Cat_Empleados')
@@ -174,7 +173,6 @@ class ReportesClienteController extends Controller
         // Obtener los productos de la tabla Cat_Articulos
         $productos = DB::table('Cat_Articulos')
                 ->select('Id_Articulo', 'Txt_Descripcion')
-                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
                 ->get();
 
         // Pasar las áreas, productos y máquinas a la vista
@@ -194,7 +192,6 @@ class ReportesClienteController extends Controller
         // Obtener los productos de la tabla Cat_Articulos
         $productos = DB::table('Cat_Articulos')
                 ->select('Id_Articulo', 'Txt_Descripcion')
-                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
                 ->get();
 
         // Obtener las máquinas de la tabla Ctrl_Mquinas

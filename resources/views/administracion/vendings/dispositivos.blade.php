@@ -3,14 +3,14 @@
 @section('usermenu_body')
 @stop
 
-@section('title', __('Notificaciones'))
+@section('title', __('Dispositivos'))
 
 @section('content_header')
     <div class="container">
         <div class="row">
             <div class=" col-md-9 col-9">
                 <h4><a href="#" onclick="goBack()" class="border rounded">&nbsp;<i
-                            class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Notificaciones') }}</h4>
+                            class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Dispositivos') }}</h4>
             </div>
             <div class="col-md-3 col-3 ml-auto">
             </div>
@@ -28,7 +28,7 @@
 
                     <div class="card-header">
                         <h5 class="card-title">
-                        Todas las Notificaciones
+                            Example Title
                         </h5>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -52,18 +52,8 @@
                         </div>
 
                     </div>
-                    
                     <div class="card-body">
-                    <div class="container">
-        @foreach($unreadNotifications as $notification)
-            <div class="alert alert-info">
-                <p>{{ $notification->Txt_Nombre }} error.</p>
-                <p><small>Dia: {{ \Carbon\Carbon::parse($notification->Fecha)->format('d-m-Y') }} | Hora: {{ \Carbon\Carbon::parse($notification->Fecha)->format('H:i') }}</small></p>
-                <p><small>Mensaje: {{$notification->description}}</small></p>
-                <a href="{{ route('markNotificationAsRead', $notification->id) }}" class="btn btn-primary">Marcar como leída</a>
-            </div>
-        @endforeach
-    </div>
+                        Lorem ipsum dolor sit am
                     </div>
                 </div>
             </div>
@@ -84,5 +74,3 @@
     }
 </script>
 @stop
-
-
