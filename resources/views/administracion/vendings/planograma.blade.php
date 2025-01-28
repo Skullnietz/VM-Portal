@@ -37,8 +37,7 @@
         </div>
     </div>
     <div class="card-footer">
-        <label for="transparencyControl">Transparencia:</label>
-        <input type="range" id="transparencyControl" min="0" max="100" value="100" class="form-control">
+       <center><button id="saveChangesBtn" class="btn btn-success">Guardar Cambios</button></center> 
     </div>
 </div>
 
@@ -78,21 +77,25 @@
 
                                                         <!-- Contenido visible cuando hay una selección (imagen, código, descripción, formulario) -->
                                                         <div class="contenido-seleccion">
+                                                        <div class="contenido-header ">
                                                             <img src="/Images/product.png" 
                                                                     class="img-fluid" 
                                                                     alt="Artículo" 
                                                                     style="max-height: 100px;min-width: 100px;min-height: 100px;max-width: 100px;">
                                                             <p class="text-muted mt-1 TxtCodigo">{{ $seleccion->Txt_Codigo ?? '' }}</p>
                                                             <small class="TxtDescripcion">{{ $seleccion->Txt_Descripcion ?? '' }}</small>
+                                                        </div>
 
-                                                            <form>
+                                                            <form class="setminmax bg-dark">
                                                                 <input type="hidden" class="IdArticulo" value="{{ $seleccion->Id_Articulo ?? '' }}">
-                                                                <div class="form-group">
-                                                                    <input type="number" class="form-control form-control-sm CantidadMax" value="{{ $seleccion->Cantidad_Max ?? '' }}" placeholder="Máx." disabled>
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <input type="number" class="form-control form-control-sm CantidadMin" value="{{ $seleccion->Cantidad_Min ?? '' }}" placeholder="Mín." disabled>
-                                                                </div>
+                                                                <div class="form-group d-flex align-items-center">
+                                                                        <small class="mr-1">Max:</small>
+                                                                        <input type="number" class="form-control form-control-sm CantidadMax" value="{{ $seleccion->Cantidad_Max ?? '' }}" placeholder="Máx." disabled>
+                                                                    </div>
+                                                                    <div class="form-group d-flex align-items-center">
+                                                                        <small class="mr-1">Min:</small>
+                                                                        <input type="number" class="form-control form-control-sm CantidadMin" value="{{ $seleccion->Cantidad_Min ?? '' }}" placeholder="Mín." disabled>
+                                                                    </div>
                                                                 <button type="button" class="btn btn-danger btn-sm remove-article-btn">Vaciar</button>
                                                             </form>
                                                         </div>
@@ -110,9 +113,7 @@
                             </div>
                         </div>
                     @endforeach
-                    <div class="card-footer text-right">
-                        <button id="saveChangesBtn" class="btn btn-success">Guardar Cambios</button>
-                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -135,10 +136,28 @@
         cursor: grab;
     }
 
-    .droppable-cell {
-        border: 2px dashed transparent;
-        transition: border-color 0.2s;
+    .contenido-header {
+    display: flex;
+    flex-direction: column;
+    height: 250px; /* Ajusta según sea necesario */
+    align-items: center;
+    justify-content: center;
     }
+
+    .setminmax {
+    padding: 10px;
+    }
+
+    .droppable-cell {
+    
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 300px; /* Ajusta según sea necesario */
+    padding: 10px;
+    vertical-align: top;
+    text-align: center;
+}
 
     .droppable-cell.drag-over {
         border-color: #28a745;
@@ -408,18 +427,16 @@ document.getElementById('saveChangesBtn').addEventListener('click', () => {
     const updatedData = [];
 
     document.querySelectorAll('.droppable-cell').forEach(cell => {
-        const idArticulo = cell.querySelector('.IdArticulo')?.value;
-        const cantidadMax = cell.querySelector('.CantidadMax')?.value;
-        const cantidadMin = cell.querySelector('.CantidadMin')?.value;
+        const idArticulo = cell.querySelector('.IdArticulo')?.value || null;
+        const cantidadMax = cell.querySelector('.CantidadMax')?.value || 0; // Ajusta a 0 si está vacío
+        const cantidadMin = cell.querySelector('.CantidadMin')?.value || 0; // Ajusta a 0 si está vacío
 
-        if (idArticulo) {
-            updatedData.push({
-                idConfiguracion: cell.dataset.id,
-                idArticulo: idArticulo,
-                cantidadMax: cantidadMax || 0,
-                cantidadMin: cantidadMin || 0
-            });
-        }
+        updatedData.push({
+            idConfiguracion: cell.dataset.id,
+            idArticulo: idArticulo,
+            cantidadMax: cantidadMax,
+            cantidadMin: cantidadMin
+        });
     });
 
     // Enviar datos al servidor

@@ -52,45 +52,47 @@
                                                 <tr>
                                                     @foreach ($chunk as $seleccion)
                                                     <td class="droppable-cell" 
-                                                        data-id="{{ $seleccion->Id_Configuracion }}" 
+                                                        data-id="{{ $seleccion->Id_Configuracion ?? '' }}" 
                                                         data-charola="{{ $seleccion->Num_Charola ?? 'N/A' }}" 
                                                         data-seleccion="{{ $seleccion->Seleccion ?? 'N/A' }}">
                                                         <div class="mb-2">
-                                                            <!-- Mensaje para selección vacía, por defecto oculto -->
-                                                            <div class="seleccion-vacia" style="display: none;">
-                                                                <p class="text-muted">Selección vacía</p>
-                                                            </div>
-
-                                                            <!-- Contenido visible cuando hay una selección (imagen, código, descripción, formulario) -->
-                                                            <div class="contenido-seleccion">
-                                                                <div class="cantidad-max-container" style=" padding: 5px; border-radius: 5px;">
-                                                                    <small class="text-muted">Máximo: {{ $seleccion->Cantidad_Max ?? 0 }}</small>
+                                                            @if(empty($seleccion->Id_Articulo)) 
+                                                                <!-- Mostrar la leyenda de selección vacía -->
+                                                                <div class="seleccion-vacia">
+                                                                    <p class="text-muted">Selección vacía</p>
                                                                 </div>
+                                                            @else
+                                                                <!-- Contenido visible cuando hay un artículo -->
+                                                                <div class="contenido-seleccion">
+                                                                    <div class="cantidad-max-container">
+                                                                        <small class="text-muted">Máximo: {{ $seleccion->Cantidad_Max ?? 0 }}</small>
+                                                                    </div>
 
-                                                                <div class="articulo-container">
-                                                                    <img src="/Images/product.png" 
-                                                                        class="img-fluid mt-2 mb-2" 
-                                                                        alt="Artículo" 
-                                                                        style="max-height: 100px; min-width: 100px; min-height: 100px; max-width: 100px;">
-                                                                    <p class="text-muted TxtCodigo">{{ $seleccion->Txt_Codigo ?? '' }}</p>
-                                                                    <small class="TxtDescripcion">{{ $seleccion->Txt_Descripcion ?? '' }}</small>
-                                                                </div>
+                                                                    <div class="articulo-container">
+                                                                        <img src="/Images/product.png" 
+                                                                            class="img-fluid mt-2 mb-2" 
+                                                                            alt="Artículo" 
+                                                                            style="max-height: 100px; min-width: 100px; min-height: 100px; max-width: 100px;">
+                                                                        <p class="text-muted TxtCodigo">{{ $seleccion->Txt_Codigo ?? '' }}</p>
+                                                                        <small class="TxtDescripcion">{{ $seleccion->Txt_Descripcion ?? '' }}</small>
+                                                                    </div>
 
-                                                                <div class="stock-container" style="background-color: #f0f0f0; padding: 10px; border-radius: 5px;">
-                                                                    <form>
-                                                                        <input type="hidden" class="IdArticulo" value="{{ $seleccion->Id_Articulo ?? '' }}">
-                                                                        <div class="form-group">
-                                                                            <label for="Stock">Stock</label>
-                                                                            <input type="number" 
-                                                                                class="form-control form-control-sm Stock" 
-                                                                                value="{{ $seleccion->Stock ?? '' }}" 
-                                                                                placeholder="Stock" 
-                                                                                min="{{ $seleccion->Cantidad_Min ?? 0 }}" 
-                                                                                max="{{ $seleccion->Cantidad_Max ?? 0 }}">
-                                                                        </div>
-                                                                    </form>
+                                                                    <div class="stock-container">
+                                                                        <form>
+                                                                            <input type="hidden" class="IdArticulo" value="{{ $seleccion->Id_Articulo }}">
+                                                                            <div class="form-group">
+                                                                                <label for="Stock">Stock</label>
+                                                                                <input type="number" 
+                                                                                    class="form-control form-control-sm Stock" 
+                                                                                    value="{{ $seleccion->Stock ?? '' }}" 
+                                                                                    placeholder="Stock" 
+                                                                                    min="{{ $seleccion->Cantidad_Min ?? 0 }}" 
+                                                                                    max="{{ $seleccion->Cantidad_Max ?? 0 }}">
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
+                                                            @endif
                                                         </div>
                                                     </td>
                                                     @endforeach
@@ -135,8 +137,10 @@
 
 .articulo-container {
     text-align: center;
+    height: 250px; /* Ajusta según sea necesario */
     margin-bottom: 10px;
 }
+
 
 floatingActions {
     position: fixed;
@@ -160,6 +164,62 @@ floatingActions {
 @stop
 
 @section('js')
+
+<script defer>
+    document.addEventListener('DOMContentLoaded', function () {
+        const updateStockColors = () => {
+            const stockContainers = document.querySelectorAll('.stock-container');
+
+            stockContainers.forEach(container => {
+                const stockInput = container.querySelector('.Stock');
+                const stockValue = parseInt(stockInput.value || 0);
+                const minStock = parseInt(stockInput.getAttribute('min') || 0);
+                const maxStock = parseInt(stockInput.getAttribute('max') || 0);
+                const nearMinStock = minStock + Math.floor((maxStock - minStock) * 0.2); // Cerca del mínimo (20% adicional)
+
+                // Resetear colores
+                container.style.backgroundColor = '#f0f0f0';
+
+                if (stockValue <= minStock) {
+                    container.style.backgroundColor = 'rgba(255, 99, 71, 0.5)'; // Rojo claro
+                } else if (stockValue > minStock && stockValue <= nearMinStock) {
+                    container.style.backgroundColor = 'rgba(255, 255, 102, 0.5)'; // Amarillo claro
+                } else if (stockValue >= maxStock) {
+                    container.style.backgroundColor = 'rgba(144, 238, 144, 0.5)'; // Verde claro
+                }
+            });
+        };
+
+        // Actualizar colores al cargar la página
+        updateStockColors();
+
+        // Escuchar cambios en los inputs de stock
+        document.querySelectorAll('.Stock').forEach(input => {
+            input.addEventListener('input', updateStockColors);
+        });
+
+        const fillMaxFloatingBtn = document.getElementById('fillMaxFloatingBtn');
+
+    if (fillMaxFloatingBtn) {
+        fillMaxFloatingBtn.addEventListener('click', function () {
+            const confirmFill = confirm('¿Estás seguro de que deseas ajustar todas las selecciones a su cantidad máxima?');
+            if (confirmFill) {
+                const stockInputs = document.querySelectorAll('.Stock');
+                stockInputs.forEach(input => {
+                    const maxStock = parseInt(input.getAttribute('max'));
+                    input.value = maxStock; // Ajusta cada input al valor máximo permitido
+                });
+                updateStockColors(); // Actualiza los colores después de rellenar
+                alert('Todas las selecciones se han ajustado a su cantidad máxima.');
+            } else {
+                alert('Operación cancelada.');
+            }
+        });
+    } else {
+        console.error('El botón "Rellenar Máximos" flotante no existe en el DOM.');
+    }
+});
+</script>
 <script defer>
   document.getElementById('saveChangesBtn').addEventListener('click', function () {
     const cells = document.querySelectorAll('.droppable-cell');
@@ -208,7 +268,7 @@ floatingActions {
 <script defer>
     document.addEventListener('DOMContentLoaded', function () {
         const saveChangesFloatingBtn = document.getElementById('saveChangesFloatingBtn');
-        const fillMaxFloatingBtn = document.getElementById('fillMaxFloatingBtn');
+        
 
         if (saveChangesFloatingBtn) {
             saveChangesFloatingBtn.addEventListener('click', function () {
@@ -221,24 +281,6 @@ floatingActions {
             });
         } else {
             console.error('El botón "Guardar Cambios" flotante no existe en el DOM.');
-        }
-
-        if (fillMaxFloatingBtn) {
-            fillMaxFloatingBtn.addEventListener('click', function () {
-                const confirmFill = confirm('¿Estás seguro de que deseas ajustar todas las selecciones a su cantidad máxima?');
-                if (confirmFill) {
-                    const stockInputs = document.querySelectorAll('.Stock');
-                    stockInputs.forEach(input => {
-                        const maxStock = parseInt(input.getAttribute('max'));
-                        input.value = maxStock; // Ajusta cada input al valor máximo permitido
-                    });
-                    alert('Todas las selecciones se han ajustado a su cantidad máxima.');
-                } else {
-                    alert('Operación cancelada.');
-                }
-            });
-        } else {
-            console.error('El botón "Rellenar Máximos" flotante no existe en el DOM.');
         }
     });
 </script>

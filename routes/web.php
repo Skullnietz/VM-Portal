@@ -145,6 +145,13 @@ Route::post('/admin/config/plano/remove', [AdminController::class, 'eliminarArti
 Route::post('/update-stock', [AdminController::class, 'updateStock'])->name('update.stock');
 
 //DISPOSITIVOS
+Route::get('/dispositivos/get', [AdminController::class, 'getDispositivos'])->name('dispositivos.get');
+Route::post('/dispositivos/store', [AdminController::class, 'storeDispositivo'])->name('dispositivos.store');
+Route::get('/dispositivos/{id}', [AdminController::class, 'showDispositivo'])->name('dispositivos.show'); // Para obtener datos del dispositivo
+Route::post('/dispositivos/update/{id}', [AdminController::class, 'updateDispositivo'])->name('dispositivos.update');
+Route::delete('/dispositivos/destroy/{id}', [AdminController::class, 'destroyDispositivo'])->name('dispositivos.destroy');
+Route::get('/maquinas/list', [AdminController::class, 'listMquinas'])->name('maquinas.list');
+
 
 
 //AREAS

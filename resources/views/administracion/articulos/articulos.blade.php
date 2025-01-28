@@ -134,24 +134,38 @@
 
                     </div>
                     <div class="card-body">
-                    <table id="articulosTable" class="display">
-        <thead>
+                    <table id="articulosTable" class="table table-bordered table-striped">
+    <thead>
         <tr>
-                <th>Imagen</th>
-                <th>Descripción</th>
-                <th>Código</th>
-                <th>Código Cliente</th>
-                <th>Estatus</th>
-                <th>Fecha Alta</th>
-                <th>Usuario Alta</th>
-                <th>Fecha Modificación</th>
-                <th>Usuario Modificación</th>
-                <th>Fecha Baja</th>
-                <th>Usuario Baja</th>
-                <th>Opciones</th>
-            </tr>
-        </thead>
-    </table>
+            <th>Imagen</th>
+            <th>Descripción</th>
+            <th>Código</th>
+            <th>Código Cliente</th>
+            <th>Estatus</th>
+            <th>Fecha Alta</th>
+            <th>Usuario Alta</th>
+            <th>Fecha Modificación</th>
+            <th>Usuario Modificación</th>
+            <th>Fecha Baja</th>
+            <th>Usuario Baja</th>
+            <th>Acciones</th>
+        </tr>
+        <tr id="filters">
+            <th></th>
+            <th><input type="text" id="filterDescripcion" class="form-control" placeholder="Buscar Descripción"></th>
+            <th><input type="text" id="filterCodigo" class="form-control" placeholder="Buscar Código"></th>
+            <th><input type="text" id="filterCodigoCliente" class="form-control" placeholder="Buscar Código Cliente"></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+</table>
                     </div>
                 </div>
             </div>
@@ -180,67 +194,73 @@
         }
     });
 
-        $('#articulosTable').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: '/articulos-datatable',
-            responsive: true,
-            language: {
-                url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-MX.json'
-            },
-            columns: [
-                {
-                    data: 'Imagen',
-                    orderable: false,
-                    searchable: false,
-                    render: function (data, type, row) {
-                        return `<img src="https://172.31.1.1/imagenes/Catalogo/${row.Txt_Codigo}.jpg" 
-                                     alt="Imagen" 
-                                     width="50" 
-                                     height="50" 
-                                     onerror="this.onerror=null;this.src='/Images/product.png';">`;
-                    }
-                },
-                { data: 'Txt_Descripcion' },
-                { data: 'Txt_Codigo' },
-                { data: 'Txt_Codigo_Cliente' },
-                {
-                    data: 'Txt_Estatus',
-                    orderable: false,
-                    searchable: false,
-                    render: function (data, type, row) {
-                        if (data === 'Alta') {
-                            return `<button class="btn btn-success toggle-status" data-id="${row.Id_Articulo}" data-status="Alta">Habilitado</button>`;
-                        } else if (data === 'Baja') {
-                            return `<button class="btn btn-danger toggle-status" data-id="${row.Id_Articulo}" data-status="Baja">Deshabilitado</button>`;
-                        }
-                    }
-                },
-                { data: 'Fecha_Alta' },
-                { data: 'UsuarioAlta' },
-                { data: 'Fecha_Modificacion' },
-                { data: 'UsuarioModificacion' },
-                { data: 'Fecha_Baja' },
-                { data: 'UsuarioBaja' },
-                {
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    render: function (data, type, row) {
-                        return `
-                            <div class="btn-group">
-                                <button class="btn btn-warning edit-article" data-id="${row.Id_Articulo}"  data-toggle="modal" data-target="#editArticleModal">
-                                    <i class="fa fa-edit"></i> Editar
-                                </button>
-                                <button class="btn btn-danger delete-article" data-id="${row.Id_Articulo}">
-                                    <i class="fa fa-trash"></i> Eliminar
-                                </button>
-                            </div>
-                        `;
-                    }
+    const table = $('#articulosTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/articulos-datatable',
+            data: function (d) {
+                // Pasar los valores de los inputs como parámetros
+                d.descripcion = $('#filterDescripcion').val();
+                d.codigo = $('#filterCodigo').val();
+                d.codigo_cliente = $('#filterCodigoCliente').val();
+            }
+        },
+        responsive: false, // Se desactiva "responsive" para usar scroll
+        scrollX: true, // Habilita desplazamiento horizontal
+        scrollY: "400px", // Altura del área visible
+        scrollCollapse: true, // Permite que la tabla colapse si hay pocas filas
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-MX.json'
+        },
+        columns: [
+            {
+                data: 'Imagen',
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    return `<img src="https://172.31.1.1/imagenes/Catalogo/${row.Txt_Codigo}.jpg" 
+                                alt="Imagen" 
+                                width="50" 
+                                height="50" 
+                                onerror="this.onerror=null;this.src='/Images/product.png';">`;
                 }
+            },
+            { data: 'Txt_Descripcion' },
+            { data: 'Txt_Codigo' },
+            { data: 'Txt_Codigo_Cliente' },
+            { data: 'Txt_Estatus', orderable: false },
+            { data: 'Fecha_Alta' },
+            { data: 'UsuarioAlta' },
+            { data: 'Fecha_Modificacion' },
+            { data: 'UsuarioModificacion' },
+            { data: 'Fecha_Baja' },
+            { data: 'UsuarioBaja' },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-warning btn-sm edit-article" data-id="${row.Id_Articulo}" data-toggle="modal" data-target="#editArticleModal">
+                                <i class="fa fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-danger  btn-sm delete-article" data-id="${row.Id_Articulo}">
+                                <i class="fa fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    `;
+                }
+            }
         ]
     });
+
+    // Eventos para los filtros
+    $('#filterDescripcion, #filterCodigo, #filterCodigoCliente').on('keyup', function () {
+        table.ajax.reload();
+    });
+
 
      // Manejo del botón Editar
     $('#articulosTable').on('click', '.edit-article', function () {

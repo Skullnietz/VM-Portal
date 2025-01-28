@@ -1193,34 +1193,46 @@ public function checkPermission(Request $request)
 
 
     public function getArticulosDataTable(Request $request)
-    {
-        $articulos = DB::table('Cat_Articulos as ca')
-        ->leftJoin('Cat_Usuarios as cua', 'ca.Id_Usuario_Alta', '=', 'cua.Id_Usuario')
-        ->leftJoin('Cat_Usuarios as cub', 'ca.Id_Usuario_Baja', '=', 'cub.Id_Usuario')
-        ->leftJoin('Cat_Usuarios as cum', 'ca.Id_Usuario_Modificacion', '=', 'cum.Id_Usuario')
+{
+    $articulos = DB::table('Cat_Articulos AS ca')
+        ->leftJoin('Cat_Usuarios AS cua', 'ca.Id_Usuario_Alta', '=', 'cua.Id_Usuario')
+        ->leftJoin('Cat_Usuarios AS cub', 'ca.Id_Usuario_Baja', '=', 'cub.Id_Usuario')
+        ->leftJoin('Cat_Usuarios AS cum', 'ca.Id_Usuario_Modificacion', '=', 'cum.Id_Usuario')
         ->select([
             'ca.Id_Articulo',
             'ca.Txt_Descripcion',
             'ca.Txt_Codigo',
             'ca.Txt_Codigo_Cliente',
-            'ca.Txt_Estatus', 
+            'ca.Txt_Estatus',
             'ca.Fecha_Alta',
             'ca.Fecha_Modificacion',
             'ca.Fecha_Baja',
-            DB::raw("CONCAT(COALESCE(cua.Txt_Nombre, ''), ' ', COALESCE(cua.Txt_ApellidoP, ''), ' ', COALESCE(cua.Txt_ApellidoM, '')) as UsuarioAlta"),
-            DB::raw("CONCAT(COALESCE(cub.Txt_Nombre, ''), ' ', COALESCE(cub.Txt_ApellidoP, ''), ' ', COALESCE(cub.Txt_ApellidoM, '')) as UsuarioBaja"),
-            DB::raw("CONCAT(COALESCE(cum.Txt_Nombre, ''), ' ', COALESCE(cum.Txt_ApellidoP, ''), ' ', COALESCE(cum.Txt_ApellidoM, '')) as UsuarioModificacion"),
+            DB::raw("COALESCE(CONCAT(cua.Txt_Nombre, ' ', cua.Txt_ApellidoP, ' ', cua.Txt_ApellidoM), '') AS UsuarioAlta"),
+            DB::raw("COALESCE(CONCAT(cub.Txt_Nombre, ' ', cub.Txt_ApellidoP, ' ', cub.Txt_ApellidoM), '') AS UsuarioBaja"),
+            DB::raw("COALESCE(CONCAT(cum.Txt_Nombre, ' ', cum.Txt_ApellidoP, ' ', cum.Txt_ApellidoM), '') AS UsuarioModificacion"),
         ]);
 
-        // Retornar DataTable
-        return DataTables::of($articulos)
-            ->addColumn('Imagen', function ($articulo) {
-                // Generar la URL de la imagen dinámicamente
-                return '<img src="https://172.31.1.1/imagenes/Catalogo/' . $articulo->Txt_Codigo . '.jpg" alt="Imagen" width="50" height="50">';
-            })
-            ->rawColumns(['Imagen']) // Permite renderizar HTML en estas columnas
-            ->make(true);
+    // Aplicar filtros personalizados
+    if ($request->filled('descripcion')) {
+        $articulos->where('ca.Txt_Descripcion', 'LIKE', '%' . $request->input('descripcion') . '%');
     }
+
+    if ($request->filled('codigo')) {
+        $articulos->where('ca.Txt_Codigo', 'LIKE', '%' . $request->input('codigo') . '%');
+    }
+
+    if ($request->filled('codigo_cliente')) {
+        $articulos->where('ca.Txt_Codigo_Cliente', 'LIKE', '%' . $request->input('codigo_cliente') . '%');
+    }
+
+    return DataTables::of($articulos)
+        ->addColumn('Imagen', function ($articulo) {
+            return '<img src="https://172.31.1.1/imagenes/Catalogo/' . $articulo->Txt_Codigo . '.jpg" alt="Imagen" width="50" height="50">';
+        })
+        ->rawColumns(['Imagen'])
+        ->make(true);
+}
+
 
     public function cambiarEstatus(Request $request)
     {
@@ -1487,6 +1499,7 @@ public function storeVM(Request $request)
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
+
     // Validación de los datos del formulario
     $validator = Validator::make($request->all(), [
         'Txt_Nombre' => 'required|string|max:255',
@@ -1506,9 +1519,14 @@ public function storeVM(Request $request)
         ], 400);
     }
 
-    // Insertar la nueva máquina expendedora
+    // Obtener el ID del usuario desde la sesión
+    $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+
+    // Transacción para asegurar la consistencia de los datos
+    DB::beginTransaction();
     try {
-        DB::table('Ctrl_Mquinas')->insert([
+        // Insertar la nueva máquina expendedora
+        $idMaquina = DB::table('Ctrl_Mquinas')->insertGetId([
             'Txt_Nombre' => $request->Txt_Nombre,
             'Id_Planta' => $request->Id_Planta,
             'Txt_Serie_Maquina' => $request->Txt_Serie_Maquina,
@@ -1516,25 +1534,53 @@ public function storeVM(Request $request)
             'Txt_Estatus' => 'Alta',
             'Capacidad' => $request->Capacidad,
             'Id_Dispositivo' => $request->Id_Dispositivo,
-            'Fecha_Alta' => now(), // Fecha actual
+            'Fecha_Alta' => now(),
             'Fecha_Modificacion' => null,
             'Fecha_Baja' => null,
-            'Id_Usuario_Admon_Alta' => $_SESSION['usuario']->Id_Usuario_Admon, // Usuario en sesión
+            'Id_Usuario_Admon_Alta' => $userId,
             'Id_Usuario_Admon_Modificacion' => null,
             'Id_Usuario_Admon_Baja' => null,
         ]);
 
+        // Crear las configuraciones para las charolas de la máquina
+        $charolas = [];
+        $fechaAlta = now();
+        for ($numCharola = 1; $numCharola <= 6; $numCharola++) {
+            for ($seleccion = 0; $seleccion <= 9; $seleccion++) {
+                $charolas[] = [
+                    'Id_Maquina' => $idMaquina,
+                    'Num_Charola' => $numCharola,
+                    'Seleccion' => (int)("{$numCharola}{$seleccion}"),
+                    'Id_Articulo' => null,
+                    'Cantidad_Max' => 0,
+                    'Cantidad_Min' => 0,
+                    'Stock' => 0,
+                    'Txt_Estatus' => 'Alta',
+                    'Fecha_Alta' => $fechaAlta,
+                    'Id_Usuario_Admon_Alta' => $userId,
+                ];
+            }
+        }
+
+        // Insertar las configuraciones en la tabla Configuracion_Maquina
+        DB::table('Configuracion_Maquina')->insert($charolas);
+
+        // Confirmar la transacción
+        DB::commit();
+
         // Respuesta de éxito
         return response()->json([
             'success' => true,
-            'message' => 'Máquina expendedora agregada exitosamente.',
+            'message' => 'Máquina expendedora y configuraciones de charolas creadas exitosamente.',
         ], 200);
 
     } catch (\Exception $e) {
-        // En caso de error
+        // Revertir la transacción en caso de error
+        DB::rollBack();
+
         return response()->json([
             'success' => false,
-            'message' => 'Hubo un problema al agregar la máquina.',
+            'message' => 'Hubo un problema al agregar la máquina y sus configuraciones.',
             'error' => $e->getMessage(),
         ], 500);
     }
@@ -1548,9 +1594,10 @@ public function guardarCambiosPlano(Request $request)
         DB::table('Configuracion_Maquina')
             ->where('Id_Configuracion', $item['idConfiguracion'])
             ->update([
-                'Id_Articulo' => $item['idArticulo'],
-                'Cantidad_Max' => $item['cantidadMax'],
-                'Cantidad_Min' => $item['cantidadMin']
+                'Id_Articulo' => $item['idArticulo'] ?: null, // Deja null si el Id_Articulo está vacío
+                'Cantidad_Max' => $item['cantidadMax'] ?: 0, // Ajusta a 0 si está vacío
+                'Cantidad_Min' => $item['cantidadMin'] ?: 0, // Ajusta a 0 si está vacío
+                'Stock' => 0  // Ajusta a 0 si está vacío
             ]);
     }
 
@@ -1622,7 +1669,125 @@ public function updateStock(Request $request)
 }
 
 
+public function getDispositivos()
+{
+    $dispositivos = DB::table('Cat_Dispositivo as d')
+        ->leftJoin('Ctrl_Mquinas as m', 'd.Id_Dispositivo', '=', 'm.Id_Dispositivo')
+        ->leftJoin('Cat_Usuarios_Administradores as uAlta', 'd.Id_Usuario_Admon_Alta', '=', 'uAlta.Id_Usuario_Admon')
+        ->leftJoin('Cat_Usuarios_Administradores as uMod', 'd.Id_Usuario_Admon_Modificacion', '=', 'uMod.Id_Usuario_Admon')
+        ->select(
+            'd.Id_Dispositivo',
+            'd.Txt_Serie_Dispositivo',
+            'd.Txt_Estatus',
+            'm.Id_Maquina',
+            'm.Txt_Nombre as Maquina_Nombre',
+            DB::raw("CONCAT(uAlta.Txt_Nombre, ' ', uAlta.Txt_ApellidoP, ' ', uAlta.Txt_ApellidoM) as Creado_Por"),
+            DB::raw("CONCAT(uMod.Txt_Nombre, ' ', uMod.Txt_ApellidoP, ' ', uMod.Txt_ApellidoM) as Modificado_Por"),
+            'd.Fecha_Alta',
+            'd.Fecha_Modificacion',
+            'd.Fecha_Baja'
+        )
+        ->get();
 
+    return datatables()->of($dispositivos)
+        ->addColumn('Opciones', function ($dispositivo) {
+            return '
+                <div class="btn-group">
+                <button class="btn btn-warning btn-sm edit-btn" data-id="' . $dispositivo->Id_Dispositivo . '"><i class="fa fa-edit"></i> Editar</button>
+                <button class="btn btn-danger  btn-sm delete-btn" data-id="' . $dispositivo->Id_Dispositivo . '"><i class="fa fa-trash"></i> Eliminar</button>
+                </div>
+                    
+            ';
+        })
+        ->rawColumns(['Opciones'])
+        ->make(true);
+}
+
+        public function showDispositivo($id)
+    {
+        $dispositivo = DB::table('Cat_Dispositivo')->where('Id_Dispositivo', $id)->first();
+        return response()->json($dispositivo);
+    }
+
+    public function storeDispositivo(Request $request)
+    {
+        // Validar los datos recibidos
+        $request->validate([
+            'Txt_Serie_Dispositivo' => [
+                'required',
+                'string',
+                'min:8',
+                'unique:Cat_Dispositivo,Txt_Serie_Dispositivo',
+            ],
+            'Txt_Estatus' => 'required|in:Alta,Baja',
+        ], [
+            'Txt_Serie_Dispositivo.required' => 'La serie del dispositivo es obligatoria.',
+            'Txt_Serie_Dispositivo.min' => 'La serie del dispositivo debe tener al menos 8 caracteres.',
+            'Txt_Serie_Dispositivo.unique' => 'La serie del dispositivo ya existe.',
+            'Txt_Estatus.required' => 'El estatus es obligatorio.',
+            'Txt_Estatus.in' => 'El estatus debe ser Activo o Inactivo.',
+        ]);
+
+        // Obtener el ID del usuario desde la sesión
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+
+        // Insertar el nuevo registro
+        $id = DB::table('Cat_Dispositivo')->insertGetId([
+            'Txt_Serie_Dispositivo' => $request->Txt_Serie_Dispositivo,
+            'Txt_Estatus' => $request->Txt_Estatus,
+            'Fecha_Alta' => now(),
+            'Id_Usuario_Admon_Alta' => $userId,
+        ]);
+
+        return response()->json(['success' => 'Dispositivo creado correctamente.', 'id' => $id]);
+    }
+
+    public function updateDispositivo(Request $request, $id)
+    {
+        // Validar los datos recibidos
+        $request->validate([
+            'Txt_Serie_Dispositivo' => [
+                'required',
+                'string',
+                'min:8',
+                "unique:Cat_Dispositivo,Txt_Serie_Dispositivo,{$id},Id_Dispositivo", // Ignora el actual
+            ],
+            'Txt_Estatus' => 'required|in:Alta,Baja',
+        ], [
+            'Txt_Serie_Dispositivo.required' => 'La serie del dispositivo es obligatoria.',
+            'Txt_Serie_Dispositivo.min' => 'La serie del dispositivo debe tener al menos 8 caracteres.',
+            'Txt_Serie_Dispositivo.unique' => 'La serie del dispositivo ya existe.',
+            'Txt_Estatus.required' => 'El estatus es obligatorio.',
+            'Txt_Estatus.in' => 'El estatus debe ser Activo o Inactivo.',
+        ]);
+
+        // Actualizar el dispositivo
+        DB::table('Cat_Dispositivo')
+            ->where('Id_Dispositivo', $id)
+            ->update([
+                'Txt_Serie_Dispositivo' => $request->Txt_Serie_Dispositivo,
+                'Txt_Estatus' => $request->Txt_Estatus,
+                'Fecha_Modificacion' => now(),
+                'Id_Usuario_Admon_Modificacion' => $_SESSION['usuario']->Id_Usuario_Admon,
+            ]);
+
+        return response()->json(['success' => 'Dispositivo actualizado correctamente.']);
+    }
+
+    public function destroyDispositivo($id)
+{
+    // Verificar si el dispositivo existe antes de eliminarlo
+    $dispositivo = DB::table('Cat_Dispositivo')->where('Id_Dispositivo', $id)->first();
+
+    if (!$dispositivo) {
+        return response()->json(['error' => 'El dispositivo no existe.'], 404);
+    }
+
+    // Eliminar el dispositivo
+    DB::table('Cat_Dispositivo')->where('Id_Dispositivo', $id)->delete();
+
+    return response()->json(['success' => 'Dispositivo eliminado correctamente.']);
+}
 
 
 
