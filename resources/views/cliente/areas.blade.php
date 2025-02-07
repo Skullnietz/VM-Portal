@@ -173,7 +173,7 @@
             {
                 data: null,
                 render: function(data, type, row) {
-                    return '<a href="{{ url("cli/areas/permissions") }}/' + row.Id_Area + '" class="btn btn-info"><i class="fas fa-lock"></i> Permisos</a>';
+                    return '<a href="{{ url("cli/areas/permissions") }}/' + row.Id_Area + '"  target="_blank" class="btn btn-info"><i class="fas fa-lock"></i> Permisos</a>';
                 },
                 orderable: false,
                 searchable: false

@@ -819,45 +819,167 @@ public function addArea(Request $request)
 public function generateMissingPermissions(Request $request)
 {
     if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-    $plantaId = $request->input('idPlanta'); // Obtiene el Id de Planta desde la sesión
+        session_start();
+    }
 
-    // Obtener todas las áreas de la planta
+    $plantaId = $request->input('idPlanta');
+
+    // 1️⃣ Obtener todas las áreas activas de la planta
     $areas = DB::table('Cat_Area')
         ->where('Id_Planta', $plantaId)
         ->where('Txt_Estatus', 'Alta')
         ->get();
 
-    // Obtener todos los artículos de la planta
-    $articulos = DB::table('Cat_Articulos')
-        ->where('Txt_Estatus', 'Alta')
-        ->get();
+    // 2️⃣ Obtener las máquinas vending de la planta
+    $maquinas = DB::table('Ctrl_Mquinas')
+        ->where('Id_Planta', $plantaId)
+        ->pluck('Id_Maquina');
 
+    if ($maquinas->isEmpty()) {
+        return response()->json(['success' => false, 'message' => 'No hay máquinas vending en esta planta.']);
+    }
+
+    // 3️⃣ Obtener los artículos que están en esas máquinas (sin repetir y eliminando NULLs)
+    $articulos = DB::table('Configuracion_Maquina')
+        ->whereIn('Id_Maquina', $maquinas)
+        ->whereNotNull('Id_Articulo') // ⚠️ Filtrar artículos NULL
+        ->distinct()
+        ->pluck('Id_Articulo')
+        ->filter() // ⚠️ Asegurar que no haya valores vacíos o NULL
+        ->toArray(); // Convertir a array para facilidad de manejo
+
+    if (empty($articulos)) {
+        return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
+    }
+
+    // 4️⃣ Obtener permisos actuales para esta planta
+    $permisosActuales = DB::table('Ctrl_Permisos_x_Area')
+        ->where('Id_Planta', $plantaId)
+        ->get(['Id_Area', 'Id_Articulo']);
+
+    // Convertir a un array asociativo para fácil búsqueda
+    $permisosExistentes = [];
+    foreach ($permisosActuales as $permiso) {
+        $permisosExistentes[$permiso->Id_Area][$permiso->Id_Articulo] = true;
+    }
+
+    // 5️⃣ Insertar permisos faltantes
+    $permisosNuevos = [];
     foreach ($areas as $area) {
-        foreach ($articulos as $articulo) {
-            // Verificar si el permiso ya existe para el área y el artículo
-            $existingPermiso = DB::table('Ctrl_Permisos_x_Area')
-                ->where('Id_Area', $area->Id_Area)
-                ->where('Id_Articulo', $articulo->Id_Articulo)
-                ->first();
-
-            // Si no existe, lo insertamos con Frecuencia y Cantidad en 0
-            if (!$existingPermiso) {
-                DB::table('Ctrl_Permisos_x_Area')->insert([
+        foreach ($articulos as $idArticulo) {
+            if (!isset($permisosExistentes[$area->Id_Area][$idArticulo])) {
+                $permisosNuevos[] = [
                     'Id_Area' => $area->Id_Area,
-                    'Id_Articulo' => $articulo->Id_Articulo,
+                    'Id_Articulo' => $idArticulo,
                     'Frecuencia' => 0,
                     'Cantidad' => 0,
                     'Id_Planta' => $plantaId,
                     'Status' => 'Alta',
-                ]);
+                ];
             }
         }
     }
 
-    return response()->json(['success' => true, 'message' => 'Permisos faltantes generados correctamente.']);
+    if (!empty($permisosNuevos)) {
+        DB::table('Ctrl_Permisos_x_Area')->insert($permisosNuevos);
+    }
+
+    // 6️⃣ Eliminar permisos que ya no deberían existir
+    $permisosAEliminar = DB::table('Ctrl_Permisos_x_Area')
+        ->where('Id_Planta', $plantaId)
+        ->whereNotIn('Id_Articulo', $articulos) // Si el artículo no está en las máquinas vending
+        ->delete();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Permisos actualizados correctamente.',
+        'nuevos' => count($permisosNuevos),
+        'eliminados' => $permisosAEliminar,
+    ]);
 }
+
+public function generateAllMissingPermissions(Request $request)
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $plantaId = $request->input('idPlanta');
+
+    // 1️⃣ Obtener todas las áreas activas de la planta
+    $areas = DB::table('Cat_Area')
+        ->where('Id_Planta', $plantaId)
+        ->where('Txt_Estatus', 'Alta')
+        ->get();
+
+    // 2️⃣ Obtener las máquinas vending de la planta
+    $maquinas = DB::table('Ctrl_Mquinas')
+        ->where('Id_Planta', $plantaId)
+        ->pluck('Id_Maquina');
+
+    if ($maquinas->isEmpty()) {
+        return response()->json(['success' => false, 'message' => 'No hay máquinas vending en esta planta.']);
+    }
+
+    // 3️⃣ Obtener los artículos que están en esas máquinas (sin repetir y eliminando NULLs)
+    $articulos = DB::table('Configuracion_Maquina')
+        ->whereIn('Id_Maquina', $maquinas)
+        ->whereNotNull('Id_Articulo') // ⚠️ Filtrar artículos NULL
+        ->distinct()
+        ->pluck('Id_Articulo')
+        ->filter() // ⚠️ Asegurar que no haya valores vacíos o NULL
+        ->toArray(); // Convertir a array para facilidad de manejo
+
+    if (empty($articulos)) {
+        return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
+    }
+
+    // 4️⃣ Obtener permisos actuales para esta planta
+    $permisosActuales = DB::table('Ctrl_Permisos_x_Area')
+        ->where('Id_Planta', $plantaId)
+        ->get(['Id_Area', 'Id_Articulo']);
+
+    // Convertir a un array asociativo para fácil búsqueda
+    $permisosExistentes = [];
+    foreach ($permisosActuales as $permiso) {
+        $permisosExistentes[$permiso->Id_Area][$permiso->Id_Articulo] = true;
+    }
+
+    // 5️⃣ Insertar permisos faltantes
+    $permisosNuevos = [];
+    foreach ($areas as $area) {
+        foreach ($articulos as $idArticulo) {
+            if (!isset($permisosExistentes[$area->Id_Area][$idArticulo])) {
+                $permisosNuevos[] = [
+                    'Id_Area' => $area->Id_Area,
+                    'Id_Articulo' => $idArticulo,
+                    'Frecuencia' => 0,
+                    'Cantidad' => 0,
+                    'Id_Planta' => $plantaId,
+                    'Status' => 'Alta',
+                ];
+            }
+        }
+    }
+
+    if (!empty($permisosNuevos)) {
+        DB::table('Ctrl_Permisos_x_Area')->insert($permisosNuevos);
+    }
+
+    // 6️⃣ Eliminar permisos que ya no deberían existir
+    $permisosAEliminar = DB::table('Ctrl_Permisos_x_Area')
+        ->where('Id_Planta', $plantaId)
+        ->whereNotIn('Id_Articulo', $articulos) // Si el artículo no está en las máquinas vending
+        ->delete();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Permisos actualizados correctamente.',
+        'nuevos' => count($permisosNuevos),
+        'eliminados' => $permisosAEliminar,
+    ]);
+}
+
 
 public function exportExcelAreas(Request $request) {
     $idPlanta = $request->query('idPlanta'); // Obtener 'idPlanta' desde la URL
@@ -894,6 +1016,33 @@ session_start();
         Log::error('Error obteniendo los permisos de artículos: ' . $e->getMessage());
         return response()->json(['error' => 'Error obteniendo los permisos de artículos'], 500);
     }
+}
+
+//Filtrar permisos por Area
+public function filtrarPermisosPorArea(Request $request, $idPlanta, $idArea)
+{
+    
+        try {
+            $data = DB::table('Ctrl_Permisos_x_Area')
+                ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
+                ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+                ->select(
+                    'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
+                    'Cat_Area.Txt_Nombre as Nombre',
+                    DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
+                    'Ctrl_Permisos_x_Area.Status as Estatus',
+                    'Ctrl_Permisos_x_Area.Cantidad',
+                    'Ctrl_Permisos_x_Area.Frecuencia'
+                )
+                ->where('Ctrl_Permisos_x_Area.Id_Area', $idArea)
+                ->where('Cat_Area.Id_Planta', $idPlanta)
+                ->get();
+    
+            return DataTables::of($data)->make(true);
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo los permisos de artículos: ' . $e->getMessage());
+            return response()->json(['error' => 'Error obteniendo los permisos de artículos'], 500);
+        }
 }
 
 public function addPermission(Request $request)
@@ -1265,6 +1414,18 @@ public function checkPermission(Request $request)
         'Txt_Codigo_Cliente' => 'required|string|max:50',
     ]);
 
+    // Verificar si ya existe un artículo con el mismo Txt_Codigo
+    $codigoExistente = DB::table('Cat_Articulos')
+        ->where('Txt_Codigo', $request->Txt_Codigo)
+        ->exists();
+
+        if ($codigoExistente) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El código ingresado ya está registrado. Por favor, ingrese un código único.'
+            ], 400); // Código de error 400 para "Bad Request"
+        }
+
     // Obtener la fecha actual
     $fechaActual = Carbon::now();
 
@@ -1285,6 +1446,7 @@ public function checkPermission(Request $request)
     // Retornar respuesta en formato JSON
     return response()->json(['success' => true, 'message' => 'Artículo agregado con éxito']);
 }
+
 
 public function deleteArticulo($id)
 {

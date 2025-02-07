@@ -139,7 +139,7 @@
     .contenido-header {
     display: flex;
     flex-direction: column;
-    height: 250px; /* Ajusta según sea necesario */
+    height: 270px; /* Ajusta según sea necesario */
     align-items: center;
     justify-content: center;
     }

@@ -17,7 +17,7 @@ class AreasExport implements FromCollection, WithHeadings, WithEvents, ShouldAut
     {
         ob_end_clean();
         ob_start();
-        session_start();
+        //session_start();
         
         $areas = DB::table('Cat_Area')
             ->select('Txt_Nombre', 'Txt_Estatus', 'Fecha_Alta', 'Id_Area')

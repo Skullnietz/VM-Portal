@@ -137,7 +137,7 @@
 
 .articulo-container {
     text-align: center;
-    height: 250px; /* Ajusta según sea necesario */
+    height: 270px; /* Ajusta según sea necesario */
     margin-bottom: 10px;
 }
 

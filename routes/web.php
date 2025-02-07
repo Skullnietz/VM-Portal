@@ -109,6 +109,7 @@ Route::delete('/planta/release/{id}', [AdminController::class, 'releaseRelatedRe
 Route::post('/plantable/{id}', [AdminController::class, 'TablasPlant']);
 Route::post('/planta/areas/update-status', [AdminController::class, 'updateStatusArea'])->name('admin-areas.update-status');
 Route::post('/planta/areas/generate-permissions', [AdminController::class, 'generateMissingPermissions']);
+Route::post('/admin/generar-permisos', [AdminController::class, 'generateAllMissingPermissions'])->name('generate.all.permissions');
 Route::post('/planta/areas/add', [AdminController::class, 'addArea']);
 Route::get('/planta/export-excel-areas', [AdminController::class, 'exportExcelAreas']);
 //PLANTA PERMISOS
@@ -116,6 +117,7 @@ Route::get('/planta/get-permisos-articulos/{idPlanta}', 'AdminController@getPerm
 Route::post('/planta/check-permission', [AdminController::class, 'checkPermission']);
 Route::post('/planta/add-permission', [AdminController::class, 'addPermission']);
 Route::get('/planta/export-excel-permissions', [AdminController::class, 'exportPermisos'])->name('admin-exportar.permisos');
+Route::get('/admin/plantas/PlantaView/{idPlanta}/permisos/{idArea}', [AdminController::class, 'filtrarPermisosPorArea']);
 //PLANTA EMPLEADOS
 Route::get('/planta/empleados/data/{idPlanta}', 'AdminController@getDataEmpleados')->name('admin-empleados.data');
 Route::get('/planta/export-csv-employees', 'AdminController@exportCSV');

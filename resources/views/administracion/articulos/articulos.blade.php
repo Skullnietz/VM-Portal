@@ -370,24 +370,28 @@
         // Obtener los datos del formulario
         var formData = $(this).serialize();
 
-        // Enviar los datos con AJAX
         $.ajax({
-            url: '/articulos/store',  // Ruta que debe coincidir con el método del controlador
-            method: 'POST',
-            data: formData,
-            success: function (response) {
-                if (response.success) {
-                    alert(response.message);  // Mostrar mensaje de éxito
-                    $('#addPermissionModal').modal('hide');  // Cerrar el modal
-                    // Aquí podrías agregar código para actualizar la tabla o hacer otras acciones
-                } else {
-                    alert('Hubo un error al agregar el artículo.');
-                }
-            },
-            error: function () {
-                alert('Hubo un error en la comunicación con el servidor.');
-            }
-        });
+    url: '/articulos/store',  // Ruta del controlador
+    method: 'POST',
+    data: formData,
+    success: function (response) {
+        if (response.success) {
+            alert(response.message);  // Mostrar mensaje de éxito
+            $('#addPermissionModal').modal('hide');  // Cerrar el modal
+            // Aquí puedes recargar la tabla o realizar otra acción
+        } else {
+            alert(response.message || 'Hubo un error al agregar el artículo.');
+        }
+    },
+    error: function (xhr) {
+        // Capturar y mostrar el mensaje del servidor
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            alert(xhr.responseJSON.message);  // Mostrar mensaje del backend
+        } else {
+            alert('Ocurrió un error inesperado.');
+        }
+    }
+});
     });
     });
 </script>

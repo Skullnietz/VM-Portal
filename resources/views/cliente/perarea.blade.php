@@ -132,9 +132,13 @@
 @stop
 
 @section('css')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <!-- jQuery UI CSS -->
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
+    <!-- Incluir CSS de Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
         #areasTable {
     width: 100% !important; /* Asegura que la tabla ocupe todo el ancho disponible */
@@ -152,19 +156,18 @@
 @stop
 
 @section('js')
-<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-    
-    <!-- Incluir SweetAlert2 -->
+<!-- jQuery UI JS -->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/i18n/datepicker-es.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Incluir CSS de Select2 -->
-
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Incluir JavaScript de Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Script para inicializar Select2 -->
-<!-- Script para inicializar Select2 y manejar la confirmación -->
-<!-- Script para inicializar Select2 y manejar la confirmación en tiempo real -->
 <script type="text/javascript">
     $(document).ready(function() {
         $.ajaxSetup({
@@ -255,7 +258,7 @@ $(document).ready(function() {
                 render: function(data, type, row) {
                     return `
                         <div class="input-group">
-                            <input type="number" class="form-control update-frecuencia" data-id="${row.Clave}" value="${data}">
+                            <input type="number" class="form-control update-frecuencia" min="0" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
                                 <span class="input-group-text">Días</span>
                             </div>
@@ -268,7 +271,7 @@ $(document).ready(function() {
                 render: function(data, type, row) {
                     return `
                         <div class="input-group">
-                            <input type="number" class="form-control update-cantidad" data-id="${row.Clave}" value="${data}">
+                            <input type="number" class="form-control update-cantidad" min="0" max="99" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
                                 <span class="input-group-text">Cantidad</span>
                             </div>
@@ -389,9 +392,11 @@ $('#permisos-articulos-table').on('click', '.toggle-status', function() {
 });
 
 // Función para actualizar la cantidad en tiempo real
+// Función para actualizar la cantidad en tiempo real
 $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
     var id = $(this).data('id');
     var value = $(this).val();
+    
     $.ajax({
         url: `/update-permiso-articulo/${id}`,
         type: 'POST',
@@ -401,18 +406,25 @@ $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
         },
         success: function(result) {
             $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
-            Swal.fire(
-                'Actualizado',
-                'Cantidad actualizada con éxito',
-                'success'
-            );
+            
+            // Mostrar Toast de éxito
+            $(document).Toasts('create', {
+                class: 'bg-success',
+                title: 'Actualizado',
+                body: 'Cantidad actualizada con éxito',
+                autohide: true,
+                delay: 3000
+            });
         },
         error: function(xhr, status, error) {
-            Swal.fire(
-                'Error',
-                `Error actualizando la cantidad: ${xhr.responseJSON.error || xhr.responseText}`,
-                'error'
-            );
+            // Mostrar Toast de error
+            $(document).Toasts('create', {
+                class: 'bg-danger',
+                title: 'Error',
+                body: `Error actualizando la cantidad: ${xhr.responseJSON?.error || xhr.responseText}`,
+                autohide: true,
+                delay: 5000
+            });
         }
     });
 });
@@ -421,6 +433,7 @@ $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
 $('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
     var id = $(this).data('id');
     var value = $(this).val();
+
     $.ajax({
         url: `/update-permiso-articulo/${id}`,
         type: 'POST',
@@ -430,18 +443,25 @@ $('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
         },
         success: function(result) {
             $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
-            Swal.fire(
-                'Actualizado',
-                'Frecuencia actualizada con éxito',
-                'success'
-            );
+            
+            // Mostrar Toast de éxito
+            $(document).Toasts('create', {
+                class: 'bg-success',
+                title: 'Actualizado',
+                body: 'Frecuencia actualizada con éxito',
+                autohide: true,
+                delay: 3000
+            });
         },
         error: function(xhr, status, error) {
-            Swal.fire(
-                'Error',
-                `Error actualizando la frecuencia: ${xhr.responseJSON.error || xhr.responseText}`,
-                'error'
-            );
+            // Mostrar Toast de error
+            $(document).Toasts('create', {
+                class: 'bg-danger',
+                title: 'Error',
+                body: `Error actualizando la frecuencia: ${xhr.responseJSON?.error || xhr.responseText}`,
+                autohide: true,
+                delay: 5000
+            });
         }
     });
 });

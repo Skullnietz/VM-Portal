@@ -659,12 +659,13 @@ public function updateStatusArea(Request $request)
 public function addArea(Request $request)
 {
     if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+        session_start();
+    }
+
     $newName = $request->input('new_name');
-    $currentDate = now(); // Obtiene la fecha actual
-    $userId = $_SESSION['usuario']->Id_Usuario; // Obtiene el Id del usuario desde la sesión
-    $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
+    $currentDate = now();
+    $userId = $_SESSION['usuario']->Id_Usuario;
+    $plantaId = $_SESSION['usuario']->Id_Planta;
 
     // Verificar si el área ya existe en la misma planta
     $existingArea = DB::table('Cat_Area')
@@ -690,30 +691,40 @@ public function addArea(Request $request)
     ]);
 
     if ($idArea) {
-        // Obtener todos los artículos de la misma planta
-        $articulos = DB::table('Cat_Articulos')
-            ->where('Txt_Estatus', 'Alta')
-            ->get();
+        // 1️⃣ Obtener las máquinas de la planta
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $plantaId)
+            ->pluck('Id_Maquina'); // Obtener solo los IDs
 
-        foreach ($articulos as $articulo) {
-            // Verificar si ya existe un permiso para este área y artículo
-            $existingPermiso = DB::table('Ctrl_Permisos_x_Area')
-                ->where('Id_Area', $idArea)
-                ->where('Id_Articulo', $articulo->Id_Articulo)
-                ->first();
-
-            if (!$existingPermiso) {
-                // Insertar un nuevo permiso en la tabla Ctrl_Permisos_x_Area
-                DB::table('Ctrl_Permisos_x_Area')->insert([
-                    'Id_Area' => $idArea,
-                    'Id_Articulo' => $articulo->Id_Articulo,
-                    'Frecuencia' => 0,
-                    'Cantidad' => 0,
-                    'Id_Planta' => $plantaId,
-                    'Status' => 'Alta',
-                ]);
-            }
+        if ($maquinas->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
         }
+
+        // 2️⃣ Obtener los artículos que están en esas máquinas
+        $articulos = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $maquinas)
+            ->distinct()
+            ->pluck('Id_Articulo'); // Obtener solo los IDs de artículos sin repetir
+
+        if ($articulos->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
+        }
+
+        // 3️⃣ Registrar permisos en Ctrl_Permisos_x_Area solo para estos artículos
+        $permisos = [];
+        foreach ($articulos as $idArticulo) {
+            $permisos[] = [
+                'Id_Area' => $idArea,
+                'Id_Articulo' => $idArticulo,
+                'Frecuencia' => 0,
+                'Cantidad' => 0,
+                'Id_Planta' => $plantaId,
+                'Status' => 'Alta',
+            ];
+        }
+
+        // Insertar permisos en la base de datos
+        DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
 
         return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
     } else {

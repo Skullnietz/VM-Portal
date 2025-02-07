@@ -346,6 +346,9 @@
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addAreaModal">
                     Agregar Área &nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-plus-circle fa-xs"></i> <i class="fas fa-square"></i>
                 </button>
+                <button type="button" class="btn btn-warning" id="generar-permisos">
+                    Actualizar Permisos &nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-lock "></i> <i class="fas fa-sync-alt fa-xs"></i>
+                </button>
                 <a href="{{ url('/planta/export-excel-areas?idPlanta=') }}{{$planta->Id_Planta}}" type="button" class="btn btn-success">
                     Reporte de Áreas &nbsp;&nbsp;&nbsp;<i class="fas fa-file-excel"></i>
                 </a>
@@ -384,8 +387,8 @@
                             <tr>
                             <th>Nombre</th>
                             <th>Artículo</th>
-                            <th>Frecuencia</th>
-                            <th>Cantidad</th>
+                            <th style="width:100px">Frecuencia</th>
+                            <th style="width:100px">Cantidad</th>
                             <th>Estatus</th>
                             <th>Acciones</th>
                             </tr>
@@ -450,6 +453,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
     <!-- Incluir CSS de Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 @stop
 
 @section('js')
@@ -458,12 +462,41 @@
 <script src="https://code.jquery.com/ui/1.12.1/i18n/datepicker-es.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Incluir JavaScript de Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $("#generar-permisos").click(function() {
+        let plantaId = {{ $planta->Id_Planta }}; // Asegúrate de tener el ID de la planta disponible en Blade
+
+        $.ajax({
+            url: "{{ route('generate.all.permissions') }}",
+            type: "POST",
+            data: {
+                idPlanta: plantaId,
+                _token: "{{ csrf_token() }}"
+            },
+            beforeSend: function() {
+                $("#generar-permisos").prop("disabled", true).text("Generando...");
+            },
+            success: function(response) {
+                alert(response.message); // Mostrar mensaje de éxito
+            },
+            error: function(xhr) {
+                alert("Error: " + xhr.responseJSON.message);
+            },
+            complete: function() {
+                $("#generar-permisos").prop("disabled", false).text("Permisos Actualizados");
+            }
+        });
+    });
+});
+</script>
 <script>
   $(document).ready(function() {
     $.ajaxSetup({
@@ -497,7 +530,7 @@
             {
                 data: 'Txt_Nombre',
                 render: function(data, type, row) {
-                    return '<input type="text" class="form-control editable-name" data-id="' + row.Id_Area + '" value="' + data + '" disabled>';
+                    return '<input type="text" style="width:250px" class="form-control editable-name" data-id="' + row.Id_Area + '" value="' + data + '" disabled>';
                 }
             },
             {
@@ -896,6 +929,8 @@
     });
 
     var Permisotable = $('#permisos-articulos-table').DataTable({
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        pageLength: 50, // Número predeterminado de filas a mostrar
         processing: true,
         serverSide: true,
         ajax: {
@@ -914,8 +949,8 @@
                 data: 'Frecuencia',
                 render: function(data, type, row) {
                     return `
-                        <div class="input-group">
-                            <input type="number" max="360" min="0" class="form-control update-frecuencia" data-id="${row.Clave}" value="${data}">
+                        <div  class="input-group">
+                            <input type="number" max="360" min="0"  class="form-control update-frecuencia" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
                                 <span class="input-group-text">Días</span>
                             </div>
@@ -928,9 +963,9 @@
                 render: function(data, type, row) {
                     return `
                         <div class="input-group">
-                            <input type="number" max="360" min="0" class="form-control update-cantidad" data-id="${row.Clave}" value="${data}">
+                            <input type="number" max="360" min="0"  class="form-control update-cantidad" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
-                                <span class="input-group-text">Cantidad</span>
+                                <span class="input-group-text">Cant.</span>
                             </div>
                         </div>
                     `;
@@ -1061,18 +1096,10 @@ $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
         },
         success: function(result) {
             $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
-            Swal.fire(
-                'Actualizado',
-                'Cantidad actualizada con éxito',
-                'success'
-            );
+            toastr.success('Cantidad actualizada con éxito');
         },
         error: function(xhr, status, error) {
-            Swal.fire(
-                'Error',
-                `Error actualizando la cantidad: ${xhr.responseJSON.error || xhr.responseText}`,
-                'error'
-            );
+            toastr.error(`Error actualizando la cantidad: ${xhr.responseJSON?.error || xhr.responseText}`);
         }
     });
 });
@@ -1090,52 +1117,136 @@ $('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
         },
         success: function(result) {
             $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
-            Swal.fire(
-                'Actualizado',
-                'Frecuencia actualizada con éxito',
-                'success'
-            );
+            toastr.success('Frecuencia actualizada con éxito');
         },
         error: function(xhr, status, error) {
-            Swal.fire(
-                'Error',
-                `Error actualizando la frecuencia: ${xhr.responseJSON.error || xhr.responseText}`,
-                'error'
-            );
+            toastr.error(`Error actualizando la frecuencia: ${xhr.responseJSON?.error || xhr.responseText}`);
         }
     });
 });
-// Detectar el clic en el botón de permisos
-$('#areas').on('click', '.btn-info', function(e) {
-        e.preventDefault();
-        
-        // Obtiene los datos de la fila en la que se hizo clic
-        var data = areasTable.row($(this).parents('tr')).data();
-        
-        // Cambia al tab-pane "empleados"
-        $('#linkpermiso').tab('show');
 
-        // Asegúrate de que todos los enlaces <a> dentro de #myTab no tengan la clase 'active'
-        $('#myTab .nav-link').removeClass('active');
-        $('#myTab .nav-item').removeClass('active'); // Remueve la clase active de todos los <li>
+$('#areas,#empleados').on('click', '.btn-info', function(e) {
+    e.preventDefault();
 
-        // Agrega la clase 'active' al enlace y al <li> con id "linkempleado"
-        $('#linkpermiso').addClass('active');
-        $('#linkpermiso').closest('.nav-item').addClass('active'); // Agrega active al <li> que contiene el enlace
+    // Obtener Id_Area desde el href del botón (ejemplo: "#28")
+    var idArea = $(this).attr('href').replace('#', '');
 
-        // Asegúrate de que solo el tab-pane 'empleados' tenga la clase 'active'
-        $('.tab-pane').removeClass('active');
-        $('#permisos').addClass('active');
+    // Obtener Id_Planta desde la URL actual
+    var urlActual = window.location.href;
+    var idPlanta = urlActual.split('/').pop();
 
-        // Realiza la búsqueda en la tabla #permisos-articulos-table usando Txt_Nombre
-        Permisotable.search(data.Txt_Nombre).draw();
+    console.log("ID de Planta:", idPlanta);
+    console.log("ID de Área:", idArea);
+
+    // Cambia al tab de permisos
+    $('#linkpermiso').tab('show');
+    $('#myTab .nav-link, #myTab .nav-item').removeClass('active');
+    $('#linkpermiso').addClass('active').closest('.nav-item').addClass('active');
+    $('.tab-pane').removeClass('active');
+    $('#permisos').addClass('active');
+
+     // Verifica si la DataTable ya está inicializada y la destruye
+     if ($.fn.DataTable.isDataTable('#permisos-articulos-table')) {
+        $('#permisos-articulos-table').DataTable().destroy();
+        $('#permisos-articulos-table tbody').empty(); // Limpia la tabla
+    }
+
+    // Petición AJAX con el filtro de área
+    $('#permisos-articulos-table').DataTable({
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        pageLength: 50, // Número predeterminado de filas a mostrar
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: `/admin/plantas/PlantaView/${idPlanta}/permisos/${idArea}`,
+            type: 'GET',
+            dataSrc: function(json) {
+                // Asegúrate de que el formato de datos es el esperado
+                console.log(json);
+                return json.data;
+            }
+        },
+        columns: [
+            { data: 'Nombre' },
+            { data: 'Articulo' },
+            { 
+                data: 'Frecuencia',
+                render: function(data, type, row) {
+                    return `
+                        <div  class="input-group">
+                            <input type="number" max="360" min="0"  class="form-control update-frecuencia" data-id="${row.Clave}" value="${data}">
+                            <div class="input-group-append">
+                                <span class="input-group-text">Días</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            },
+            { 
+                data: 'Cantidad',
+                render: function(data, type, row) {
+                    return `
+                        <div class="input-group">
+                            <input type="number" max="360" min="0"  class="form-control update-cantidad" data-id="${row.Clave}" value="${data}">
+                            <div class="input-group-append">
+                                <span class="input-group-text">Cant.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            },
+            { 
+                data: 'Estatus',
+                render: function(data, type, row) {
+                    var btnClass = data === 'Alta' ? 'btn-danger' : 'btn-success';
+                    var btnText = data === 'Alta' ? 'Desactivar <i class="fas fa-lock"></i>' : '&nbsp;&nbsp;Activar&nbsp;&nbsp; <i class="fas fa-lock-open"></i>';
+                    return `
+                        <button class="btn btn-xs ${btnClass} toggle-status" data-id="${row.Clave}" data-status="${data}">
+                            ${btnText}
+                        </button>
+                    `;
+                }
+            },
+            { 
+                data: null, 
+                orderable: false, 
+                searchable: false, 
+                render: function(data, type, row) {
+                    return `<button class="btn btn-danger btn-xs delete-btn" data-id="${row.Clave}">&nbsp;&nbsp;&nbsp; Eliminar &nbsp;&nbsp;&nbsp;<i class="fas fa-trash"></i></button>`;
+                }
+            }
+        ],
+            responsive: true,
+            scrollX: true,
+        language: {
+            processing: "Procesando...",
+            search: "Buscar:",
+            lengthMenu: "Mostrar _MENU_ registros",
+            info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+            infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+            infoFiltered: "(filtrado de un total de _MAX_ registros)",
+            infoPostFix: "",
+            loadingRecords: "Cargando...",
+            zeroRecords: "No se encontraron resultados",
+            emptyTable: "No hay datos disponibles en la tabla",
+            paginate: {
+                first: "Primero",
+                previous: "Anterior",
+                next: "Siguiente",
+                last: "Último"
+            },
+            aria: {
+                sortAscending: ": activar para ordenar la columna de manera ascendente",
+                sortDescending: ": activar para ordenar la columna de manera descendente"
+            }
+        }
     });
-
+});
     
     var table = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: {
+            ajax: { 
                     url: '/planta/empleados/data/{{$planta->Id_Planta}}',
                     type: 'GET',
                     dataSrc: function(json) {
@@ -1357,31 +1468,8 @@ $('#areas').on('click', '.btn-info', function(e) {
             openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, area);
         });
 
-        // Detectar el clic en el botón de permisos
-$('#empleados').on('click', '.btn-info', function(e) {
-        e.preventDefault();
-        
-        // Obtiene los datos de la fila en la que se hizo clic
-        var data = table.row($(this).parents('tr')).data();
-        
-        // Cambia al tab-pane "empleados"
-        $('#linkpermiso').tab('show');
-
-        // Asegúrate de que todos los enlaces <a> dentro de #myTab no tengan la clase 'active'
-        $('#myTab .nav-link').removeClass('active');
-        $('#myTab .nav-item').removeClass('active'); // Remueve la clase active de todos los <li>
-
-        // Agrega la clase 'active' al enlace y al <li> con id "linkempleado"
-        $('#linkpermiso').addClass('active');
-        $('#linkpermiso').closest('.nav-item').addClass('active'); // Agrega active al <li> que contiene el enlace
-
-        // Asegúrate de que solo el tab-pane 'empleados' tenga la clase 'active'
-        $('.tab-pane').removeClass('active');
-        $('#permisos').addClass('active');
-
-        // Realiza la búsqueda en la tabla #permisos-articulos-table usando Txt_Nombre
-        Permisotable.search(data.NArea).draw();
-    });
+       // Detectar el clic en el botón de permisos
+       
 
 
 });

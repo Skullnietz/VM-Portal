@@ -17,7 +17,7 @@ class PermisosExport implements FromCollection, WithHeadings, WithEvents, Should
     {
         ob_end_clean();
         ob_start();
-        session_start();
+        
         
         $permisos = DB::table('Ctrl_Permisos_x_Area')
             ->select('Id_Permiso', 'Id_Area', 'Id_Articulo', 'Frecuencia', 'Cantidad', 'Status')
