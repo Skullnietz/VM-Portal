@@ -88,6 +88,9 @@ return [
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
+            'options' => [
+                    PDO::SQLSRV_ATTR_ENCODING => PDO::SQLSRV_ENCODING_UTF8,
+                ],
             'prefix_indexes' => true,
         ],
 

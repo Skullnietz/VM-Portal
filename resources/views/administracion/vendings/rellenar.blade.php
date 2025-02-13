@@ -229,9 +229,14 @@ floatingActions {
             const charola = cell.getAttribute('data-charola');
             const seleccion = cell.getAttribute('data-seleccion');
             const stockInput = cell.querySelector('.Stock');
-            const stockValue = stockInput ? parseInt(stockInput.value) : null;
-            const minStock = parseInt(stockInput.getAttribute('min'));
-            const maxStock = parseInt(stockInput.getAttribute('max'));
+
+            if (!stockInput) {
+                return null; // Ignorar celdas sin input
+            }
+
+            const stockValue = parseInt(stockInput.value) || 0;
+            const minStock = parseInt(stockInput.getAttribute('min')) || 0;
+            const maxStock = parseInt(stockInput.getAttribute('max')) || 0;
 
             // Validar el valor del stock
             if (stockValue < minStock || stockValue > maxStock) {
@@ -241,7 +246,7 @@ floatingActions {
             }
 
             return { id, stock: stockValue };
-        });
+        }).filter(item => item !== null); // Filtrar elementos nulos
 
         // Enviar datos actualizados al servidor
         fetch('/update-stock', {
@@ -263,6 +268,7 @@ floatingActions {
         alert(error.message);
     }
 });
+
 
 </script>
 <script defer>
