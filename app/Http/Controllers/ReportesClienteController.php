@@ -142,19 +142,40 @@ class ReportesClienteController extends Controller
     session_start();
 }
          // Obtener las áreas de la tabla Cat_Area
-        $areas = DB::table('Cat_Area')
-            ->select('Id_Area', 'Txt_Nombre')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
-            ->get();
+         $areas = DB::table('Cat_Area')
+         ->select('Id_Area', 'Txt_Nombre')
+         ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta
+         ->where('Txt_Estatus', 'Alta') // Filtrar solo las áreas activas
+         ->get();
         // Obtener los productos de la tabla Cat_Articulos
         $productos = DB::table('Cat_Articulos')
                 ->select('Id_Articulo', 'Txt_Descripcion')
                 ->get();
-        // Obtener los productos de la tabla Cat_Articulos
-        $empleados = DB::table('Cat_Empleados')
-                ->select('Id_Empleado', 'Nombre', 'APaterno', 'AMaterno')
-                ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
-                ->get();
+        // Obtener los empleados de la planta
+            $empleados = DB::table('Cat_Empleados')
+            ->select('Id_Empleado', 'Nombre', 'APaterno', 'AMaterno')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
+            ->get();
+
+        // 1️⃣ Obtener las máquinas de la planta
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
+            ->pluck('Id_Maquina')
+            ->toArray();
+
+        // 2️⃣ Obtener los artículos configurados en esas máquinas
+        $articulosIds = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $maquinas)
+            ->whereNotNull('Id_Articulo')
+            ->distinct()
+            ->pluck('Id_Articulo')
+            ->toArray();
+
+        // 3️⃣ Obtener los detalles de los artículos
+        $productos = DB::table('Cat_Articulos')
+            ->whereIn('Id_Articulo', $articulosIds)
+            ->select('Id_Articulo', 'Txt_Descripcion')
+            ->get();
 
         // Pasar las áreas, productos y máquinas a la vista
         return view('cliente.reportes.consumoxempleado', compact('areas', 'productos','empleados'));
@@ -165,15 +186,31 @@ class ReportesClienteController extends Controller
     session_start();
 }
          // Obtener las áreas de la tabla Cat_Area
-        $areas = DB::table('Cat_Area')
-            ->select('Id_Area', 'Txt_Nombre')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
-            ->get();
+         $areas = DB::table('Cat_Area')
+         ->select('Id_Area', 'Txt_Nombre')
+         ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta
+         ->where('Txt_Estatus', 'Alta') // Filtrar solo las áreas activas
+         ->get();
 
-        // Obtener los productos de la tabla Cat_Articulos
+        // 1️⃣ Obtener las máquinas de la planta
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
+            ->pluck('Id_Maquina')
+            ->toArray();
+
+        // 2️⃣ Obtener los artículos configurados en esas máquinas
+        $articulosIds = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $maquinas)
+            ->whereNotNull('Id_Articulo')
+            ->distinct()
+            ->pluck('Id_Articulo')
+            ->toArray();
+
+        // 3️⃣ Obtener los detalles de los artículos
         $productos = DB::table('Cat_Articulos')
-                ->select('Id_Articulo', 'Txt_Descripcion')
-                ->get();
+            ->whereIn('Id_Articulo', $articulosIds)
+            ->select('Id_Articulo', 'Txt_Descripcion')
+            ->get();
 
         // Pasar las áreas, productos y máquinas a la vista
         return view('cliente.reportes.consumoxarea', compact('areas', 'productos'));
@@ -184,15 +221,31 @@ class ReportesClienteController extends Controller
     session_start();
 }
          // Obtener las áreas de la tabla Cat_Area
-        $areas = DB::table('Cat_Area')
-            ->select('Id_Area', 'Txt_Nombre')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
-            ->get();
+         $areas = DB::table('Cat_Area')
+         ->select('Id_Area', 'Txt_Nombre')
+         ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta
+         ->where('Txt_Estatus', 'Alta') // Filtrar solo las áreas activas
+         ->get();
 
-        // Obtener los productos de la tabla Cat_Articulos
+        // 1️⃣ Obtener las máquinas de la planta
+        $mquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
+            ->pluck('Id_Maquina')
+            ->toArray();
+
+        // 2️⃣ Obtener los artículos configurados en esas máquinas
+        $articulosIds = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $mquinas)
+            ->whereNotNull('Id_Articulo')
+            ->distinct()
+            ->pluck('Id_Articulo')
+            ->toArray();
+
+        // 3️⃣ Obtener los detalles de los artículos
         $productos = DB::table('Cat_Articulos')
-                ->select('Id_Articulo', 'Txt_Descripcion')
-                ->get();
+            ->whereIn('Id_Articulo', $articulosIds)
+            ->select('Id_Articulo', 'Txt_Descripcion')
+            ->get();
 
         // Obtener las máquinas de la tabla Ctrl_Mquinas
         $maquinas = DB::table('Ctrl_Mquinas')
@@ -262,10 +315,13 @@ class ReportesClienteController extends Controller
         }
     }
 
-    // Filtros de fecha
     if ($request->filled('startDate') && $request->filled('endDate')) {
-        $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$request->startDate, $request->endDate]);
+        $startDate = $request->startDate . ' 00:00:00';
+        $endDate = $request->endDate . ' 23:59:59';
+    
+        $consumos->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
     }
+    
 
     // Devolver datos para DataTable
     return DataTables::of($data)->make(true);
@@ -274,10 +330,9 @@ class ReportesClienteController extends Controller
 public function getConsumoxArea(Request $request)
 {
     if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+        session_start();
+    }
     $idPlanta = $_SESSION['usuario']->Id_Planta;
-    
 
     // Consulta base para la DataTable enfocada en consumos por área
     $consumos = DB::table('Ctrl_Consumos')
@@ -295,40 +350,35 @@ public function getConsumoxArea(Request $request)
             'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
             DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo')
         )
-        ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno');
+        ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno')
+        ->orderByDesc('Ultimo_Consumo'); // Ordena por la fecha del último consumo
 
     // Aplicar filtros de área si están presentes
     if ($request->filled('area')) {
-        // Si es un array, usar whereIn
         if (is_array($request->area)) {
             $consumos->whereIn('Cat_Area.Txt_Nombre', $request->area);
         } else {
-            $consumos->where('Cat_Area.Txt_Nombre', '=', "$request->area");
+            $consumos->where('Cat_Area.Txt_Nombre', '=', $request->area);
         }
     }
 
-     // Aplicar filtros de producto si están presentes
-     if ($request->filled('product')) {
-        // Si es un array, usar whereIn para múltiples productos
+    // Aplicar filtros de producto si están presentes
+    if ($request->filled('product')) {
         if (is_array($request->product)) {
-            $consumos->where(function($query) use ($request) {
-                $query->whereIn('Cat_Articulos.Txt_Descripcion', $request->product);
-            });
+            $consumos->whereIn('Cat_Articulos.Txt_Descripcion', $request->product);
         } else {
-            $consumos->where(function($query) use ($request) {
-                $query->where('Cat_Articulos.Txt_Descripcion', '=', $request->product);
-            });
+            $consumos->where('Cat_Articulos.Txt_Descripcion', '=', $request->product);
         }
     }
 
-    // Aplicar filtro de rango de fechas
     if ($request->filled('startDate') && $request->filled('endDate')) {
-        $startDate = $request->startDate;
-        $endDate = $request->endDate;
-
-        // Filtrar por el campo Fecha_Real
+        $startDate = $request->startDate . ' 00:00:00';
+        $endDate = $request->endDate . ' 23:59:59';
+    
         $consumos->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
     }
+    
+    
 
     // Obtener los resultados
     $result = $consumos->get();
@@ -349,8 +399,6 @@ public function getConsumoxArea(Request $request)
         ];
     });
 
-    
-
     // Devolver datos para DataTable
     return response()->json([
         'draw' => $request->input('draw'),
@@ -359,6 +407,7 @@ public function getConsumoxArea(Request $request)
         'data' => $data->values()->toArray()
     ]);
 }
+
 public function exportConsumoxEmpleado(Request $request)
 {
     if (session_status() == PHP_SESSION_NONE) {
@@ -449,8 +498,13 @@ public function getConsumoxVending(Request $request)
 
     // Filtros de fecha
     if ($request->filled('startDate') && $request->filled('endDate')) {
-        $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$request->startDate, $request->endDate]);
+        $startDate = $request->startDate . ' 00:00:00';
+        $endDate = $request->endDate . ' 23:59:59';
+    
+        $consumos->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
     }
+    
+    
 
     // Devolver datos para DataTable
     return DataTables::of($data)->make(true);
