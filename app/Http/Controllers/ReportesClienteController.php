@@ -224,7 +224,7 @@ class ReportesClienteController extends Controller
             'Cat_Articulos.Txt_Descripcion as Producto',
             'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
             'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
-            'Ctrl_Consumos.Fecha_Consumo as Fecha',
+            'Ctrl_Consumos.Fecha_Real as Fecha',
             'Ctrl_Consumos.Cantidad'
         );
 
@@ -264,7 +264,7 @@ class ReportesClienteController extends Controller
 
     // Filtros de fecha
     if ($request->filled('startDate') && $request->filled('endDate')) {
-        $data->whereBetween('Ctrl_Consumos.Fecha_Consumo', [$request->startDate, $request->endDate]);
+        $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$request->startDate, $request->endDate]);
     }
 
     // Devolver datos para DataTable
@@ -293,7 +293,7 @@ public function getConsumoxArea(Request $request)
             'Cat_Articulos.Txt_Descripcion as Producto',
             'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
             'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
-            DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo')
+            DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo')
         )
         ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno');
 
@@ -326,8 +326,8 @@ public function getConsumoxArea(Request $request)
         $startDate = $request->startDate;
         $endDate = $request->endDate;
 
-        // Filtrar por el campo Fecha_Consumo
-        $consumos->whereBetween('Ctrl_Consumos.Fecha_Consumo', [$startDate, $endDate]);
+        // Filtrar por el campo Fecha_Real
+        $consumos->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
     }
 
     // Obtener los resultados
@@ -408,7 +408,7 @@ public function getConsumoxVending(Request $request)
         'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
         'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
         'Cat_Area.Txt_Nombre as Area', // Nombre del área
-        DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo') // Fecha del último consumo
+        DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo') // Fecha del último consumo
     );
 
 
@@ -449,7 +449,7 @@ public function getConsumoxVending(Request $request)
 
     // Filtros de fecha
     if ($request->filled('startDate') && $request->filled('endDate')) {
-        $data->whereBetween('Ctrl_Consumos.Fecha_Consumo', [$request->startDate, $request->endDate]);
+        $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$request->startDate, $request->endDate]);
     }
 
     // Devolver datos para DataTable
