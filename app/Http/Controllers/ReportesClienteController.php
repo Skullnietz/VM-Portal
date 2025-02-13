@@ -279,7 +279,8 @@ class ReportesClienteController extends Controller
             'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
             'Ctrl_Consumos.Fecha_Real as Fecha',
             'Ctrl_Consumos.Cantidad'
-        );
+        )
+        ->orderByDesc('Ctrl_Consumos.Fecha_Real'); // Ordena por la fecha del último consumo;
 
     // Aplicar filtros de área si están presentes
     if ($request->filled('area')) {
@@ -323,8 +324,20 @@ class ReportesClienteController extends Controller
     }
     
 
-    // Devolver datos para DataTable
-    return DataTables::of($data)->make(true);
+    $totalRecords = $data->count(); // Total sin filtrar
+    $filteredData = clone $data;
+    $filteredRecords = $filteredData->count(); // Total después de aplicar filtros
+
+    $data = $data->offset($request->start)
+        ->limit($request->length)
+        ->get();
+
+    return response()->json([
+        'draw' => intval($request->draw),
+        'recordsTotal' => $totalRecords,
+        'recordsFiltered' => $filteredRecords,
+        'data' => $data
+    ]);
 }
 
 public function getConsumoxArea(Request $request)
@@ -399,13 +412,22 @@ public function getConsumoxArea(Request $request)
         ];
     });
 
+    $filteredData = clone $data;
+    $filteredRecords = $filteredData->count(); // Total después de aplicar filtros
+    $totalRecords = $data->count(); // Total sin filtrar
+
     // Devolver datos para DataTable
     return response()->json([
         'draw' => $request->input('draw'),
-        'recordsTotal' => $data->count(),
-        'recordsFiltered' => $data->count(),
+        'recordsTotal' => $totalRecords,
+        'recordsFiltered' => $filteredRecords,
         'data' => $data->values()->toArray()
     ]);
+
+    
+    
+
+    
 }
 
 public function exportConsumoxEmpleado(Request $request)
@@ -506,8 +528,21 @@ public function getConsumoxVending(Request $request)
     
     
 
-    // Devolver datos para DataTable
-    return DataTables::of($data)->make(true);
+    $totalRecords = $data->count(); // Total sin filtrar
+    $filteredData = clone $data;
+    $filteredRecords = $filteredData->count(); // Total después de aplicar filtros
+
+    $data = $data->offset($request->start)
+        ->limit($request->length)
+        ->get();
+
+    return response()->json([
+        'draw' => intval($request->draw),
+        'recordsTotal' => $totalRecords,
+        'recordsFiltered' => $filteredRecords,
+        'data' => $data
+    ]);
+
 }
 public function exportConsumoxVending(Request $request)
 {

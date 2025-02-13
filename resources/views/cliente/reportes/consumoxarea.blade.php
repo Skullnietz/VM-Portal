@@ -313,11 +313,9 @@
 
     // Manejar la acción de keyup en los campos de filtro
     $('#filterArea, #filterProduct, #startDate, #endDate').on('keyup change', function() {
-        table.ajax.reload(function() {
-        // Cambia el tamaño de la página al total de registros después de recargar
-        table.page.len(-1).draw(); // -1 indica mostrar todos los registros
-    });
-    });
+    table.page.len(-1).draw(); // -1 para mostrar todos los registros
+});
+
 
      // Gráfica de doughnut para empleados que consumen productos
      var ctxDoughnut = document.getElementById('employeeConsumptionChart').getContext('2d');
