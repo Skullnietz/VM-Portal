@@ -3,71 +3,69 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
 use DB;
 
 class NotificationController extends Controller
 {
-    
-     public function showNotifications()
-     {
+    public function showNotifications()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-    if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Usuario)) {
-        $userId = $_SESSION['usuario']->Id_Usuario;
-        $notifications = DB::table('vending_notifications')
-        ->where('User_Id', $userId)
-        ->whereNull('read_at')
-        ->orderBy('Fecha', 'desc')
-        ->get();
 
-    return response()->json($notifications);
+        if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+            $plantaId = $_SESSION['usuario']->Id_Planta;
+            
+            $notifications = DB::table('vending_notifications')
+                ->where('Id_Planta', $plantaId)
+                ->whereNull('read_at')
+                ->orderBy('Fecha', 'desc')
+                ->get();
+
+            return response()->json($notifications);
         } else {
-            // Devolver un mensaje de "Sesión de administrador" si no hay un usuario específico
             return response()->json(['message' => 'Sesión de administrador.'], 200);
         }
-     }
+    }
 
-     public function listNotifications()
-     {
+    public function listNotifications()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Usuario)) {
-        $userId = $_SESSION['usuario']->Id_Usuario;
-        $unreadNotifications = DB::table('vending_notifications')
-        ->where('User_Id', $userId)
-        ->whereNull('read_at')
-        ->orderBy('Fecha', 'desc')
-        ->get();
 
-        return view('cliente.notificaciones', compact('unreadNotifications'));
+        if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+            $plantaId = $_SESSION['usuario']->Id_Planta;
+            
+            $unreadNotifications = DB::table('vending_notifications')
+                ->where('Id_Planta', $plantaId)
+                ->whereNull('read_at')
+                ->orderBy('Fecha', 'desc')
+                ->get();
+
+            return view('cliente.notificaciones', compact('unreadNotifications'));
         } else {
-            // Devolver un mensaje de "Sesión de administrador" si no hay un usuario específico
             return response()->json(['message' => 'Sesión de administrador.'], 200);
         }
-     }
-
-    
+    }
 
     public function markAsRead($id)
     {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Usuario)) {
-        $userId = $_SESSION['usuario']->Id_Usuario;
 
-        DB::table('vending_notifications')
-            ->where('id', $id)
-            ->where('User_Id', $userId)
-            ->update(['read_at' => now()]);
+        if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+            $plantaId = $_SESSION['usuario']->Id_Planta;
 
-        return redirect()->back();
-    } else {
-        // Devolver un mensaje de "Sesión de administrador" si no hay un usuario específico
-        return response()->json(['message' => 'Sesión de administrador.'], 200);
-    }
+            DB::table('vending_notifications')
+                ->where('id', $id)
+                ->where('Id_Planta', $plantaId)
+                ->update(['read_at' => now()]);
+
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['error' => 'Sesión de administrador.'], 403);
+        }
     }
 }

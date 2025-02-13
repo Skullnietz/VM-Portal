@@ -60,7 +60,7 @@
                 <p>{{ $notification->Txt_Nombre }} error.</p>
                 <p><small>Dia: {{ \Carbon\Carbon::parse($notification->Fecha)->format('d-m-Y') }} | Hora: {{ \Carbon\Carbon::parse($notification->Fecha)->format('H:i') }}</small></p>
                 <p><small>Mensaje: {{$notification->description}}</small></p>
-                <a href="{{ route('markNotificationAsRead', $notification->id) }}" class="btn btn-primary">Marcar como leída</a>
+                <button class="btn btn-primary mark-as-read" data-id="{{ $notification->id }}">Marcar como leída</button>
             </div>
         @endforeach
     </div>
@@ -78,6 +78,28 @@
 @stop
 
 @section('js')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $(".mark-as-read").click(function () {
+            let notificationId = $(this).data("id");
+            let button = $(this);
+
+            $.ajax({
+                url: "{{ route('markNotificationAsRead', '') }}/" + notificationId,
+                type: "GET",
+                success: function () {
+                    button.closest(".alert").fadeOut("slow", function() {
+                        $(this).remove();
+                    });
+                },
+                error: function () {
+                    alert("Hubo un error al marcar la notificación como leída.");
+                }
+            });
+        });
+    });
+</script>
 <script>
     function goBack() {
       window.history.back();

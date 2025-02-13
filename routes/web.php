@@ -10,7 +10,7 @@ use App\Http\Controllers\ReportesClienteController;
 
 
 // REDIRECCIONAMIENTO BASICO
-Route::redirect('/', 'inicio');
+Route::redirect('/', '/inicio');
 // REDIRECCIONAMIENTO SEGUN ROL
 Route::get('/inicio', 'InicioController@HomeRol')->name('homerol');
 Route::get('/home', 'InicioController@HomeRol')->name('homerol');
