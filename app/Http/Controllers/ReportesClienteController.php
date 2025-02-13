@@ -319,7 +319,7 @@ class ReportesClienteController extends Controller
         $startDate = $request->startDate . ' 00:00:00';
         $endDate = $request->endDate . ' 23:59:59';
     
-        $consumos->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
+        $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
     }
     
 
@@ -501,7 +501,7 @@ public function getConsumoxVending(Request $request)
         $startDate = $request->startDate . ' 00:00:00';
         $endDate = $request->endDate . ' 23:59:59';
     
-        $consumos->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
+        $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
     }
     
     
