@@ -323,6 +323,8 @@
                 d.vending = $('#filterVM').val();
             }
         },
+        lengthMenu: [[ 100, 500, 1000, -1], [ 100, 500, 1000, "Todos"]], // Agrega opciones de cantidad de registros
+        pageLength: 100,
         columns: [
             { data: 'Maquina', title: 'Vending' },
             { data: 'Total_Consumos', title: 'Total Consumo' },

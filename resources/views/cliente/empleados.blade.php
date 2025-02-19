@@ -270,6 +270,9 @@
 @section('css')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<!-- Agregar CSS de Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <style>
     .input-group-text-fixed {
         min-width: 160px;
@@ -282,6 +285,9 @@
 <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Agregar JS de Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
     $(document).ready(function() {
         var table = $('#empleados-table').DataTable({
@@ -503,22 +509,35 @@
     });
 
     function openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, idArea) {
-        // Llenar el formulario con los datos del empleado
-        $('#editId').val(id);
-        $('#nip').val(nip);
-        $('#notarjeta').val(notarjeta);
-        $('#nombre').val(nombre);
-        $('#apaterno').val(apaterno);
-        $('#amaterno').val(amaterno);
+    // Llenar el formulario con los datos del empleado
+    $('#editId').val(id);
+    $('#nip').val(nip);
+    $('#notarjeta').val(notarjeta);
+    $('#nombre').val(nombre);
+    $('#apaterno').val(apaterno);
+    $('#amaterno').val(amaterno);
 
-        // Cargar opciones de áreas en el select
-        $.ajax({
+    var $areaSelect = $('#area');
+
+    // Destruir Select2 antes de modificar opciones para evitar errores
+    if ($areaSelect.hasClass("select2-hidden-accessible")) {
+        $areaSelect.select2('destroy').html(''); // Destruye Select2 y limpia opciones
+    }
+
+    // Inicializar Select2 correctamente
+    $areaSelect.select2({
+        width: '100%',
+        placeholder: "Seleccione un área",
+        allowClear: true,
+        minimumResultsForSearch: 0 // 🔥 Siempre muestra la búsqueda
+    });
+
+    // Cargar opciones de áreas en el select
+    $.ajax({
         url: '{!! route('areas.data') !!}', // Ruta para obtener áreas
         method: 'GET',
         success: function(data) {
             console.log('Datos de áreas recibidos:', data); // Verificar datos recibidos
-            var $areaSelect = $('#area');
-            $areaSelect.empty(); // Limpiar opciones existentes
 
             // Convertir idArea a cadena para comparación
             var idAreaStr = idArea.toString();
@@ -526,25 +545,30 @@
             // Verificar que el área actual del empleado exista en los datos recibidos
             var currentArea = data.find(area => area.Id_Area === idAreaStr);
             console.log('Área actual del empleado:', currentArea); // Verificar área actual
+
             if (currentArea) {
                 // Agregar el área actual del empleado como la primera opción
-                $areaSelect.append(`<option value="${currentArea.Id_Area}" selected>${currentArea.Txt_Nombre}</option>`);
+                $areaSelect.append(new Option(currentArea.Txt_Nombre, currentArea.Id_Area, true, true));
                 // Eliminar el área actual de las opciones restantes
                 data = data.filter(area => area.Id_Area !== idAreaStr);
             }
 
             // Agregar las demás áreas
             data.forEach(area => {
-                $areaSelect.append(`<option value="${area.Id_Area}">${area.Txt_Nombre}</option>`);
+                $areaSelect.append(new Option(area.Txt_Nombre, area.Id_Area, false, false));
             });
+
+            // Refrescar Select2 después de agregar opciones
+            $areaSelect.trigger('change');
         },
         error: function(xhr) {
             console.error('Error al cargar las áreas:', xhr.responseText);
         }
     });
 
-        $('#editModal').modal('show');
-    }
+    $('#editModal').modal('show');
+}
+
 </script>
 <script>
         document.addEventListener('DOMContentLoaded', function() {

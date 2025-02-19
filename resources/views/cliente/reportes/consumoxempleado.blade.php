@@ -305,6 +305,8 @@ $(document).ready(function() {
                 console.log('API Response:', response);
             }
         },
+        lengthMenu: [[ 100, 500, 1000, -1], [ 100, 500, 1000, "Todos"]], // Agrega opciones de cantidad de registros
+        pageLength: 100,
         columns: [
             { data: 'Nombre' },
             { data: 'Numero_de_empleado' },

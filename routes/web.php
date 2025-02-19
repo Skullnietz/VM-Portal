@@ -19,6 +19,30 @@ Route::get('/logout', 'LoginController@logout')->name('salir');
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% INTERFAZ Y VISTAS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
 Route::prefix('{language}')->group(function () {
+    //////////////////////////////////// LOGIN CONTROLLER //////////////////////////////////////
+    // LOGIN
+    Route::post('/validar-registro', 'LoginController@Login')->name('validar-registro');
+    // LOGIN
+    Route::post('/validar-admin', 'LoginController@ADMINLogin')->name('validar-admin');
+    //////////////////////////////////////////////////////////////////////////////////////////// 
+    });
+
+
+
+
+// VISTA DEL LOGIN
+Route::get('/login', function () {
+    return view('login');
+});
+Route::get('/adminlogin', function () {
+    return view('adminlogin');
+});
+
+// PROTECCION DE DATOS MIDDLEWARE
+Route::group(['middleware' => 'checkSession'], function() {
+
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% INTERFAZ Y VISTAS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
+Route::prefix('{language}')->group(function () {
     // ------------> DENTRO DEL SISTEMA ADMINISTRATIVO <------------------
     //////////////////////////////////// CLIENT CONTROLLER ///////////////////////////////////// 
     // DASHBOARD | INICIO
@@ -53,13 +77,6 @@ Route::prefix('{language}')->group(function () {
     
     
 
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////// LOGIN CONTROLLER //////////////////////////////////////
-    // LOGIN
-    Route::post('/validar-registro', 'LoginController@Login')->name('validar-registro');
-    // LOGIN
-    Route::post('/validar-admin', 'LoginController@ADMINLogin')->name('validar-admin');
-    //////////////////////////////////////////////////////////////////////////////////////////// 
     //////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////
     Route::get('/notifications/list', [NotificationController::class, 'listNotifications'])->name('listNotifications');
     ///////////////////////////////////// AREAS ////////////////////////////////////////////
@@ -74,18 +91,6 @@ Route::prefix('{language}')->group(function () {
 });
 
 
-
-
-// VISTA DEL LOGIN
-Route::get('/login', function () {
-    return view('login');
-});
-Route::get('/adminlogin', function () {
-    return view('adminlogin');
-});
-
-// PROTECCION DE DATOS MIDDLEWARE
-Route::group(['middleware' => 'checkSession'], function() {
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° ADMINISTRADORES °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° //
 //ADMINISTRADORES
 Route::get('get-administradores', [AdminController::class, 'getAdministradores'])->name('get-administradores');

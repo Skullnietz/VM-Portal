@@ -290,6 +290,8 @@
                 d.product = $('#filterProduct').val();
             }
         },
+        lengthMenu: [[ 100, 500, 1000, -1], [ 100, 500, 1000, "Todos"]], // Agrega opciones de cantidad de registros
+        pageLength: 100,
         columns: [
             { data: 'Area', title: 'Área' },
             { data: 'Total_Consumo', title: 'Total Consumo' },

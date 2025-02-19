@@ -223,6 +223,7 @@ floatingActions {
 <script defer>
   document.getElementById('saveChangesBtn').addEventListener('click', function () {
     const cells = document.querySelectorAll('.droppable-cell');
+
     try {
         const updatedStock = Array.from(cells).map(cell => {
             const id = cell.getAttribute('data-id');
@@ -234,15 +235,19 @@ floatingActions {
                 return null; // Ignorar celdas sin input
             }
 
-            const stockValue = parseInt(stockInput.value) || 0;
-            const minStock = parseInt(stockInput.getAttribute('min')) || 0;
+            let stockValue = parseInt(stockInput.value) || 0;
             const maxStock = parseInt(stockInput.getAttribute('max')) || 0;
 
-            // Validar el valor del stock
-            if (stockValue < minStock || stockValue > maxStock) {
-                throw new Error(
-                    `El stock para la charola ${charola}, selección ${seleccion} debe estar entre ${minStock} y ${maxStock}.`
-                );
+            // Evitar valores negativos
+            if (stockValue < 0) {
+                alert(`El stock para la charola ${charola}, selección ${seleccion} no puede ser negativo.`);
+                throw new Error(`El stock para la charola ${charola}, selección ${seleccion} no puede ser negativo.`);
+            }
+
+            // Asegurar que no pase del máximo permitido
+            if (stockValue > maxStock) {
+                stockValue = maxStock;
+                stockInput.value = maxStock; // Ajustar visualmente en la interfaz
             }
 
             return { id, stock: stockValue };
@@ -265,12 +270,11 @@ floatingActions {
         }).catch(error => console.error('Error:', error));
 
     } catch (error) {
-        alert(error.message);
+        console.error(error.message);
     }
-});
-
-
+  });
 </script>
+
 <script defer>
     document.addEventListener('DOMContentLoaded', function () {
         const saveChangesFloatingBtn = document.getElementById('saveChangesFloatingBtn');

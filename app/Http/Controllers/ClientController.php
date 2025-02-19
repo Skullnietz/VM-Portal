@@ -65,6 +65,8 @@ class ClientController extends Controller
 
     public function exportPermisos(Request $request)
     {
+        ini_set('max_execution_time', 300); // 5 minutos
+
         // Puedes personalizar el nombre del archivo que se descargará
         $fileName = 'Reporte_Permisos_' . now()->format('Ymd_His') . '.xlsx';
 
@@ -341,9 +343,9 @@ class ClientController extends Controller
             $header = array_shift($data); // Obtener y eliminar el encabezado
 
             foreach ($data as $row) {
-                $no_empleado = !empty($row[0]) ? $row[0] : null;
-                $nip = !empty($row[1]) ? $row[1] : '1234';
-                $no_tarjeta = !empty($row[2]) ? $this->sanitizeString($row[2]) : null;
+                $no_empleado = !empty($row[0]) ? (string) $row[0] : null;
+                $nip = !empty($row[1]) ? (string) $row[1] : '1234';
+                $no_tarjeta = !empty($row[2]) ? (string) $this->sanitizeString($row[2]) : null;
                 $nombre = !empty($row[3]) ? $this->sanitizeString($row[3]) : null;
                 $a_paterno = !empty($row[4]) ? $this->sanitizeString($row[4]) : null;
                 $a_materno = !empty($row[5]) ? $this->sanitizeString($row[5]) : '';
@@ -492,13 +494,33 @@ private function sanitizeString($string) {
         
     }
 
-    public function getAreas()
-    {
-        // Obtiene todas las áreas de la tabla 'Cat_Area'
-        $areas = DB::table('Cat_Area')->select('Id_Area', 'Txt_Nombre')->get();
-        
-        return response()->json($areas);
+    public function getAreas(Request $request)
+{
+    // Verifica si el usuario es administrador a través de un parámetro en la URL
+    $esAdministrador = $request->query('admin', false); // Se espera ?admin=1 en la URL para indicar que es admin
+
+    if ($esAdministrador) {
+        // Obtiene Id_Planta desde la URL (debe pasarse como ?id_planta=X)
+        $id_planta = $request->query('id_planta', null);
+    } else {
+        // Obtiene Id_Planta desde la sesión
+        $id_planta = $_SESSION['usuario']->Id_Planta ?? null;
     }
+
+    // Construye la consulta base
+    $query = DB::table('Cat_Area')
+        ->select('Id_Area', 'Txt_Nombre')
+        ->where('Txt_Estatus', 'Alta');
+
+    // Aplica el filtro de Id_Planta si está presente
+    if (!is_null($id_planta)) {
+        $query->where('Id_Planta', $id_planta);
+    }
+
+    $areas = $query->get();
+
+    return response()->json($areas);
+}
 
     public function destroyEmployee($Id_Empleado)
 {
