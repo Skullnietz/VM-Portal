@@ -270,8 +270,8 @@
 @section('css')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<!-- Agregar CSS de Select2 -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 
 <style>
     .input-group-text-fixed {
@@ -285,8 +285,8 @@
 <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- Agregar JS de Select2 -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 <script>
     $(document).ready(function() {
@@ -518,49 +518,52 @@
     $('#apaterno').val(apaterno);
     $('#amaterno').val(amaterno);
 
-    var $areaSelect = $('#area');
+    var areaSelect = document.getElementById("area");
 
-    // Destruir Select2 antes de modificar opciones para evitar errores
-    if ($areaSelect.hasClass("select2-hidden-accessible")) {
-        $areaSelect.select2('destroy').html(''); // Destruye Select2 y limpia opciones
+    // Si Choices ya está inicializado, lo destruimos antes de modificar opciones
+    if (areaSelect.choicesInstance) {
+        areaSelect.choicesInstance.destroy();
     }
 
-    // Inicializar Select2 correctamente
-    $areaSelect.select2({
-        width: '100%',
-        placeholder: "Seleccione un área",
-        allowClear: true,
-        minimumResultsForSearch: 0 // 🔥 Siempre muestra la búsqueda
-    });
+    // Limpiar las opciones existentes
+    areaSelect.innerHTML = '';
 
-    // Cargar opciones de áreas en el select
+    // Obtener áreas desde la API
     $.ajax({
         url: '{!! route('areas.data') !!}', // Ruta para obtener áreas
         method: 'GET',
         success: function(data) {
-            console.log('Datos de áreas recibidos:', data); // Verificar datos recibidos
+            console.log('Datos de áreas recibidos:', data);
 
-            // Convertir idArea a cadena para comparación
-            var idAreaStr = idArea.toString();
+            var idAreaStr = idArea.toString(); // Convertir idArea a cadena para comparación
+            var options = [];
 
-            // Verificar que el área actual del empleado exista en los datos recibidos
+            // Buscar y mover el área actual del empleado al inicio
             var currentArea = data.find(area => area.Id_Area === idAreaStr);
-            console.log('Área actual del empleado:', currentArea); // Verificar área actual
-
             if (currentArea) {
-                // Agregar el área actual del empleado como la primera opción
-                $areaSelect.append(new Option(currentArea.Txt_Nombre, currentArea.Id_Area, true, true));
-                // Eliminar el área actual de las opciones restantes
+                options.push({ value: currentArea.Id_Area, label: currentArea.Txt_Nombre, selected: true });
                 data = data.filter(area => area.Id_Area !== idAreaStr);
             }
 
             // Agregar las demás áreas
             data.forEach(area => {
-                $areaSelect.append(new Option(area.Txt_Nombre, area.Id_Area, false, false));
+                options.push({ value: area.Id_Area, label: area.Txt_Nombre });
             });
 
-            // Refrescar Select2 después de agregar opciones
-            $areaSelect.trigger('change');
+            // Inicializar Choices.js con las nuevas opciones
+            var choices = new Choices(areaSelect, {
+                searchEnabled: true, // Permitir búsqueda
+                removeItemButton: false, // No permitir eliminación de opciones seleccionadas
+                placeholder: true,
+                placeholderValue: "Seleccione un área",
+                shouldSort: false, // Mantener el orden original
+            });
+
+            // Agregar opciones a Choices
+            choices.setChoices(options, 'value', 'label', true);
+
+            // Guardar referencia a Choices en el elemento para futuras modificaciones
+            areaSelect.choicesInstance = choices;
         },
         error: function(xhr) {
             console.error('Error al cargar las áreas:', xhr.responseText);
@@ -569,6 +572,7 @@
 
     $('#editModal').modal('show');
 }
+
 
 </script>
 <script>
