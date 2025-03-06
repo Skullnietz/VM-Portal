@@ -1762,13 +1762,13 @@ public function guardarCambiosPlano(Request $request)
 
     foreach ($data as $item) {
         DB::table('Configuracion_Maquina')
-            ->where('Id_Configuracion', $item['idConfiguracion'])
-            ->update([
-                'Id_Articulo' => $item['idArticulo'] ?: null, // Deja null si el Id_Articulo está vacío
-                'Cantidad_Max' => $item['cantidadMax'] ?: 0, // Ajusta a 0 si está vacío
-                'Cantidad_Min' => $item['cantidadMin'] ?: 0, // Ajusta a 0 si está vacío
-                'Stock' => 0  // Ajusta a 0 si está vacío
-            ]);
+        ->where('Id_Configuracion', $item['idConfiguracion'])
+        ->update([
+            'Id_Articulo' => $item['idArticulo'] ?: null,
+            'Cantidad_Max' => $item['cantidadMax'] ?: 0,
+            'Cantidad_Min' => $item['cantidadMin'] ?: 0,
+            'Stock' => DB::raw("COALESCE(Stock, 0)") // Si Stock es NULL, lo pone en 0
+        ]);
     }
 
     return response()->json(['success' => true, 'message' => 'Cambios guardados correctamente.']);

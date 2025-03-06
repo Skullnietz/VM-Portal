@@ -116,7 +116,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text input-group-text-fixed"><i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta</span>
                                 </div>
-                                <input type="number" class="form-control" id="notarjeta" name="notarjeta" required>
+                                <input type="number" class="form-control" id="notarjeta" name="notarjeta">
                             </div>
                         </div>
                         <div class="form-group">
@@ -488,9 +488,10 @@
                     Swal.fire('Éxito', 'Empleado actualizado con éxito.', 'success');
                 },
                 error: function(xhr) {
-                    Swal.fire('Error', 'Hubo un error al actualizar el empleado: ' + xhr.responseJSON.message, 'error');
-                    console.log(xhr.responseJSON.errors); 
+                    console.log(xhr.responseJSON); // Muestra toda la respuesta en consola
+                    Swal.fire('Error', 'Hubo un error al actualizar el empleado.', 'error');
                 }
+
             });
         });
 
