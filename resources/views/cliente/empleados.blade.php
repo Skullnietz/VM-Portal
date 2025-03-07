@@ -471,7 +471,7 @@
 
             $.ajax({
                 url: `/empleado/update/${id}`,
-                type: 'PUT',
+                type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
                     id:id,
