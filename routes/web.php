@@ -183,7 +183,7 @@ Route::get('empleado/delete/{Id_Empleado}','ClientController@destroyEmployee')->
 Route::get('export-excel-employees', 'ClientController@exportExcel');
 Route::post('empleado/add', 'ClientController@storeemployee');
 Route::get('areas/data', 'ClientController@getAreas')->name('areas.data');
-Route::put('empleado/update/{id}', 'ClientController@updateemployee')->name('empleados.update');
+Route::post('empleado/update/{id}', 'ClientController@updateemployee')->name('empleados.update');
 ///////////////////////////////////////// PERMISOS TOOLS ///////////////////////////////////////////////////
 Route::get('get-permisos-articulos', 'ClientController@getPermisosArticulos')->name('get.permisos.articulos'); // Asignacion de permisos
 Route::delete('/delete-permiso-articulo/{id}', 'ClientController@deletePermisoArticulo')->name('delete.permiso.articulo');
