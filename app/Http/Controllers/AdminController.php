@@ -57,7 +57,9 @@ class AdminController extends Controller
                 'Configuracion_Maquina.Seleccion',
                 'Configuracion_Maquina.Num_Charola',
                 'Cat_Articulos.Txt_Codigo',
-                'Cat_Articulos.Txt_Descripcion'
+                'Cat_Articulos.Txt_Descripcion',
+                'Cat_Articulos.Tamano_Espiral',
+                'Cat_Articulos.Capacidad_Espiral'
             )
             ->get()
             ->groupBy('Num_Charola');
@@ -70,7 +72,7 @@ class AdminController extends Controller
         if ($request->has('search')) {
             $search = $request->input('search');
             $articulos = DB::table('Cat_Articulos')
-                ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo')
+                ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo','Tamano_Espiral','Capacidad_Espiral')
                 ->where('Txt_Descripcion', 'LIKE', "%$search%")
                 ->orWhere('Txt_Codigo', 'LIKE', "%$search%")
                 ->limit(5) // Limitar a 5 resultados
@@ -81,7 +83,7 @@ class AdminController extends Controller
     
         // Obtener 4 artículos aleatorios para mostrar inicialmente
         $articulos = DB::table('Cat_Articulos')
-            ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo')
+            ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo', 'Tamano_Espiral','Capacidad_Espiral')
             ->inRandomOrder()
             ->limit(4)
             ->get();
@@ -754,12 +756,13 @@ public function updatePlanta(Request $request) {
 public function addArea(Request $request)
 {
     if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+        session_start();
+    }
+    
     $newName = $request->input('new_name');
-    $currentDate = now(); // Obtiene la fecha actual
-    $plantaId = $request->input('idPlanta'); // Obtiene el Id de Planta 
-    Log::info('Planta:'.$plantaId);
+    $currentDate = now();
+    $plantaId = $request->input('idPlanta'); // Obtenemos el Id de Planta desde el request
+    $userId = 1; // Se mantiene el usuario como 1
 
     // Verificar si el área ya existe en la misma planta
     $existingArea = DB::table('Cat_Area')
@@ -779,36 +782,49 @@ public function addArea(Request $request)
         'Txt_Estatus' => 'Alta',
         'Fecha_Modificacion' => null,
         'Fecha_Baja' => null,
-        'Id_Usuario_Alta' => 1,
+        'Id_Usuario_Alta' => $userId,
         'Id_Usuario_Modificacion' => null,
         'Id_Usuario_Baja' => null
     ]);
 
     if ($idArea) {
-        // Obtener todos los artículos de la misma planta
-        $articulos = DB::table('Cat_Articulos')
-            ->where('Txt_Estatus', 'Alta')
-            ->get();
+        // 1️⃣ Obtener las máquinas de la planta
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $plantaId)
+            ->pluck('Id_Maquina');
 
-        foreach ($articulos as $articulo) {
-            // Verificar si ya existe un permiso para este área y artículo
-            $existingPermiso = DB::table('Ctrl_Permisos_x_Area')
-                ->where('Id_Area', $idArea)
-                ->where('Id_Articulo', $articulo->Id_Articulo)
-                ->first();
-
-            if (!$existingPermiso) {
-                // Insertar un nuevo permiso en la tabla Ctrl_Permisos_x_Area
-                DB::table('Ctrl_Permisos_x_Area')->insert([
-                    'Id_Area' => $idArea,
-                    'Id_Articulo' => $articulo->Id_Articulo,
-                    'Frecuencia' => 0,
-                    'Cantidad' => 0,
-                    'Id_Planta' => $plantaId,
-                    'Status' => 'Alta',
-                ]);
-            }
+        if ($maquinas->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
         }
+
+        // 2️⃣ Obtener los artículos que están en esas máquinas (sin registros nulos)
+        $articulos = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $maquinas)
+            ->whereNotNull('Id_Articulo')
+            ->distinct()
+            ->pluck('Id_Articulo');
+
+        Log::info('Artículos obtenidos:', $articulos->toArray());
+
+        if ($articulos->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
+        }
+
+        // 3️⃣ Registrar permisos en Ctrl_Permisos_x_Area solo para estos artículos
+        $permisos = [];
+        foreach ($articulos as $idArticulo) {
+            $permisos[] = [
+                'Id_Area' => $idArea,
+                'Id_Articulo' => $idArticulo,
+                'Frecuencia' => 0,
+                'Cantidad' => 0,
+                'Id_Planta' => $plantaId,
+                'Status' => 'Alta',
+            ];
+        }
+
+        // Insertar los permisos en la base de datos
+        DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
 
         return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
     } else {
@@ -1351,25 +1367,29 @@ private function sanitizeString($string) {
 
     public function getArticulosDataTable(Request $request)
 {
-    $articulos = DB::table('Cat_Articulos AS ca')
-        ->leftJoin('Cat_Usuarios AS cua', 'ca.Id_Usuario_Alta', '=', 'cua.Id_Usuario')
-        ->leftJoin('Cat_Usuarios AS cub', 'ca.Id_Usuario_Baja', '=', 'cub.Id_Usuario')
-        ->leftJoin('Cat_Usuarios AS cum', 'ca.Id_Usuario_Modificacion', '=', 'cum.Id_Usuario')
+    $articulos = DB::table(DB::raw('Cat_Articulos ca'))
+        ->leftJoin(DB::raw('Cat_Usuarios cua'), 'ca.Id_Usuario_Alta', '=', 'cua.Id_Usuario')
+        ->leftJoin(DB::raw('Cat_Usuarios cub'), 'ca.Id_Usuario_Baja', '=', 'cub.Id_Usuario')
+        ->leftJoin(DB::raw('Cat_Usuarios cum'), 'ca.Id_Usuario_Modificacion', '=', 'cum.Id_Usuario')
         ->select([
-            'ca.Id_Articulo',
-            'ca.Txt_Descripcion',
-            'ca.Txt_Codigo',
-            'ca.Txt_Codigo_Cliente',
-            'ca.Txt_Estatus',
-            'ca.Fecha_Alta',
-            'ca.Fecha_Modificacion',
-            'ca.Fecha_Baja',
-            DB::raw("COALESCE(CONCAT(cua.Txt_Nombre, ' ', cua.Txt_ApellidoP, ' ', cua.Txt_ApellidoM), '') AS UsuarioAlta"),
-            DB::raw("COALESCE(CONCAT(cub.Txt_Nombre, ' ', cub.Txt_ApellidoP, ' ', cub.Txt_ApellidoM), '') AS UsuarioBaja"),
-            DB::raw("COALESCE(CONCAT(cum.Txt_Nombre, ' ', cum.Txt_ApellidoP, ' ', cum.Txt_ApellidoM), '') AS UsuarioModificacion"),
+            DB::raw('ca.Id_Articulo as Id_Articulo'),
+            DB::raw('ca.Txt_Descripcion as Txt_Descripcion'),
+            DB::raw('ca.Txt_Codigo as Txt_Codigo'),
+            DB::raw('ca.Txt_Codigo_Cliente as Txt_Codigo_Cliente'),
+            DB::raw('ca.Txt_Estatus as Txt_Estatus'),
+            DB::raw('ca.Tamano_Espiral as Tamano_Espiral'),
+            DB::raw('ca.Capacidad_Espiral as Capacidad_Espiral'),
+            DB::raw('ca.Fecha_Alta as Fecha_Alta'),
+            DB::raw('ca.Fecha_Modificacion as Fecha_Modificacion'),
+            DB::raw('ca.Fecha_Baja as Fecha_Baja'),
+
+            // Campos de usuario con DB::raw y un alias sencillo:
+            DB::raw("COALESCE(CONCAT(cua.Txt_Nombre, ' ', cua.Txt_ApellidoP, ' ', cua.Txt_ApellidoM), '') as UsuarioAlta"),
+            DB::raw("COALESCE(CONCAT(cub.Txt_Nombre, ' ', cub.Txt_ApellidoP, ' ', cub.Txt_ApellidoM), '') as UsuarioBaja"),
+            DB::raw("COALESCE(CONCAT(cum.Txt_Nombre, ' ', cum.Txt_ApellidoP, ' ', cum.Txt_ApellidoM), '') as UsuarioModificacion"),
         ]);
 
-    // Aplicar filtros personalizados
+    // Filtros personalizados (referenciando 'ca.' en los where)
     if ($request->filled('descripcion')) {
         $articulos->where('ca.Txt_Descripcion', 'LIKE', '%' . $request->input('descripcion') . '%');
     }
@@ -1384,7 +1404,9 @@ private function sanitizeString($string) {
 
     return DataTables::of($articulos)
         ->addColumn('Imagen', function ($articulo) {
-            return '<img src="https://172.31.1.1/imagenes/Catalogo/' . $articulo->Txt_Codigo . '.jpg" alt="Imagen" width="50" height="50">';
+            return '<img src="https://172.31.1.1/imagenes/Catalogo/' 
+                   . $articulo->Txt_Codigo . '.jpg" alt="Imagen" width="50" height="50"
+                   onerror="this.onerror=null;this.src=\'/Images/product.png\';">';
         })
         ->rawColumns(['Imagen'])
         ->make(true);
@@ -1419,7 +1441,8 @@ private function sanitizeString($string) {
     $request->validate([
         'Txt_Descripcion' => 'required|string|max:255',
         'Txt_Codigo' => 'required|string|max:50',
-        'Txt_Codigo_Cliente' => 'required|string|max:50',
+        'Tamano_Espiral'   => 'nullable|string|in:Chico,Grande',
+        'Capacidad_Espiral'=> 'nullable|integer|min:5|max:24',
     ]);
 
     // Verificar si ya existe un artículo con el mismo Txt_Codigo
@@ -1441,7 +1464,8 @@ private function sanitizeString($string) {
     DB::table('Cat_Articulos')->insert([
         'Txt_Descripcion' => $request->Txt_Descripcion,
         'Txt_Codigo' => $request->Txt_Codigo,
-        'Txt_Codigo_Cliente' => $request->Txt_Codigo_Cliente,
+        'Tamano_Espiral' => $request->Tamano_Espiral,
+        'Capacidad_Espiral' => $request->Capacidad_Espiral,
         'Txt_Estatus' => 'Alta',  // El estatus es 'Alta' por defecto
         'Fecha_Alta' => $fechaActual, // Fecha actual
         'Fecha_Modificacion' => null,
@@ -1488,14 +1512,17 @@ public function updateArticulo(Request $request, $id)
     $validated = $request->validate([
         'Txt_Descripcion' => 'required|string|max:255',
         'Txt_Codigo' => 'required|string|max:50',
-        'Txt_Codigo_Cliente' => 'nullable|string|max:50',
+        'Tamano_Espiral'   => 'nullable|string|in:Chico,Grande',
+        'Capacidad_Espiral'=> 'nullable|integer|min:5|max:24',
+        
     ]);
 
     // Actualizar el artículo
     DB::table('Cat_Articulos')->where('Id_Articulo', $id)->update([
         'Txt_Descripcion' => $validated['Txt_Descripcion'],
         'Txt_Codigo' => $validated['Txt_Codigo'],
-        'Txt_Codigo_Cliente' => $validated['Txt_Codigo_Cliente'],
+        'Tamano_Espiral' => $validated['Tamano_Espiral'],
+        'Capacidad_Espiral'=> $validated['Capacidad_Espiral'],
         'Fecha_Modificacion' => now(),
         'Id_Usuario_Modificacion' => 1
     ]);
@@ -1513,34 +1540,43 @@ public function getVendingsData()
     // Obtenemos el Id_Usuario_Admon desde la sesión
     $userId = $_SESSION['usuario']->Id_Usuario_Admon;
 
-    // Realizamos la consulta SQL con Facade DB
-    // Realizamos la consulta SQL con Facade DB utilizando JOIN
-     // Consulta para obtener los datos y agruparlos por planta
-     $vendingsData = DB::table('Ctrl_Mquinas')
-     ->join('Cat_Plantas', 'Ctrl_Mquinas.Id_Planta', '=', 'Cat_Plantas.Id_Planta')
-     ->select([
-         'Cat_Plantas.Txt_Nombre_Planta',
-         'Ctrl_Mquinas.Id_Maquina',
-         'Ctrl_Mquinas.Id_Dispositivo',
-         'Ctrl_Mquinas.Txt_Nombre',
-         'Ctrl_Mquinas.Txt_Serie_Maquina',
-         'Ctrl_Mquinas.Txt_Tipo_Maquina',
-         'Ctrl_Mquinas.Txt_Estatus',
-         'Ctrl_Mquinas.Capacidad',
-         'Ctrl_Mquinas.Fecha_Alta',
-         'Ctrl_Mquinas.Fecha_Modificacion',
-         'Ctrl_Mquinas.Fecha_Baja',
-         'Ctrl_Mquinas.Id_Usuario_Admon_Alta',
-         'Ctrl_Mquinas.Id_Usuario_Admon_Modificacion',
-         'Ctrl_Mquinas.Id_Usuario_Admon_Baja',
-         'Cat_Plantas.Ruta_Imagen'
-     ])
-     ->get()
-    ->groupBy('Txt_Nombre_Planta'); // Agrupamos por el nombre de la planta
+    // Primero obtenemos todas las plantas con estado "Alta"
+    $activePlants = DB::table('Cat_Plantas')
+        ->where('Txt_Estatus', 'Alta')
+        ->get();
+
+    // Extraemos los Ids de las plantas activas
+    $activePlantIds = $activePlants->pluck('Id_Planta')->toArray();
+
+    // Luego obtenemos los datos de las máquinas que pertenecen a las plantas activas
+    $vendingsData = DB::table('Ctrl_Mquinas')
+        ->join('Cat_Plantas', 'Ctrl_Mquinas.Id_Planta', '=', 'Cat_Plantas.Id_Planta')
+        ->select([
+            'Cat_Plantas.Txt_Nombre_Planta',
+            'Ctrl_Mquinas.Id_Maquina',
+            'Ctrl_Mquinas.Id_Dispositivo',
+            'Ctrl_Mquinas.Txt_Nombre',
+            'Ctrl_Mquinas.Txt_Serie_Maquina',
+            'Ctrl_Mquinas.Txt_Tipo_Maquina',
+            'Ctrl_Mquinas.Txt_Estatus',
+            'Ctrl_Mquinas.Capacidad',
+            'Ctrl_Mquinas.Fecha_Alta',
+            'Ctrl_Mquinas.Fecha_Modificacion',
+            'Ctrl_Mquinas.Fecha_Baja',
+            'Ctrl_Mquinas.Id_Usuario_Admon_Alta',
+            'Ctrl_Mquinas.Id_Usuario_Admon_Modificacion',
+            'Ctrl_Mquinas.Id_Usuario_Admon_Baja',
+            'Cat_Plantas.Ruta_Imagen'
+        ])
+        ->whereIn('Cat_Plantas.Id_Planta', $activePlantIds)
+        ->get()
+        ->groupBy('Txt_Nombre_Planta'); // Agrupamos por el nombre de la planta
 
     // Devolvemos los datos como JSON para que AJAX los consuma
     return response()->json($vendingsData);
 }
+
+
 
 public function changeStatusvm(Request $request)
 {
@@ -1793,7 +1829,9 @@ public function Surtir(Request $request, $lang, $id) {
             'Configuracion_Maquina.Seleccion',
             'Configuracion_Maquina.Num_Charola',
             'Cat_Articulos.Txt_Codigo',
-            'Cat_Articulos.Txt_Descripcion'
+            'Cat_Articulos.Txt_Descripcion',
+            'Cat_Articulos.Tamano_Espiral',
+            'Cat_Articulos.Capacidad_Espiral'
         )
         ->get()
         ->groupBy('Num_Charola');
@@ -1817,7 +1855,7 @@ public function Surtir(Request $request, $lang, $id) {
 
     // Obtener 4 artículos aleatorios para mostrar inicialmente
     $articulos = DB::table('Cat_Articulos')
-        ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo')
+        ->select('Id_Articulo', 'Txt_Descripcion', 'Txt_Codigo','Tamano_Espiral','Capacidad_Espiral')
         ->inRandomOrder()
         ->limit(4)
         ->get();

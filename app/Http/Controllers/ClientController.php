@@ -706,11 +706,12 @@ public function addArea(Request $request)
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
-
+ 
     $newName = $request->input('new_name');
     $currentDate = now();
     $userId = $_SESSION['usuario']->Id_Usuario;
     $plantaId = $_SESSION['usuario']->Id_Planta;
+
 
     // Verificar si el área ya existe en la misma planta
     $existingArea = DB::table('Cat_Area')
@@ -747,9 +748,12 @@ public function addArea(Request $request)
 
         // 2️⃣ Obtener los artículos que están en esas máquinas
         $articulos = DB::table('Configuracion_Maquina')
-            ->whereIn('Id_Maquina', $maquinas)
-            ->distinct()
-            ->pluck('Id_Articulo'); // Obtener solo los IDs de artículos sin repetir
+        ->whereIn('Id_Maquina', $maquinas)
+        ->whereNotNull('Id_Articulo')
+        ->distinct()
+        ->pluck('Id_Articulo');
+
+        Log::info('Artículos obtenidos:', $articulos->toArray());
 
         if ($articulos->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);

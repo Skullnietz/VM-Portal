@@ -256,22 +256,18 @@
                         </div>
                         <div id="collapse${index}" class="collapse" aria-labelledby="heading${index}" data-parent="#groupedVendingsContainer">
                             <div class="card-body">
-                                <table id="table${index}" class="grouped-table display table table-striped table-bordered" style="width:100%">
+                                <table id="table${index}" class=" display table table-striped table-bordered" >
                                     <thead>
                                         <tr>
-                                            <th>Id Máquina</th>
-                                            <th>Id Dispositivo</th>
                                             <th>Nombre</th>
                                             <th>Serie</th>
                                             <th>Tipo</th>
                                             <th>Estatus</th>
                                             <th>Capacidad</th>
                                             <th>Configuración</th>
-                                            <th>Fecha Alta</th>
-                                            <th>Fecha Modificación</th>
-                                            <th>Fecha Baja</th>
-                                            <th>Opciones</th>
                                             <th>Stock</th>
+                                            <th>Fecha Alta</th>
+                                            <th>Opciones</th> 
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -287,8 +283,6 @@
                 registros.forEach((registro) => {
                     $(`#table${index} tbody`).append(`
                         <tr data-id="${registro.Id_Maquina}">
-                            <td>${registro.Id_Maquina}</td>
-                            <td>${registro.Id_Dispositivo}</td>
                             <td>${registro.Txt_Nombre}</td>
                             <td>${registro.Txt_Serie_Maquina}</td>
                             <td>${registro.Txt_Tipo_Maquina}</td>
@@ -304,9 +298,12 @@
                                     Planograma
                             </a>
                             </td>
+                            <td>
+                            <a href="stock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm edit-btn">
+                                    Rellenar
+                            </a>
+                            </td>
                             <td>${registro.Fecha_Alta}</td>
-                            <td>${registro.Fecha_Modificacion}</td>
-                            <td>${registro.Fecha_Baja}</td>
                             <td>
                                 <button class="btn btn-warning btn-sm edit-btn" data-id="${registro.Id_Maquina}" onclick="editVending(${registro.Id_Maquina})" data-target="#editVendingModal">
                                     Editar
@@ -315,11 +312,7 @@
                                     Eliminar
                                 </button>
                             </td>
-                            <td>
-                            <a href="stock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm edit-btn">
-                                    Rellenar
-                            </a>
-                            </td>
+                            
                         </tr>
                     `);
                 });

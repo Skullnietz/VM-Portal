@@ -4,17 +4,17 @@
 
 @section('content_header')
 <meta name="csrf-token" content="{{ csrf_token() }}">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-9 col-9">
-                <h4>
-                    <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>
-                    &nbsp;&nbsp;&nbsp;{{ __('Planograma') }}
-                </h4>
-            </div>
-            <div class="col-md-3 col-3 ml-auto"></div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-9 col-9">
+            <h4>
+                <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>
+                &nbsp;&nbsp;&nbsp;{{ __('Planograma') }}
+            </h4>
         </div>
+        <div class="col-md-3 col-3 ml-auto"></div>
     </div>
+</div>
 @stop
 
 @section('content')
@@ -30,7 +30,9 @@
                     draggable="true" 
                     data-id="{{ $articulo->Id_Articulo }}"
                     data-codigo="{{ $articulo->Txt_Codigo }}"
-                    data-descripcion="{{ $articulo->Txt_Descripcion }}">
+                    data-descripcion="{{ $articulo->Txt_Descripcion }}"
+                    data-capacidad-espiral="{{ $articulo->Capacidad_Espiral }}"
+                    data-tamano-espiral="{{ $articulo->Tamano_Espiral }}">
                     {{ $articulo->Txt_Descripcion }} ({{ $articulo->Txt_Codigo }})
                 </div>
             @endforeach
@@ -68,39 +70,43 @@
                                             @foreach ($selecciones->chunk(10) as $chunk)
                                                 <tr>
                                                     @foreach ($chunk as $seleccion)
-                                                    <td class="droppable-cell" data-id="{{ $seleccion->Id_Configuracion }}">
-                                                    <div class="mb-2">
-                                                        <!-- Mensaje para selección vacía, por defecto oculto -->
-                                                        <div class="seleccion-vacia" style="display: none;">
-                                                            <p class="text-muted">Selección vacía</p>
-                                                        </div>
-
-                                                        <!-- Contenido visible cuando hay una selección (imagen, código, descripción, formulario) -->
-                                                        <div class="contenido-seleccion">
-                                                        <div class="contenido-header ">
-                                                            <img src="/Images/product.png" 
-                                                                    class="img-fluid" 
-                                                                    alt="Artículo" 
-                                                                    style="max-height: 100px;min-width: 100px;min-height: 100px;max-width: 100px;">
-                                                            <p class="text-muted mt-1 TxtCodigo">{{ $seleccion->Txt_Codigo ?? '' }}</p>
-                                                            <small class="TxtDescripcion">{{ $seleccion->Txt_Descripcion ?? '' }}</small>
-                                                        </div>
-
-                                                            <form class="setminmax bg-dark">
-                                                                <input type="hidden" class="IdArticulo" value="{{ $seleccion->Id_Articulo ?? '' }}">
-                                                                <div class="form-group d-flex align-items-center">
-                                                                        <small class="mr-1">Max:</small>
-                                                                        <input type="number" class="form-control form-control-sm CantidadMax" value="{{ $seleccion->Cantidad_Max ?? '' }}" placeholder="Máx." disabled>
+                                                        <td class="droppable-cell" data-id="{{ $seleccion->Id_Configuracion }}">
+                                                            <div class="mb-2">
+                                                                <!-- Mensaje para selección vacía, por defecto oculto -->
+                                                                <div class="seleccion-vacia" style="display: none;">
+                                                                    <p class="text-muted">Selección vacía</p>
+                                                                </div>
+                                                                <!-- Contenido visible cuando hay una selección -->
+                                                                <div class="contenido-seleccion">
+                                                                    <div class="contenido-header">
+                                                                        <img src="/Images/product.png" 
+                                                                             class="img-fluid" 
+                                                                             alt="Artículo" 
+                                                                             style="max-height: 100px; min-width: 100px; min-height: 100px; max-width: 100px;">
+                                                                        <p class="text-muted mt-1 TxtCodigo">{{ $seleccion->Txt_Codigo ?? '' }}</p>
+                                                                        <small class="TxtDescripcion">{{ $seleccion->Txt_Descripcion ?? '' }}</small>
+                                                                                    <!-- Mostrar Tamano_Espiral si existe -->
+                                                                            @if(isset($seleccion->Tamano_Espiral))
+                                                                                <div class="bg-secondary tamano-espiral">
+                                                                                    Espiral {{ $seleccion->Tamano_Espiral }}
+                                                                                </div>
+                                                                            @endif
                                                                     </div>
-                                                                    <div class="form-group d-flex align-items-center">
-                                                                        <small class="mr-1">Min:</small>
-                                                                        <input type="number" class="form-control form-control-sm CantidadMin" value="{{ $seleccion->Cantidad_Min ?? '' }}" placeholder="Mín." disabled>
-                                                                    </div>
-                                                                <button type="button" class="btn btn-danger btn-sm remove-article-btn">Vaciar</button>
-                                                            </form>
-                                                        </div>
-                                                        </div>
-                                            </td>
+                                                                    <form class="setminmax bg-dark">
+                                                                        <input type="hidden" class="IdArticulo" value="{{ $seleccion->Id_Articulo ?? '' }}">
+                                                                        <div class="form-group d-flex align-items-center">
+                                                                            <small class="mr-1">Max:</small>
+                                                                            <input type="number" class="form-control form-control-sm CantidadMax" value="{{ $seleccion->Cantidad_Max ?? '' }}" placeholder="Máx." disabled>
+                                                                        </div>
+                                                                        <div class="form-group d-flex align-items-center">
+                                                                            <small class="mr-1">Min:</small>
+                                                                            <input type="number" class="form-control form-control-sm CantidadMin" value="{{ $seleccion->Cantidad_Min ?? '' }}" placeholder="Mín." disabled>
+                                                                        </div>
+                                                                        <button type="button" class="btn btn-danger btn-sm remove-article-btn">Vaciar</button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </td>
                                                     @endforeach
                                                     @for ($i = $chunk->count(); $i < 10; $i++)
                                                         <td class="droppable-cell"></td>
@@ -112,8 +118,7 @@
                                 </div>
                             </div>
                         </div>
-                    @endforeach
-                    
+                    @endforeach                    
                 </div>
             </div>
         </div>
@@ -131,82 +136,76 @@
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         width: 300px;
     }
-
     .draggable-item {
         cursor: grab;
     }
-
     .contenido-header {
-    display: flex;
-    flex-direction: column;
-    height: 270px; /* Ajusta según sea necesario */
-    align-items: center;
-    justify-content: center;
+        display: flex;
+        flex-direction: column;
+        height: 270px; /* Ajusta según sea necesario */
+        align-items: center;
+        justify-content: center;
     }
-
     .setminmax {
-    padding: 10px;
+        padding: 10px;
     }
-
     .droppable-cell {
-    
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    height: 300px; /* Ajusta según sea necesario */
-    padding: 10px;
-    vertical-align: top;
-    text-align: center;
-}
-
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        height: 300px; /* Ajusta según sea necesario */
+        padding: 10px;
+        vertical-align: top;
+        text-align: center;
+    }
     .droppable-cell.drag-over {
         border-color: #28a745;
+    }
+    .tamano-espiral {
+        font-weight: bold;
+        background-color: #f8f9fa;
+        padding: 4px;
+        border-bottom: 1px solid #dee2e6;
+        text-align: center;
+        width: 100%;
     }
 </style>
 @stop
 
 @section('js')
 <script>
-// Actualizar la funcionalidad de Drag-and-Drop después de la búsqueda
+// Función para inicializar drag and drop
 function setupDragAndDrop() {
-    // Asignar el evento dragstart a los elementos de la lista de artículos
     document.querySelectorAll('.draggable-item').forEach(item => {
         item.addEventListener('dragstart', e => {
-            // Guardamos la información del artículo cuando comienza el arrastre
             e.dataTransfer.setData('text/plain', JSON.stringify({
                 id: e.target.dataset.id,
                 codigo: e.target.dataset.codigo,
-                descripcion: e.target.dataset.descripcion
+                descripcion: e.target.dataset.descripcion,
+                capacidadEspiral: e.target.dataset.capacidadEspiral,
+                tamanoEspiral: e.target.dataset.tamanoEspiral
             }));
-
-            // Opcional: Puedes añadir un estilo visual para indicar que el elemento se está arrastrando
             e.target.classList.add('dragging');
         });
-
         item.addEventListener('dragend', e => {
-            // Al finalizar el arrastre, eliminamos el estilo visual
             e.target.classList.remove('dragging');
         });
     });
 
-    // Asignar los eventos de dragover, dragleave y drop a las celdas de destino
     document.querySelectorAll('.droppable-cell').forEach(cell => {
         cell.addEventListener('dragover', e => {
-            e.preventDefault(); // Necesario para permitir el drop
-            cell.classList.add('drag-over'); // Añadimos clase de estilo visual (opcional)
+            e.preventDefault();
+            cell.classList.add('drag-over');
         });
-
         cell.addEventListener('dragleave', () => {
             cell.classList.remove('drag-over');
         });
-
         cell.addEventListener('drop', e => {
-            e.preventDefault(); // Prevenimos el comportamiento predeterminado (navegar)
+            e.preventDefault();
             cell.classList.remove('drag-over');
 
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
 
-            // Actualizamos los campos en la celda de destino
             const idArticuloElement = cell.querySelector('.IdArticulo');
             const codigoElement = cell.querySelector('.TxtCodigo');
             const descripcionElement = cell.querySelector('.TxtDescripcion');
@@ -215,48 +214,52 @@ function setupDragAndDrop() {
             const seleccionVaciaElement = cell.querySelector('.seleccion-vacia');
             const contenidoSeleccionElement = cell.querySelector('.contenido-seleccion');
 
-            // Si el id del artículo está vacío, mostramos "Selección vacía"
             if (!data.id) {
-                idArticuloElement.value = '';
-                codigoElement.textContent = '';
-                descripcionElement.textContent = '';
-                cantidadMaxElement.value = '';
-                cantidadMinElement.value = '';
-                
+                // Si no se suelta un artículo válido, limpia la celda
+                if(idArticuloElement) idArticuloElement.value = '';
+                if(codigoElement) codigoElement.textContent = '';
+                if(descripcionElement) descripcionElement.textContent = '';
+                if(cantidadMaxElement) cantidadMaxElement.value = '';
+                if(cantidadMinElement) cantidadMinElement.value = '';
                 if (seleccionVaciaElement) {
-                    seleccionVaciaElement.style.display = 'block'; // Mostrar mensaje de selección vacía
+                    seleccionVaciaElement.style.display = 'block';
                 }
-                
                 if (contenidoSeleccionElement) {
-                    contenidoSeleccionElement.style.display = 'none'; // Ocultamos contenido
+                    contenidoSeleccionElement.style.display = 'none';
                 }
-
-                cantidadMaxElement.disabled = true;
-                cantidadMinElement.disabled = true;
+                if(cantidadMaxElement) cantidadMaxElement.disabled = true;
+                if(cantidadMinElement) cantidadMinElement.disabled = true;
             } else {
-                idArticuloElement.value = data.id;
-                codigoElement.textContent = data.codigo;
-                descripcionElement.textContent = data.descripcion;
-                cantidadMaxElement.value = 0;
-                cantidadMinElement.value = 0;
-
+                // Asigna los datos del artículo solo por drag and drop
+                if(idArticuloElement) idArticuloElement.value = data.id;
+                if(codigoElement) codigoElement.textContent = data.codigo;
+                if(descripcionElement) descripcionElement.textContent = data.descripcion;
+                // Solo se asigna Capacidad_Espiral si no hay valor registrado previamente
+                if(cantidadMaxElement && (!cantidadMaxElement.value || cantidadMaxElement.value === "0")) {
+                    cantidadMaxElement.value = data.capacidadEspiral;
+                }
+                if(cantidadMinElement) cantidadMinElement.value = 0;
                 if (seleccionVaciaElement) {
                     seleccionVaciaElement.style.display = 'none';
                 }
-                
                 if (contenidoSeleccionElement) {
-                    contenidoSeleccionElement.style.display = 'block'; // Mostrar contenido
+                    contenidoSeleccionElement.style.display = 'block';
                 }
+                if(cantidadMaxElement) cantidadMaxElement.disabled = false;
+                if(cantidadMinElement) cantidadMinElement.disabled = false;
 
-                cantidadMaxElement.disabled = false;
-                cantidadMinElement.disabled = false;
+                // Mostrar Tamano_Espiral en la celda (simulando un th)
+                let tamanoElement = cell.querySelector('.tamano-espiral');
+                if (!tamanoElement) {
+                    tamanoElement = document.createElement('div');
+                    tamanoElement.classList.add('tamano-espiral');
+                    cell.insertBefore(tamanoElement, cell.firstChild);
+                }
+                tamanoElement.textContent = data.tamanoEspiral;
             }
-
-            // Opcional: Realizar una llamada AJAX para guardar el cambio
         });
     });
 
-    // Agregar el evento de "Eliminar" al botón para restaurar la selección vacía
     document.querySelectorAll('.remove-article-btn').forEach(button => {
         button.addEventListener('click', e => {
             const cell = e.target.closest('.droppable-cell');
@@ -267,29 +270,24 @@ function setupDragAndDrop() {
             const cantidadMinElement = cell.querySelector('.CantidadMin');
             const seleccionVaciaElement = cell.querySelector('.seleccion-vacia');
             const contenidoSeleccionElement = cell.querySelector('.contenido-seleccion');
-
-            // Restablecemos la celda a su estado vacío
-            idArticuloElement.value = '';
-            codigoElement.textContent = '';
-            descripcionElement.textContent = '';
-            cantidadMaxElement.value = '';
-            cantidadMinElement.value = '';
-
+            if(idArticuloElement) idArticuloElement.value = '';
+            if(codigoElement) codigoElement.textContent = '';
+            if(descripcionElement) descripcionElement.textContent = '';
+            if(cantidadMaxElement) cantidadMaxElement.value = '';
+            if(cantidadMinElement) cantidadMinElement.value = '';
             if (seleccionVaciaElement) {
                 seleccionVaciaElement.style.display = 'block';
             }
-
             if (contenidoSeleccionElement) {
                 contenidoSeleccionElement.style.display = 'none';
             }
-
-            cantidadMaxElement.disabled = true;
-            cantidadMinElement.disabled = true;
+            if(cantidadMaxElement) cantidadMaxElement.disabled = true;
+            if(cantidadMinElement) cantidadMinElement.disabled = true;
         });
     });
 }
 
-// Llamada para verificar las celdas al cargar la página
+// Verificar el estado de las celdas al cargar la página
 document.querySelectorAll('.droppable-cell').forEach(cell => {
     const idArticuloElement = cell.querySelector('.IdArticulo');
     const cantidadMaxElement = cell.querySelector('.CantidadMax');
@@ -297,115 +295,55 @@ document.querySelectorAll('.droppable-cell').forEach(cell => {
     const seleccionVaciaElement = cell.querySelector('.seleccion-vacia');
     const contenidoSeleccionElement = cell.querySelector('.contenido-seleccion');
 
-    // Verificar si el Id_Articulo es vacío o nulo al cargar
     if (idArticuloElement && !idArticuloElement.value) {
         if (seleccionVaciaElement) {
-            seleccionVaciaElement.style.display = 'block'; // Mostrar "Selección vacía"
+            seleccionVaciaElement.style.display = 'block';
         }
         if (contenidoSeleccionElement) {
-            contenidoSeleccionElement.style.display = 'none'; // Ocultar la imagen, inputs y botón
+            contenidoSeleccionElement.style.display = 'none';
         }
-        cantidadMaxElement.disabled = true;
-        cantidadMinElement.disabled = true;
+        if(cantidadMaxElement) cantidadMaxElement.disabled = true;
+        if(cantidadMinElement) cantidadMinElement.disabled = true;
     } else {
         if (seleccionVaciaElement) {
-            seleccionVaciaElement.style.display = 'none'; // Ocultar "Selección vacía"
+            seleccionVaciaElement.style.display = 'none';
         }
         if (contenidoSeleccionElement) {
-            contenidoSeleccionElement.style.display = 'block'; // Mostrar la imagen, inputs y botón
+            contenidoSeleccionElement.style.display = 'block';
         }
-        cantidadMaxElement.disabled = false;
-        cantidadMinElement.disabled = false;
+        if(cantidadMaxElement) cantidadMaxElement.disabled = false;
+        if(cantidadMinElement) cantidadMinElement.disabled = false;
     }
 });
 
-// Llamada para verificar las celdas al cargar la página
-document.querySelectorAll('.droppable-cell').forEach(cell => {
-    const idArticuloElement = cell.querySelector('.IdArticulo');
-    const cantidadMaxElement = cell.querySelector('.CantidadMax');
-    const cantidadMinElement = cell.querySelector('.CantidadMin');
-    const seleccionVaciaElement = cell.querySelector('.seleccion-vacia');
-    const contenidoSeleccionElement = cell.querySelector('.contenido-seleccion');
-
-    // Verificar si el Id_Articulo es vacío o nulo al cargar
-    if (idArticuloElement && !idArticuloElement.value) {
-        if (seleccionVaciaElement) {
-            seleccionVaciaElement.style.display = 'block'; // Mostrar "Selección vacía"
-        }
-        if (contenidoSeleccionElement) {
-            contenidoSeleccionElement.style.display = 'none'; // Ocultar la imagen, inputs y botón
-        }
-        cantidadMaxElement.disabled = true;
-        cantidadMinElement.disabled = true;
-    } else {
-        if (seleccionVaciaElement) {
-            seleccionVaciaElement.style.display = 'none'; // Ocultar "Selección vacía"
-        }
-        if (contenidoSeleccionElement) {
-            contenidoSeleccionElement.style.display = 'block'; // Mostrar la imagen, inputs y botón
-        }
-        cantidadMaxElement.disabled = false;
-        cantidadMinElement.disabled = false;
-    }
-});
-
-
-// Llamada para verificar las celdas al cargar la página
-document.querySelectorAll('.droppable-cell').forEach(cell => {
-    const idArticuloElement = cell.querySelector('.IdArticulo');
-    const cantidadMaxElement = cell.querySelector('.CantidadMax');
-    const cantidadMinElement = cell.querySelector('.CantidadMin');
-    const seleccionVaciaElement = cell.querySelector('.seleccion-vacia');
-    const contenidoSeleccionElement = cell.querySelector('.contenido-seleccion');
-
-    // Verificar si el Id_Articulo es vacío o nulo al cargar
-    if (idArticuloElement && !idArticuloElement.value) {
-        if (seleccionVaciaElement) {
-            seleccionVaciaElement.style.display = 'block'; // Mostrar "Selección vacía"
-        }
-        if (contenidoSeleccionElement) {
-            contenidoSeleccionElement.style.display = 'none'; // Ocultar la imagen, inputs y botón
-        }
-        cantidadMaxElement.disabled = true;
-        cantidadMinElement.disabled = true;
-    } else {
-        if (seleccionVaciaElement) {
-            seleccionVaciaElement.style.display = 'none'; // Ocultar "Selección vacía"
-        }
-        if (contenidoSeleccionElement) {
-            contenidoSeleccionElement.style.display = 'block'; // Mostrar la imagen, inputs y botón
-        }
-        cantidadMaxElement.disabled = false;
-        cantidadMinElement.disabled = false;
-    }
-});
-// Realizar la búsqueda
+// Búsqueda en la barra lateral
 document.getElementById('searchBar').addEventListener('input', function () {
     const query = this.value;
     const resultsContainer = document.getElementById('searchResults');
 
     if (query.length === 0) {
-        resultsContainer.innerHTML = ''; // Limpiar si no hay búsqueda
+        resultsContainer.innerHTML = '';
         @foreach ($articulos as $articulo)
             resultsContainer.innerHTML += `
                 <div class="list-group-item draggable-item"
                      draggable="true"
                      data-id="{{ $articulo->Id_Articulo }}"
                      data-codigo="{{ $articulo->Txt_Codigo }}"
-                     data-descripcion="{{ $articulo->Txt_Descripcion }}">
+                     data-descripcion="{{ $articulo->Txt_Descripcion }}"
+                     data-capacidad-espiral="{{ $articulo->Capacidad_Espiral }}"
+                     data-tamano-espiral="{{ $articulo->Tamano_Espiral }}">
                     {{ $articulo->Txt_Descripcion }} ({{ $articulo->Txt_Codigo }})
                 </div>
             `;
         @endforeach
-        setupDragAndDrop(); // Reasignar eventos de drag and drop después de cargar los elementos
+        setupDragAndDrop();
         return;
     }
 
-    // Realizar solicitud AJAX con el Id de la Vending
     fetch(`/admin/config/plano/1?search=${query}`)
         .then(response => response.json())
         .then(data => {
-            resultsContainer.innerHTML = ''; // Limpiar resultados previos
+            resultsContainer.innerHTML = '';
             data.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'list-group-item draggable-item';
@@ -413,23 +351,30 @@ document.getElementById('searchBar').addEventListener('input', function () {
                 div.dataset.id = item.Id_Articulo;
                 div.dataset.codigo = item.Txt_Codigo;
                 div.dataset.descripcion = item.Txt_Descripcion;
+                div.dataset.capacidadEspiral = item.Capacidad_Espiral;
+                div.dataset.tamanoEspiral = item.Tamano_Espiral;
                 div.textContent = `${item.Txt_Descripcion} (${item.Txt_Codigo})`;
                 resultsContainer.appendChild(div);
             });
-            setupDragAndDrop(); // Reasignar eventos de drag and drop después de cargar los elementos
+            setupDragAndDrop();
         })
         .catch(error => console.error('Error:', error));
 });
 
-setupDragAndDrop(); // Inicializar los eventos de drag and drop al cargar la página
+setupDragAndDrop();
 
 document.getElementById('saveChangesBtn').addEventListener('click', () => {
     const updatedData = [];
+    let valid = true;
 
     document.querySelectorAll('.droppable-cell').forEach(cell => {
         const idArticulo = cell.querySelector('.IdArticulo')?.value || null;
-        const cantidadMax = cell.querySelector('.CantidadMax')?.value || 0; // Ajusta a 0 si está vacío
-        const cantidadMin = cell.querySelector('.CantidadMin')?.value || 0; // Ajusta a 0 si está vacío
+        const cantidadMax = Number(cell.querySelector('.CantidadMax')?.value) || 0;
+        const cantidadMin = Number(cell.querySelector('.CantidadMin')?.value) || 0;
+
+        if (idArticulo && (cantidadMax === 0 || cantidadMin === 0)) {
+            valid = false;
+        }
 
         updatedData.push({
             idConfiguracion: cell.dataset.id,
@@ -439,7 +384,11 @@ document.getElementById('saveChangesBtn').addEventListener('click', () => {
         });
     });
 
-    // Enviar datos al servidor
+    if (!valid) {
+        alert("Por favor, asigne valores mayores a 0 para Máximo y Mínimo en los artículos asignados.");
+        return;
+    }
+
     fetch(`/admin/config/plano/save`, {
         method: 'POST',
         headers: {
@@ -462,46 +411,42 @@ document.getElementById('saveChangesBtn').addEventListener('click', () => {
     });
 });
 </script>
-<!-- JavaScript para hacer la tarjeta movible y ajustable en transparencia -->
+
 <script>
+    // Hacer la tarjeta movible
     const card = document.getElementById('draggableCard');
-    const cardHeader = document.getElementById('cardHeader'); // Selecciona el encabezado
+    const cardHeader = document.getElementById('cardHeader');
     let offsetX, offsetY;
     let isDragging = false;
 
-    // Función para manejar el inicio del arrastre
     cardHeader.addEventListener('mousedown', (e) => {
-        // Detectar el desplazamiento inicial
         offsetX = e.clientX - card.getBoundingClientRect().left;
         offsetY = e.clientY - card.getBoundingClientRect().top;
         isDragging = true;
-
-        // Evitar selección de texto mientras se arrastra
         document.body.style.userSelect = 'none';
     });
 
-    // Función para mover la tarjeta
     document.addEventListener('mousemove', (e) => {
         if (isDragging) {
-            // Actualizar la posición de la tarjeta en base a la posición del mouse
             card.style.left = e.clientX - offsetX + 'px';
             card.style.top = e.clientY - offsetY + 'px';
         }
     });
 
-    // Función para finalizar el arrastre
     document.addEventListener('mouseup', () => {
         isDragging = false;
-        document.body.style.userSelect = '';  // Restaurar la selección de texto
+        document.body.style.userSelect = '';
     });
 
-    // Función para ajustar la transparencia de la tarjeta
     const transparencyControl = document.getElementById('transparencyControl');
-    transparencyControl.addEventListener('input', () => {
-        const transparencyValue = transparencyControl.value;
-        card.style.opacity = transparencyValue / 100;  // Convertir el valor del rango a opacidad
-    });
+    if(transparencyControl) {
+        transparencyControl.addEventListener('input', () => {
+            const transparencyValue = transparencyControl.value;
+            card.style.opacity = transparencyValue / 100;
+        });
+    }
 </script>
+
 <script>
     function goBack() {
         window.history.back();

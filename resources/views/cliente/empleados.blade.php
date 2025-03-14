@@ -6,38 +6,38 @@
 @section('title', __('Empleados'))
 
 @section('content_header')
-<div class="container">
-        <div class="row">
-            <!-- Columna de la izquierda con alineación a la izquierda -->
-            <div class="col-2 d-flex align-items-center">
-                <h4 class="mb-0">
-                    <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Empleados') }}
-                </h4>
-            </div>
-
-            <!-- Columna de la derecha con alineación a la derecha -->
-            <div class="col-10 d-flex justify-content-end align-items-center">
-                <div class="btn-group" role="group" aria-label="Basic example">
-                    <a type="button" href="{{ url('export-csv-employees') }}" class="btn btn-secondary">
-                        Descarga .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-download"></i>
-                    </a>
-                    <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#uploadCsvModal">
-                        Subida .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-cloud-upload-alt"></i>
-                    </button>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addEmployeeModal">
-                        Agregar Empleado &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i>
-                    </button>
-                    <a href="{{ url('export-excel-employees') }}" type="button" class="btn btn-success">
-                        Reporte &nbsp;&nbsp;&nbsp;<i class="fas fa-file-excel"></i>
-                    </a>
-                </div>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Columna izquierda: en móviles ocupa todo el ancho -->
+        <div class="col-12 col-md-2 d-flex align-items-center mb-2 mb-md-0">
+            <h4 class="mb-0">
+                <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>
+                &nbsp;&nbsp;&nbsp;{{ __('Empleados') }}
+            </h4>
+        </div>
+        <!-- Columna derecha: en móviles ocupa todo el ancho -->
+        <div class="col-12 col-md-10 d-flex justify-content-end align-items-center">
+            <div class="btn-group" role="group" aria-label="Basic example">
+                <a type="button" href="{{ url('export-csv-employees') }}" class="btn btn-secondary">
+                    Descarga .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-download"></i>
+                </a>
+                <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#uploadCsvModal">
+                    Subida .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-cloud-upload-alt"></i>
+                </button>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addEmployeeModal">
+                    Agregar Empleado &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i>
+                </button>
+                <a href="{{ url('export-excel-employees') }}" type="button" class="btn btn-success">
+                    Reporte &nbsp;&nbsp;&nbsp;<i class="fas fa-file-excel"></i>
+                </a>
             </div>
         </div>
     </div>
+</div>
 @stop
 
 @section('content')
-    <div class="container">
+    <div class="container-fluid">
         <div class="row">
             <div class="col">
                 <div class="card">
@@ -55,7 +55,7 @@
                                     <a href="#" class="dropdown-item">Action</a>
                                     <a href="#" class="dropdown-item">Another action</a>
                                     <a href="#" class="dropdown-item">Something else here</a>
-                                    <a class="dropdown-divider"></a>
+                                    <div class="dropdown-divider"></div>
                                     <a href="#" class="dropdown-item">Separated link</a>
                                 </div>
                             </div>
@@ -91,11 +91,11 @@
 
     <!-- Edit Modal -->
     <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Editar Empleado</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -106,7 +106,9 @@
                         <div class="form-group">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed"><i class="fas fa-key"></i>&nbsp;&nbsp;| NIP</span>
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-key"></i>&nbsp;&nbsp;| NIP
+                                    </span>
                                 </div>
                                 <input type="number" class="form-control" id="nip" name="nip" required>
                             </div>
@@ -114,7 +116,9 @@
                         <div class="form-group">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed"><i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta</span>
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta
+                                    </span>
                                 </div>
                                 <input type="number" class="form-control" id="notarjeta" name="notarjeta">
                             </div>
@@ -122,7 +126,9 @@
                         <div class="form-group">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed"><i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre</span>
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre
+                                    </span>
                                 </div>
                                 <input type="text" class="form-control" id="nombre" name="nombre" required>
                             </div>
@@ -130,7 +136,9 @@
                         <div class="form-group">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed"><i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno</span>
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno
+                                    </span>
                                 </div>
                                 <input type="text" class="form-control" id="apaterno" name="apaterno" required>
                             </div>
@@ -138,13 +146,17 @@
                         <div class="form-group">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed"><i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno</span>
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno
+                                    </span>
                                 </div>
                                 <input type="text" class="form-control" id="amaterno" name="amaterno">
                             </div>
                         </div>
                         <div class="form-group"> 
-                            <label for="area"><i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de Producto</label>
+                            <label for="area">
+                                <i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de Producto
+                            </label>
                             <select class="form-control" id="area" name="area" required>
                                 <!-- Opciones se llenarán con JavaScript -->
                             </select>
@@ -160,11 +172,11 @@
 
     <!-- Upload CSV Modal -->
     <div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="uploadCsvModalLabel">Subir archivo CSV</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -186,82 +198,95 @@
     </div>
 
     <!-- Modal para agregar empleado -->
-<div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addEmployeeModalLabel">Agregar Empleado</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="addEmployeeForm">
-                <div class="form-group">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text input-group-text-fixed"><i class="fas fa-id-card-alt"></i>&nbsp;&nbsp;| N° Empleado</span>
+    <div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addEmployeeModalLabel">Agregar Empleado</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addEmployeeForm">
+                        <div class="form-group">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-id-card-alt"></i>&nbsp;&nbsp;| N° Empleado
+                                    </span>
+                                </div>
+                                <input type="number" class="form-control" id="no_empleado" name="no_empleado" required>
                             </div>
-                            <input type="number" class="form-control" id="no_empleado" name="no_empleado" required>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text input-group-text-fixed"><i class="fas fa-key"></i>&nbsp;&nbsp;| NIP</span>
+                        <div class="form-group">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-key"></i>&nbsp;&nbsp;| NIP
+                                    </span>
+                                </div>
+                                <input type="number" class="form-control" id="nip" name="nip">
                             </div>
-                            <input type="number" class="form-control" id="nip" name="nip" >
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text input-group-text-fixed"><i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta</span>
+                        <div class="form-group">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta
+                                    </span>
+                                </div>
+                                <input type="number" class="form-control" id="no_tarjeta" name="no_tarjeta">
                             </div>
-                            <input type="number" class="form-control" id="no_tarjeta" name="no_tarjeta">
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text input-group-text-fixed"><i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre</span>
+                        <div class="form-group">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre
+                                    </span>
+                                </div>
+                                <input type="text" class="form-control" id="nombre" name="nombre" required>
                             </div>
-                            <input type="text" class="form-control" id="nombre" name="nombre" required>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text input-group-text-fixed"><i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno</span>
+                        <div class="form-group">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno
+                                    </span>
+                                </div>
+                                <input type="text" class="form-control" id="apaterno" name="apaterno" required>
                             </div>
-                            <input type="text" class="form-control" id="apaterno" name="apaterno" required>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text input-group-text-fixed"><i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno</span>
+                        <div class="form-group">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text input-group-text-fixed">
+                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno
+                                    </span>
+                                </div>
+                                <input type="text" class="form-control" id="amaterno" name="amaterno">
                             </div>
-                            <input type="text" class="form-control" id="amaterno" name="amaterno">
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="area"><i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de Producto</label>
-                        <select class="form-control" id="area" name="area" required>
-                            @foreach ($areas as $area)
-                                <option value="{{ $area->Id_Area }}">{{ $area->Txt_Nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary">Agregar</button>
-                    </div>
-                </form>
+                        <div class="form-group">
+                            <label for="area">
+                                <i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de Producto
+                            </label>
+                            <select class="form-control" id="area" name="area" required>
+                                @foreach ($areas as $area)
+                                    <option value="{{ $area->Id_Area }}">{{ $area->Txt_Nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Agregar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
 @stop
 
 @section('right-sidebar')
@@ -270,13 +295,26 @@
 @section('css')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<!-- CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-
 <style>
     .input-group-text-fixed {
         min-width: 160px;
         text-align: center;
+    }
+    /* Ajustes para dispositivos móviles */
+    @media (max-width: 576px) {
+        .input-group-text-fixed {
+            min-width: 120px;
+            font-size: 0.9rem;
+        }
+        .btn-group a, .btn-group button {
+            margin-bottom: 5px;
+        }
+        /* Asegura que los inputs de DataTables se adapten al ancho */
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            width: 100% !important;
+        }
     }
 </style>
 @stop
@@ -285,9 +323,7 @@
 <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-
 <script>
     $(document).ready(function() {
         var table = $('#empleados-table').DataTable({
@@ -336,30 +372,28 @@
             ],
             responsive: true,
             scrollX: true,
-        language: {
-            processing: "Procesando...",
-            search: "Buscar:",
-            lengthMenu: "Mostrar _MENU_ registros",
-            info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-            infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
-            infoFiltered: "(filtrado de un total de _MAX_ registros)",
-            infoPostFix: "",
-            loadingRecords: "Cargando...",
-            zeroRecords: "No se encontraron resultados",
-            emptyTable: "No hay datos disponibles en la tabla",
-            paginate: {
-                first: "Primero",
-                previous: "Anterior",
-                next: "Siguiente",
-                last: "Último"
-            },
-            aria: {
-                sortAscending: ": activar para ordenar la columna de manera ascendente",
-                sortDescending: ": activar para ordenar la columna de manera descendente"
+            language: {
+                processing: "Procesando...",
+                search: "Buscar:",
+                lengthMenu: "Mostrar _MENU_ registros",
+                info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+                infoFiltered: "(filtrado de un total de _MAX_ registros)",
+                loadingRecords: "Cargando...",
+                zeroRecords: "No se encontraron resultados",
+                emptyTable: "No hay datos disponibles en la tabla",
+                paginate: {
+                    first: "Primero",
+                    previous: "Anterior",
+                    next: "Siguiente",
+                    last: "Último"
+                },
+                aria: {
+                    sortAscending: ": activar para ordenar la columna de manera ascendente",
+                    sortDescending: ": activar para ordenar la columna de manera descendente"
+                }
             }
-        }
-    });
-
+        });
 
         window.toggleStatus = function(employeeId) {
             $.ajax({
@@ -369,7 +403,7 @@
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
-                    table.ajax.reload(null, false); // false to keep current paging
+                    table.ajax.reload(null, false);
                 },
                 error: function() {
                     alert('Error al cambiar el estado del empleado.');
@@ -393,19 +427,11 @@
                         url: `/empleado/delete/${employeeId}`,
                         method: 'GET',
                         success: function(response) {
-                            table.ajax.reload(null, false); // false to keep current paging
-                            Swal.fire(
-                                'Eliminado!',
-                                `El empleado ${employeeName} ha sido eliminado.`,
-                                'success'
-                            );
+                            table.ajax.reload(null, false);
+                            Swal.fire('Eliminado!', `El empleado ${employeeName} ha sido eliminado.`, 'success');
                         },
                         error: function() {
-                            Swal.fire(
-                                'Error!',
-                                'Hubo un problema al eliminar el empleado.',
-                                'error'
-                            );
+                            Swal.fire('Error!', 'Hubo un problema al eliminar el empleado.', 'error');
                         }
                     });
                 }
@@ -419,48 +445,45 @@
         });
 
         $('#addEmployeeForm').on('submit', function(e) {
-        e.preventDefault();
-
-        $.ajax({
-            url: '/empleado/add', // Ajusta la URL a la ruta de tu controlador de Laravel
-            method: 'POST',
-            data: $(this).serialize(),
-            success: function(response) {
-                if (response.success) {
-                    $('#addEmployeeModal').modal('hide');
-                    table.ajax.reload();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Éxito',
-                        text: 'Empleado agregado correctamente.',
-                    });
-                } else {
+            e.preventDefault();
+            $.ajax({
+                url: '/empleado/add',
+                method: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#addEmployeeModal').modal('hide');
+                        table.ajax.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Éxito',
+                            text: 'Empleado agregado correctamente.',
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message,
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    var errors = xhr.responseJSON.errors;
+                    var errorMessage = '';
+                    for (var key in errors) {
+                        errorMessage += errors[key] + '\n';
+                    }
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: response.message,
+                        text: errorMessage,
                     });
                 }
-            },
-            error: function(xhr) {
-                var errors = xhr.responseJSON.errors;
-                var errorMessage = '';
-                for (var key in errors) {
-                    errorMessage += errors[key] + '\n';
-                }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: errorMessage,
-                });
-            }
+            });
         });
-    });
 
-        // Manejo del formulario de edición
         $('#editForm').on('submit', function(e) {
             e.preventDefault();
-
             var id = $('#editId').val();
             var nip = $('#nip').val();
             var notarjeta = $('#notarjeta').val();
@@ -468,7 +491,6 @@
             var apaterno = $('#apaterno').val();
             var amaterno = $('#amaterno').val();
             var area = $('#area').val();
-
             $.ajax({
                 url: `/empleado/update/${id}`,
                 type: 'POST',
@@ -483,19 +505,17 @@
                     area: area
                 },
                 success: function(result) {
-                    table.ajax.reload(); // Recarga la tabla después de actualizar el empleado
+                    table.ajax.reload();
                     $('#editModal').modal('hide');
                     Swal.fire('Éxito', 'Empleado actualizado con éxito.', 'success');
                 },
                 error: function(xhr) {
-                    console.log(xhr.responseJSON); // Muestra toda la respuesta en consola
+                    console.log(xhr.responseJSON);
                     Swal.fire('Error', 'Hubo un error al actualizar el empleado.', 'error');
                 }
-
             });
         });
 
-        // Función para abrir el modal de edición
         $('#empleados-table').on('click', '.edit-btn', function() {
             var id = $(this).data('id');
             var nip = $(this).data('nip');
@@ -504,90 +524,65 @@
             var apaterno = $(this).data('apaterno');
             var amaterno = $(this).data('amaterno');
             var area = $(this).data('area');
-
             openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, area);
         });
     });
 
     function openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, idArea) {
-    // Llenar el formulario con los datos del empleado
-    $('#editId').val(id);
-    $('#nip').val(nip);
-    $('#notarjeta').val(notarjeta);
-    $('#nombre').val(nombre);
-    $('#apaterno').val(apaterno);
-    $('#amaterno').val(amaterno);
-
-    var areaSelect = document.getElementById("area");
-
-    // Si Choices ya está inicializado, lo destruimos antes de modificar opciones
-    if (areaSelect.choicesInstance) {
-        areaSelect.choicesInstance.destroy();
-    }
-
-    // Limpiar las opciones existentes
-    areaSelect.innerHTML = '';
-
-    // Obtener áreas desde la API
-    $.ajax({
-        url: '{!! route('areas.data') !!}', // Ruta para obtener áreas
-        method: 'GET',
-        success: function(data) {
-            console.log('Datos de áreas recibidos:', data);
-
-            var idAreaStr = idArea.toString(); // Convertir idArea a cadena para comparación
-            var options = [];
-
-            // Buscar y mover el área actual del empleado al inicio
-            var currentArea = data.find(area => area.Id_Area === idAreaStr);
-            if (currentArea) {
-                options.push({ value: currentArea.Id_Area, label: currentArea.Txt_Nombre, selected: true });
-                data = data.filter(area => area.Id_Area !== idAreaStr);
-            }
-
-            // Agregar las demás áreas
-            data.forEach(area => {
-                options.push({ value: area.Id_Area, label: area.Txt_Nombre });
-            });
-
-            // Inicializar Choices.js con las nuevas opciones
-            var choices = new Choices(areaSelect, {
-                searchEnabled: true, // Permitir búsqueda
-                removeItemButton: false, // No permitir eliminación de opciones seleccionadas
-                placeholder: true,
-                placeholderValue: "Seleccione un área",
-                shouldSort: false, // Mantener el orden original
-            });
-
-            // Agregar opciones a Choices
-            choices.setChoices(options, 'value', 'label', true);
-
-            // Guardar referencia a Choices en el elemento para futuras modificaciones
-            areaSelect.choicesInstance = choices;
-        },
-        error: function(xhr) {
-            console.error('Error al cargar las áreas:', xhr.responseText);
+        $('#editId').val(id);
+        $('#nip').val(nip);
+        $('#notarjeta').val(notarjeta);
+        $('#nombre').val(nombre);
+        $('#apaterno').val(apaterno);
+        $('#amaterno').val(amaterno);
+        var areaSelect = document.getElementById("area");
+        if (areaSelect.choicesInstance) {
+            areaSelect.choicesInstance.destroy();
         }
-    });
-
-    $('#editModal').modal('show');
-}
-
-
+        areaSelect.innerHTML = '';
+        $.ajax({
+            url: '{!! route('areas.data') !!}',
+            method: 'GET',
+            success: function(data) {
+                var idAreaStr = idArea.toString();
+                var options = [];
+                var currentArea = data.find(area => area.Id_Area === idAreaStr);
+                if (currentArea) {
+                    options.push({ value: currentArea.Id_Area, label: currentArea.Txt_Nombre, selected: true });
+                    data = data.filter(area => area.Id_Area !== idAreaStr);
+                }
+                data.forEach(area => {
+                    options.push({ value: area.Id_Area, label: area.Txt_Nombre });
+                });
+                var choices = new Choices(areaSelect, {
+                    searchEnabled: true,
+                    removeItemButton: false,
+                    placeholder: true,
+                    placeholderValue: "Seleccione un área",
+                    shouldSort: false,
+                });
+                choices.setChoices(options, 'value', 'label', true);
+                areaSelect.choicesInstance = choices;
+            },
+            error: function(xhr) {
+                console.error('Error al cargar las áreas:', xhr.responseText);
+            }
+        });
+        $('#editModal').modal('show');
+    }
 </script>
 <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            @if (session('status'))
-                let status = "{{ session('status') }}";
-                let message = "{{ session('message') }}";
-
-                Swal.fire({
-                    icon: status,
-                    title: status === 'success' ? 'Éxito' : 'Error',
-                    html: message,
-                    confirmButtonText: 'Aceptar'
-                });
-            @endif
-        });
-    </script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if (session('status'))
+            let status = "{{ session('status') }}";
+            let message = "{{ session('message') }}";
+            Swal.fire({
+                icon: status,
+                title: status === 'success' ? 'Éxito' : 'Error',
+                html: message,
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
+    });
+</script>
 @stop
