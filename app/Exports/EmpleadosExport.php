@@ -17,7 +17,6 @@ class EmpleadosExport implements FromCollection, WithHeadings, WithEvents, Shoul
     {
         ob_end_clean();
         ob_start();
-        session_start();
         
         $empleados = DB::table('Cat_Empleados')
             ->select('No_Empleado', 'Nip','No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'Id_Area', 'Txt_Estatus')

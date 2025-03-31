@@ -62,14 +62,16 @@ Route::prefix('{language}')->group(function () {
     // ADMINISTRADORES
     Route::get('/administradores', 'AdminController@AdminView')->name('administradores'); // Administracion Administradores
     // PLANTAS
-    Route::get('/plantas', 'AdminController@Plantas')->name('plantas'); // Administracion Empleados
+    Route::get('/plantas', 'AdminController@Plantas')->name('plantas'); // Administracion PLANTAS
     Route::get('/plantas/PlantaView/{id}', [AdminController::class, 'PlantaView']);
     // ARTICULOS
-    Route::get('/articulos', 'AdminController@Articulos')->name('articulos'); // Administracion Empleados
+    Route::get('/articulos', 'AdminController@Articulos')->name('articulos'); // Administracion ARTICULOS
+    // ARTICULOS
+    Route::get('/codigocte', 'AdminController@CodigoCteV')->name('codigoscte'); // Administracion Codigos CTE
     // VENDINGS
-    Route::get('/vendings', 'AdminController@Vendings')->name('vendings'); // Administracion Empleados
+    Route::get('/vendings', 'AdminController@Vendings')->name('vendings'); // Administracion VENDINGS
     // DISPOSITIVOS
-    Route::get('/dispositivos', 'AdminController@Dispositivos')->name('dispositivos'); // Administracion Empleados
+    Route::get('/dispositivos', 'AdminController@Dispositivos')->name('dispositivos'); // Administracion DISPOSITIVOS
     // PLANOGRAMA
     Route::get('/config/plano/{id}', 'AdminController@Planograma')->name('planograma'); // Administracion Planograma
     // RELLENAR
@@ -136,6 +138,13 @@ Route::post('/articulos/store', [AdminController::class, 'storeArticulo']);
 Route::delete('/articulos/{id}/delete', [AdminController::class, 'deleteArticulo']);
 Route::get('/articulos/{id}/edit', [AdminController::class, 'editArticulo']);
 Route::post('/articulos/{id}/update', [AdminController::class, 'updateArticulo']);
+// CODIGOS CLIENTE
+// Ruta para listar los registros (con parámetro opcional)
+Route::get('/codigocte/{id?}', 'AdminController@CodigoCteID')->name('codigocte');
+// Ruta para crear un nuevo registro
+Route::post('/codigocte/store', 'AdminController@storeCodigoCte')->name('codigocte.store');
+// Ruta para actualizar un registro existente
+Route::put('/codigocte/update', 'AdminController@updateCodigoCte')->name('codigocte.update');
 //VENDINGS
 Route::get('/vendings/data', [AdminController::class, 'getVendingsData'])->name('vendings.data');
 Route::post('/vending/changeStatus', 'AdminController@changeStatusvm');
@@ -150,7 +159,6 @@ Route::post('/admin/config/plano/save', [AdminController::class, 'guardarCambios
 Route::post('/admin/config/plano/remove', [AdminController::class, 'eliminarArticuloPlano']);
 //RELLENAR
 Route::post('/update-stock', [AdminController::class, 'updateStock'])->name('update.stock');
-
 //DISPOSITIVOS
 Route::get('/dispositivos/get', [AdminController::class, 'getDispositivos'])->name('dispositivos.get');
 Route::post('/dispositivos/store', [AdminController::class, 'storeDispositivo'])->name('dispositivos.store');
@@ -158,11 +166,10 @@ Route::get('/dispositivos/{id}', [AdminController::class, 'showDispositivo'])->n
 Route::post('/dispositivos/update/{id}', [AdminController::class, 'updateDispositivo'])->name('dispositivos.update');
 Route::delete('/dispositivos/destroy/{id}', [AdminController::class, 'destroyDispositivo'])->name('dispositivos.destroy');
 Route::get('/maquinas/list', [AdminController::class, 'listMquinas'])->name('maquinas.list');
-
-
-
 //AREAS
 Route::get('/getAreas', [AdminController::class, 'getAreas']);
+
+
 
 
 //##################################### REGISTRO DE ESTATUS ######################################################//

@@ -99,6 +99,13 @@ class AdminController extends Controller
         $userId = $_SESSION['usuario']->Id_Usuario_Admon;
         return view('administracion.articulos.articulos');
     }
+    public function CodigoCteV(){
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+        return view('administracion.articulos.codigoscte');
+    }
     public function Vendings(){
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -1411,6 +1418,90 @@ private function sanitizeString($string) {
         ->rawColumns(['Imagen'])
         ->make(true);
 }
+
+public function CodigoCteID($id = null)
+{
+    $query = DB::table('Cat_CodigosCte as c')
+        ->join('Cat_Articulos as a', 'c.Id_Articulo', '=', 'a.Id_Articulo')
+        ->join('Cat_Plantas as p', 'c.Id_Planta', '=', 'p.Id_Planta')
+        ->select(
+            'c.*',
+            'a.Txt_Descripcion as ArticuloDescripcion',
+            'a.Txt_Codigo as ArticuloCodigo',
+            'p.Txt_Nombre as PlantaNombre'
+        );
+    
+    if ($id) {
+        $query->where('c.Id_Articulo', $id);
+    }
+    
+    // Si usas Yajra DataTables:
+    return DataTables::of($query)->make(true);
+    
+    // Si prefieres retornar un JSON simple:
+    // return response()->json($query->get());
+}
+
+/**
+ * Función para crear un nuevo registro en Cat_CodigosCte.
+ */
+public function storeCodigoCte(Request $request)
+{
+    // Validar los datos recibidos
+    $validatedData = $request->validate([
+        'Id_Articulo'             => 'required|integer',
+        'Id_Planta'               => 'required|integer',
+        'Txt_Descripcion'         => 'required|string',
+        'Txt_Estatus'             => 'required|in:Alta,Baja',
+        'Fecha_Alta'              => 'required|date',
+        'Fecha_Modificacion'      => 'nullable|date',
+        'Fecha_Baja'              => 'nullable|date',
+        'Id_Usuario_Alta'         => 'required|integer',
+        'Id_Usuario_Modificacion' => 'nullable|integer',
+        'Id_Usuario_Baja'         => 'nullable|integer',
+    ]);
+
+    // Insertar el registro y obtener el ID generado
+    $id = DB::table('Cat_CodigosCte')->insertGetId($validatedData);
+
+    return response()->json([
+        'success'      => true,
+        'message'      => 'Registro creado exitosamente',
+        'Id_CodigoCte' => $id
+    ]);
+}
+
+/**
+ * Función para actualizar un registro existente en Cat_CodigosCte.
+ */
+public function updateCodigoCte(Request $request)
+{
+    // Validar los datos recibidos, incluyendo el ID del registro
+    $validatedData = $request->validate([
+        'Id_CodigoCte'            => 'required|integer',
+        'Id_Articulo'             => 'required|integer',
+        'Id_Planta'               => 'required|integer',
+        'Txt_Descripcion'         => 'required|string',
+        'Txt_Estatus'             => 'required|in:Alta,Baja',
+        'Fecha_Alta'              => 'required|date',
+        'Fecha_Modificacion'      => 'nullable|date',
+        'Fecha_Baja'              => 'nullable|date',
+        'Id_Usuario_Alta'         => 'required|integer',
+        'Id_Usuario_Modificacion' => 'nullable|integer',
+        'Id_Usuario_Baja'         => 'nullable|integer',
+    ]);
+
+    // Actualizar el registro según el Id_CodigoCte
+    DB::table('Cat_CodigosCte')
+        ->where('Id_CodigoCte', $validatedData['Id_CodigoCte'])
+        ->update($validatedData);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Registro actualizado exitosamente'
+    ]);
+}
+
 
 
     public function cambiarEstatus(Request $request)
