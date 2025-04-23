@@ -130,7 +130,7 @@
     
     
     <title>
-                USI :: Admin :: VM            </title>
+                USI :: Operador :: VM            </title>
 
     
         <link rel="stylesheet" href="http://127.0.0.1:8000/vendor/icheck-bootstrap/icheck-bootstrap.min.css">
@@ -166,7 +166,7 @@
                          alt="Admin Logo" height="50">
                 
                 
-                <b>ADMIN</b> VM
+                <b>Operador</b> VM
 
             </a>
         </div>
@@ -177,7 +177,7 @@
             
                 <div class="card-header ">
                     <h3 class="card-title float-none text-center">
-                        <b>Portal de Administracion VM</b>
+                        <b>Portal de Operador VM</b>
                     </h3>
                 </div>
             
