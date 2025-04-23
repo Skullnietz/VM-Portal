@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InicioController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\OperadorController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportesClienteController;
@@ -24,6 +25,8 @@ Route::prefix('{language}')->group(function () {
     Route::post('/validar-registro', 'LoginController@Login')->name('validar-registro');
     // LOGIN
     Route::post('/validar-admin', 'LoginController@ADMINLogin')->name('validar-admin');
+    //LOGIN
+    Route::post('/validar-operador', [LoginController::class, 'operadorLogin'])->name('login.operador');
     //////////////////////////////////////////////////////////////////////////////////////////// 
     });
 
@@ -36,6 +39,9 @@ Route::get('/login', function () {
 });
 Route::get('/adminlogin', function () {
     return view('adminlogin');
+});
+Route::get('/oplogin', function () {
+    return view('operadorlogin');
 });
 
 // PROTECCION DE DATOS MIDDLEWARE
@@ -90,6 +96,10 @@ Route::prefix('{language}')->group(function () {
     Route::get('/reporte/consumoxvending', [ReportesClienteController::class, 'indexConsumoxVending'])->name('consumosxvending.index');
     ///////////////////////////////////// REPORTE DE VENDINGS /////////////////////////////
     Route::get('/reporte/inventariovm', [ReportesClienteController::class, 'indexInventarioVM'])->name('inventariovm.index');
+
+    //RELLENADO DE VENDINGS | OPERADOR
+    Route::get('/stock/rellenar/{id}', 'OperadorController@Surtir')->name('rellenar'); // Administracion Surtido
+    Route::get('/op-vendings', 'OperadorController@Vendings')->name('op-vendings'); // Administracion VENDINGS
 });
 
 
@@ -223,6 +233,10 @@ Route::get('/export-inventariovm', [ReportesClienteController::class, 'exportInv
 
 Route::get('/notifications/unread', [NotificationController::class, 'showNotifications'])->name('getUnreadNotifications');
 Route::get('/mark-notification-as-read/{id}', [NotificationController::class, 'markAsRead'])->name('markNotificationAsRead');
+
+////////////////////////////////////     OPERADORES    ///////////////////////////////
+Route::get('op/vendings/data', [OperadorController::class, 'getVendingsData'])->name('vendings.data');
+
 
 
 ////////////////////////////////////      PRUEBAS     ///////////////////////////////

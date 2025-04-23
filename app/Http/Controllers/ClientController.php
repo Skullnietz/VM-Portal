@@ -338,7 +338,8 @@ public function getDataEmpleados()
         return response()->stream($callback, 200, $headers);
     }
 
-    public function importCSV(Request $request) {
+    public function importCSV(Request $request)
+{
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
@@ -351,10 +352,22 @@ public function getDataEmpleados()
 
     if ($request->hasFile('csv_file')) {
         $path = $request->file('csv_file')->getRealPath();
-        $data = array_map('str_getcsv', file($path));
+
+        // Leemos y convertimos todas las líneas a UTF-8
+        $lines = file($path);
+        $encodedLines = array_map(function ($line) {
+            $encoding = mb_detect_encoding($line, ['ISO-8859-1', 'Windows-1252', 'UTF-8'], true);
+            if ($encoding === false) {
+                // Si no se puede detectar la codificación, omitimos o usamos UTF-8 como fallback
+                $encoding = 'ISO-8859-1'; // o puedes registrar un error si prefieres
+            }
+            return mb_convert_encoding($line, 'UTF-8', $encoding);
+        }, $lines);
+
+        $data = array_map('str_getcsv', $encodedLines);
 
         if (count($data) > 0) {
-            $header = array_shift($data); // Obtener y eliminar el encabezado
+            $header = array_shift($data); // Eliminar encabezado
 
             foreach ($data as $row) {
                 $no_empleado = !empty($row[0]) ? (string) $row[0] : null;
@@ -395,7 +408,6 @@ public function getDataEmpleados()
                 $empleado = DB::table('Cat_Empleados')->where('No_Empleado', $no_empleado)->first();
 
                 if ($empleado) {
-                    // Actualizar empleado existente sin verificar el No_Tarjeta
                     DB::table('Cat_Empleados')
                         ->where('No_Empleado', $no_empleado)
                         ->update([
@@ -410,7 +422,6 @@ public function getDataEmpleados()
                             'Id_Usuario_Modificacion' => $usuario,
                         ]);
                 } else {
-                    // Verificar si el No_Tarjeta ya existe antes de crear un nuevo registro
                     if (!empty($no_tarjeta)) {
                         $tarjeta_existente = DB::table('Cat_Empleados')->where('No_Tarjeta', $no_tarjeta)->first();
 
@@ -421,7 +432,6 @@ public function getDataEmpleados()
                         }
                     }
 
-                    // Crear nuevo empleado
                     DB::table('Cat_Empleados')->insert([
                         'No_Empleado' => $no_empleado,
                         'Nip' => $nip,
@@ -453,8 +463,17 @@ public function getDataEmpleados()
 /**
  * Función para limpiar y convertir la codificación de caracteres a UTF-8
  */
-private function sanitizeString($string) {
-    return mb_convert_encoding(trim($string), 'UTF-8', 'auto'); 
+private function sanitizeString($string)
+{
+    // Detectar y convertir a UTF-8 si es necesario
+    if (!mb_detect_encoding($string, 'UTF-8', true)) {
+        $string = mb_convert_encoding($string, 'UTF-8', 'ISO-8859-1');
+    }
+
+    // Eliminar caracteres invisibles o especiales raros
+    $string = preg_replace('/[\x00-\x1F\x7F]/u', '', $string);
+
+    return trim($string);
 }
 
     

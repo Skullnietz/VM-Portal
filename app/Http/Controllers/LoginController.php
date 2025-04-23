@@ -83,6 +83,47 @@ class LoginController extends Controller
             }
         }
     }
+
+    public function operadorLogin(Request $request) {
+        
+        if (isset($_SESSION['usuario'])) {
+            return redirect()->route('home', app()->getLocale());
+        } else {
+            $consulta = DB::table('Cat_Operadores')
+                ->select('Id_Operador','Txt_Nombre','Txt_ApellidoP','Txt_ApellidoM','Nick_Usuario','Contrasenia','Txt_Puesto','Txt_Estatus','PlantasConAcceso','Fecha_Alta','Txt_Rol','Img_URL')
+                ->where('Nick_Usuario', $request->usuario)
+                ->where('Contrasenia', $request->password)
+                ->get();
+
+            if (isset($consulta[0])) {
+                $user = $consulta[0];
+               
+
+                if ($user->Nick_Usuario != $request->usuario) {
+                    $msg = "Usuario o Contraseña Incorrecta";
+                    return redirect()->back()->withErrors(['msg' => $msg]);
+                }
+                if ($user->Contrasenia != $request->password) {
+                    $msg = "Contraseña Incorrecta";
+                    return redirect()->back()->withErrors(['msg' => $msg]);
+                } else {
+                    session_start();
+                    $_SESSION['usuario'] = $user;
+
+                    if ($_SESSION['usuario']->Txt_Rol == "operador") {
+                        $_SESSION['usuario'] = $user;
+                        $_SESSION['usuario']->Img_URL = '/Images/Usuarios/urvina.png';
+                        return redirect()->route('op-vendings', ['language' => 'op'])->with('usuario', $user);
+                    }
+
+                    return redirect()->route('salir', app()->getLocale())->with('usuario', $user);
+                }
+            } else {
+                $msg = "Usuario o Contraseña Incorrecta";
+                return redirect()->back()->withErrors(['msg' => $msg]);
+            }
+        }
+    }
     
 
     public function logout()

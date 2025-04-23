@@ -15,7 +15,10 @@ class InicioController extends Controller
                     return redirect('/cli/home-cli');
                 }
                 if($_SESSION['usuario']->Txt_Rol == "operador" ){
-                    return redirect('op/home');
+                    return redirect('/op/op-vendings');
+                }
+                if($_SESSION['usuario']->Txt_Rol == "administrador"){
+                    return redirect('/admin/home-cli');
                 }
             }
             else{
