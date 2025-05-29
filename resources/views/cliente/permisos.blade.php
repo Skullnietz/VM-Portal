@@ -139,7 +139,6 @@
     <!-- Incluir CSS de Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
 <style>
         #areasTable {
     width: 100% !important; /* Asegura que la tabla ocupe todo el ancho disponible */
@@ -234,7 +233,7 @@
         });
     });
 </script>
-<script type="text/javascript">
+    <script type="text/javascript">
 $(document).ready(function() {
     $.ajaxSetup({
         headers: {
@@ -330,7 +329,8 @@ $(document).ready(function() {
         }
     });
 
-    $('#permisos-articulos-table').on('click', '.delete-btn', function() {
+ // Función para eliminar un permiso
+$('#permisos-articulos-table').on('click', '.delete-btn', function() {
     var id = $(this).data('id');
     Swal.fire({
         title: '¿Estás seguro?',
@@ -345,23 +345,54 @@ $(document).ready(function() {
             $.ajax({
                 url: `/delete-permiso-articulo/${id}`,
                 type: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content') // 👈 esto es clave
-                },
                 success: function(result) {
-                    $('#permisos-articulos-table').DataTable().ajax.reload();
-                    Swal.fire('Eliminado', 'Permiso eliminado con éxito', 'success');
+                    $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+                    Swal.fire(
+                        'Eliminado',
+                        'Permiso eliminado con éxito',
+                        'success'
+                    );
                 },
                 error: function(xhr, status, error) {
-                    Swal.fire('Error', `Error eliminando el permiso: ${xhr.responseJSON?.error || xhr.responseText}`, 'error');
+                    Swal.fire(
+                        'Error',
+                        `Error eliminando el permiso: ${xhr.responseJSON.error || xhr.responseText}`,
+                        'error'
+                    );
                 }
             });
         }
     });
 });
 
-
-
+// Función para cambiar el estado
+$('#permisos-articulos-table').on('click', '.toggle-status', function() {
+    var id = $(this).data('id');
+    var status = $(this).data('status');
+    var newStatus = status === 'Alta' ? 'Baja' : 'Alta';
+    $.ajax({
+        url: `/toggle-status-permiso-articulo/${id}`,
+        type: 'POST',
+        data: {
+            status: newStatus
+        },
+        success: function(result) {
+            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+            Swal.fire(
+                'Actualizado',
+                'Estado actualizado con éxito',
+                'success'
+            );
+        },
+        error: function(xhr, status, error) {
+            Swal.fire(
+                'Error',
+                `Error actualizando el estado: ${xhr.responseJSON.error || xhr.responseText}`,
+                'error'
+            );
+        }
+    });
+});
 
 // Función para actualizar la cantidad en tiempo real
 $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
