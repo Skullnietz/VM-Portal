@@ -344,7 +344,7 @@ $('#permisos-articulos-table').on('click', '.delete-btn', function() {
         if (result.isConfirmed) {
             $.ajax({
                 url: `/delete-permiso-articulo/${id}`,
-                type: 'DELETE',
+                type: 'POST',
                 success: function(result) {
                     $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
                     Swal.fire(
