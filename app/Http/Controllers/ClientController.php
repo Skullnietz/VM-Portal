@@ -349,25 +349,29 @@ public function getDataEmpleados()
 
     $status = 'success';
     $message = 'Datos importados correctamente.';
+    $nuevas_areas = [];
 
     if ($request->hasFile('csv_file')) {
         $path = $request->file('csv_file')->getRealPath();
 
-        // Leemos y convertimos todas las líneas a UTF-8
         $lines = file($path);
         $encodedLines = array_map(function ($line) {
             $encoding = mb_detect_encoding($line, ['ISO-8859-1', 'Windows-1252', 'UTF-8'], true);
-            if ($encoding === false) {
-                // Si no se puede detectar la codificación, omitimos o usamos UTF-8 como fallback
-                $encoding = 'ISO-8859-1'; // o puedes registrar un error si prefieres
-            }
-            return mb_convert_encoding($line, 'UTF-8', $encoding);
+            return mb_convert_encoding($line, 'UTF-8', $encoding ?: 'ISO-8859-1');
         }, $lines);
 
         $data = array_map('str_getcsv', $encodedLines);
 
         if (count($data) > 0) {
-            $header = array_shift($data); // Eliminar encabezado
+            $header = array_shift($data);
+
+            // Precargar áreas con función anónima compatible
+            $areas = DB::table('Cat_Area')
+                ->where('Id_Planta', $id_planta)
+                ->pluck('Id_Area', 'Txt_Nombre')
+                ->mapWithKeys(function ($id, $nombre) {
+                    return [mb_strtoupper(trim($nombre)) => $id];
+                });
 
             foreach ($data as $row) {
                 $no_empleado = !empty($row[0]) ? (string) $row[0] : null;
@@ -379,28 +383,54 @@ public function getDataEmpleados()
                 $n_area = !empty($row[6]) ? $this->sanitizeString($row[6]) : null;
                 $estatus = !empty($row[7]) ? $this->sanitizeString($row[7]) : 'Alta';
 
-                if (is_null($no_empleado)) {
+                if (is_null($no_empleado) || empty($nombre) || empty($a_paterno) || is_null($n_area)) {
                     $status = 'error';
-                    $message = "El campo No_Empleado está vacío. No se ha importado este registro.";
+                    $message = "Datos incompletos para el empleado '$no_empleado'.";
                     break;
                 }
 
-                if (empty($nombre) || empty($a_paterno)) {
-                    $status = 'error';
-                    $message = "El campo Nombre y/o Apellido Paterno está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
-                    break;
-                }
+                $n_area_key = mb_strtoupper(trim($n_area));
+                $id_area = $areas[$n_area_key] ?? null;
 
-                if (is_null($n_area)) {
-                    $status = 'error';
-                    $message = "El campo de área está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
-                    break;
-                } else {
-                    $id_area = DB::table('Cat_Area')->where('Txt_Nombre', $n_area)->value('Id_Area');
+                if (!$id_area) {
+                    $fecha = now();
+                    try {
+                        DB::table('Cat_Area')->insert([
+                            'Id_Planta' => $id_planta,
+                            'Txt_Nombre' => $n_area,
+                            'Fecha_Alta' => $fecha,
+                            'Txt_Estatus' => 'Alta',
+                            'Fecha_Modificacion' => null,
+                            'Fecha_Baja' => null,
+                            'Id_Usuario_Alta' => $usuario,
+                            'Id_Usuario_Modificacion' => null,
+                            'Id_Usuario_Baja' => null
+                        ]);
 
-                    if (!$id_area) {
+                        $retries = 0;
+                        do {
+                            usleep(200000);
+                            $area = DB::table('Cat_Area')
+                                ->where('Id_Planta', $id_planta)
+                                ->where('Txt_Nombre', $n_area)
+                                ->whereDate('Fecha_Alta', $fecha->toDateString())
+                                ->first();
+                            $id_area = $area ? $area->Id_Area : null;
+                            $retries++;
+                        } while (!$id_area && $retries < 5);
+
+                        if ($id_area) {
+                            $areas[$n_area_key] = $id_area;
+                            $nuevas_areas[] = $n_area;
+                        } else {
+                            $status = 'error';
+                            $message = "No se pudo confirmar la creación del área '$n_area'.";
+                            break;
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error al insertar área desde importación: ' . $e->getMessage());
                         $status = 'error';
-                        $message = "El área '$n_area' no se encontró en la base de datos para el empleado '$no_empleado'. No se ha importado este registro.";
+                        $message = "Error al registrar el área '$n_area'.";
                         break;
                     }
                 }
@@ -408,26 +438,35 @@ public function getDataEmpleados()
                 $empleado = DB::table('Cat_Empleados')->where('No_Empleado', $no_empleado)->first();
 
                 if ($empleado) {
-                    DB::table('Cat_Empleados')
-                        ->where('No_Empleado', $no_empleado)
-                        ->update([
-                            'Nip' => $nip,
-                            'No_Tarjeta' => $no_tarjeta,
-                            'Nombre' => $nombre,
-                            'APaterno' => $a_paterno,
-                            'AMaterno' => $a_materno,
-                            'Id_Area' => $id_area,
-                            'Fecha_Modificacion' => now(),
-                            'Txt_Estatus' => $estatus,
-                            'Id_Usuario_Modificacion' => $usuario,
-                        ]);
+                    if (
+                        $empleado->Nip !== $nip ||
+                        $empleado->No_Tarjeta !== $no_tarjeta ||
+                        $empleado->Nombre !== $nombre ||
+                        $empleado->APaterno !== $a_paterno ||
+                        $empleado->AMaterno !== $a_materno ||
+                        $empleado->Id_Area !== $id_area ||
+                        $empleado->Txt_Estatus !== $estatus
+                    ) {
+                        DB::table('Cat_Empleados')
+                            ->where('No_Empleado', $no_empleado)
+                            ->update([
+                                'Nip' => $nip,
+                                'No_Tarjeta' => $no_tarjeta,
+                                'Nombre' => $nombre,
+                                'APaterno' => $a_paterno,
+                                'AMaterno' => $a_materno,
+                                'Id_Area' => $id_area,
+                                'Fecha_Modificacion' => now(),
+                                'Txt_Estatus' => $estatus,
+                                'Id_Usuario_Modificacion' => $usuario,
+                            ]);
+                    }
                 } else {
                     if (!empty($no_tarjeta)) {
                         $tarjeta_existente = DB::table('Cat_Empleados')->where('No_Tarjeta', $no_tarjeta)->first();
-
                         if ($tarjeta_existente) {
                             $status = 'error';
-                            $message = "El número de tarjeta '$no_tarjeta' ya está registrado para otro empleado. No se ha importado este registro.";
+                            $message = "El número de tarjeta '$no_tarjeta' ya está registrado para otro empleado.";
                             break;
                         }
                     }
@@ -457,8 +496,14 @@ public function getDataEmpleados()
         $message = 'No se seleccionó ningún archivo.';
     }
 
+    if ($status === 'success' && !empty($nuevas_areas)) {
+        $message .= ' Se registraron nuevas áreas: ' . implode(', ', $nuevas_areas) . '.';
+    }
+
     return redirect()->back()->with(['status' => $status, 'message' => $message]);
 }
+
+    
 
 /**
  * Función para limpiar y convertir la codificación de caracteres a UTF-8
