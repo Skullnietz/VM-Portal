@@ -243,7 +243,7 @@ Route::get('areas/data', 'ClientController@getAreas')->name('areas.data');
 Route::post('empleado/update/{id}', 'ClientController@updateemployee')->name('empleados.update');
 ///////////////////////////////////////// PERMISOS TOOLS ///////////////////////////////////////////////////
 Route::get('get-permisos-articulos', 'ClientController@getPermisosArticulos')->name('get.permisos.articulos'); // Asignacion de permisos
-Route::delete('/delete-permiso-articulo/{id}', 'ClientController@deletePermisoArticulo')->name('delete.permiso.articulo');
+Route::post('/delete-permiso-articulo/{id}', 'ClientController@deletePermisoArticulo')->name('delete.permiso.articulo');
 Route::post('/update-permiso-articulo/{id}', 'ClientController@updatePermisoArticulo')->name('update.permiso.articulo');
 Route::post('/toggle-status-permiso-articulo/{id}', 'ClientController@toggleStatusPermiso')->name('toggle.status.permiso.articulo');
 Route::post('check-permission', [ClientController::class, 'checkPermission']);
