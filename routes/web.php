@@ -8,6 +8,7 @@ use App\Http\Controllers\OperadorController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportesClienteController;
+use Illuminate\Http\Request;
 
 
 // REDIRECCIONAMIENTO BASICO
@@ -200,6 +201,32 @@ Route::get('vm-graphs', 'StatusController@getConsumoGraph')->name('getgraph');
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° CLIENTES °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° //
 ///////////////////////////////////////// EMPLEADOS TOOLS ///////////////////////////////////////////////////
+
+
+
+Route::get('/test-upload', function () {
+    return response('
+        <form method="POST" action="/test-upload" enctype="multipart/form-data">
+            ' . csrf_field() . '
+            <input type="file" name="csv_file" required>
+            <button type="submit">Enviar</button>
+        </form>
+    ', 200)->header('Content-Type', 'text/html');
+});
+
+Route::post('/test-upload', function (Request $request) {
+    $file = $request->file('csv_file'); // CORRECTO: usando la instancia $request
+
+    return response()->json([
+        'hasFile' => $request->hasFile('csv_file'),
+        'isValid' => $file ? $file->isValid() : false,
+        'realPath' => $file ? $file->getRealPath() : null,
+        'error' => $file ? $file->getError() : null,
+        'size' => $file ? $file->getSize() : null,
+    ]);
+});
+
+
 Route::post('empleado/toggle-status/{id}', 'ClientController@toggleStatus');
 Route::get('empleados/data', 'ClientController@getDataEmpleados')->name('empleados.data');
 Route::get('export-csv-employees', 'ClientController@exportCSV');
