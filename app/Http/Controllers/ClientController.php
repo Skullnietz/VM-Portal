@@ -732,8 +732,8 @@ public function addArea(Request $request)
     $plantaId = $_SESSION['usuario']->Id_Planta;
 
 
-    // Verificar si el área ya existe en la misma planta
-    $existingArea = DB::table('Cat_Area')
+        // Verificar si el área ya existe
+        $existingArea = DB::table('Cat_Area')
         ->where('Id_Planta', $plantaId)
         ->where('Txt_Nombre', $newName)
         ->first();
@@ -742,62 +742,90 @@ public function addArea(Request $request)
         return response()->json(['success' => false, 'message' => 'El área ya existe.']);
     }
 
-    // Insertar el nuevo área en la base de datos
-    $idArea = DB::table('Cat_Area')->insertGetId([
-        'Id_Planta' => $plantaId,
-        'Txt_Nombre' => $newName,
-        'Fecha_Alta' => $currentDate,
-        'Txt_Estatus' => 'Alta',
-        'Fecha_Modificacion' => null,
-        'Fecha_Baja' => null,
-        'Id_Usuario_Alta' => $userId,
-        'Id_Usuario_Modificacion' => null,
-        'Id_Usuario_Baja' => null
-    ]);
+    try {
+        // Insertamos sin obtener el ID
+        DB::table('Cat_Area')->insert([
+            'Id_Planta' => $plantaId,
+            'Txt_Nombre' => $newName,
+            'Fecha_Alta' => $currentDate,
+            'Txt_Estatus' => 'Alta',
+            'Fecha_Modificacion' => null,
+            'Fecha_Baja' => null,
+            'Id_Usuario_Alta' => $userId,
+            'Id_Usuario_Modificacion' => null,
+            'Id_Usuario_Baja' => null
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error al insertar área: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Error al agregar el área.']);
+    }
 
-    if ($idArea) {
-        // 1️⃣ Obtener las máquinas de la planta
-        $maquinas = DB::table('Ctrl_Mquinas')
+    // 🔁 Esperar hasta que esté disponible
+    $idArea = null;
+    $maxRetries = 5;
+    $retries = 0;
+
+    while ($retries < $maxRetries) {
+        $area = DB::table('Cat_Area')
+            ->where('Txt_Nombre', $newName)
             ->where('Id_Planta', $plantaId)
-            ->pluck('Id_Maquina'); // Obtener solo los IDs
+            ->where('Fecha_Alta', $currentDate)
+            ->first();
 
-        if ($maquinas->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
+        if ($area) {
+            $idArea = $area->Id_Area;
+            break;
         }
 
-        // 2️⃣ Obtener los artículos que están en esas máquinas
-        $articulos = DB::table('Configuracion_Maquina')
+        usleep(200000); // 200ms
+        $retries++;
+    }
+
+    if (!$idArea) {
+        return response()->json(['success' => false, 'message' => 'No se pudo confirmar la creación del área.']);
+    }
+
+    // Obtener máquinas
+    $maquinas = DB::table('Ctrl_Mquinas')
+        ->where('Id_Planta', $plantaId)
+        ->pluck('Id_Maquina');
+
+    if ($maquinas->isEmpty()) {
+        return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
+    }
+
+    // Obtener artículos
+    $articulos = DB::table('Configuracion_Maquina')
         ->whereIn('Id_Maquina', $maquinas)
         ->whereNotNull('Id_Articulo')
         ->distinct()
         ->pluck('Id_Articulo');
 
-        Log::info('Artículos obtenidos:', $articulos->toArray());
-
-        if ($articulos->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
-        }
-
-        // 3️⃣ Registrar permisos en Ctrl_Permisos_x_Area solo para estos artículos
-        $permisos = [];
-        foreach ($articulos as $idArticulo) {
-            $permisos[] = [
-                'Id_Area' => $idArea,
-                'Id_Articulo' => $idArticulo,
-                'Frecuencia' => 0,
-                'Cantidad' => 0,
-                'Id_Planta' => $plantaId,
-                'Status' => 'Alta',
-            ];
-        }
-
-        // Insertar permisos en la base de datos
-        DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
-
-        return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
-    } else {
-        return response()->json(['success' => false, 'message' => 'Error al crear el área.']);
+    if ($articulos->isEmpty()) {
+        return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
     }
+
+    // Crear permisos
+    $permisos = [];
+    foreach ($articulos as $idArticulo) {
+        $permisos[] = [
+            'Id_Area' => $idArea,
+            'Id_Articulo' => $idArticulo,
+            'Frecuencia' => 0,
+            'Cantidad' => 0,
+            'Id_Planta' => $plantaId,
+            'Status' => 'Alta',
+        ];
+    }
+
+    try {
+        DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
+    } catch (\Exception $e) {
+        Log::error('Error al insertar permisos: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'No se pudo crear los permisos del área.']);
+    }
+
+    return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
 }
 
 public function deleteArea(Request $request)

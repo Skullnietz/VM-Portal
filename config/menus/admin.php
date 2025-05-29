@@ -40,6 +40,11 @@ return[
                     'icon_color' => 'red',
                     'url' => '/admin/administradores',
                 ],
+                [
+                    'text' => 'Operadores',
+                    'icon_color' => 'red',
+                    'url' => '/admin/operadores',
+                ],
             ]
         ],
         [

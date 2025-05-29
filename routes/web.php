@@ -67,6 +67,8 @@ Route::prefix('{language}')->group(function () {
     Route::get('/usuarios', 'AdminController@Usuarios')->name('usuarios'); // Administracion Empleados
     // ADMINISTRADORES
     Route::get('/administradores', 'AdminController@AdminView')->name('administradores'); // Administracion Administradores
+    // OPERADORES
+    Route::get('/operadores', 'AdminController@OpView')->name('operadores'); // Administracion Administradores
     // PLANTAS
     Route::get('/plantas', 'AdminController@Plantas')->name('plantas'); // Administracion PLANTAS
     Route::get('/plantas/PlantaView/{id}', [AdminController::class, 'PlantaView']);
@@ -81,7 +83,7 @@ Route::prefix('{language}')->group(function () {
     // PLANOGRAMA
     Route::get('/config/plano/{id}', 'AdminController@Planograma')->name('planograma'); // Administracion Planograma
     // RELLENAR
-    Route::get('/stock/rellenar/{id}', 'AdminController@Surtir')->name('rellenar'); // Administracion Surtido
+    Route::get('/Astock/rellenar/{id}', 'AdminController@Surtir')->name('Arellenar'); // Administracion Surtido
     
     
 
@@ -104,6 +106,12 @@ Route::prefix('{language}')->group(function () {
 
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° ADMINISTRADORES °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° //
+//OPERADORES 
+Route::get('get-operadores', [AdminController::class, 'getOperadores'])->name('get-operadores');
+Route::post('/operadores/add', [AdminController::class, 'agregarOperador'])->name('add.operador');
+Route::post('/operadores/estatus', [AdminController::class, 'updateOpEstatus'])->name('update.operador.estatus');
+Route::delete('/operadores/{id}', [AdminController::class, 'destroyOperador'])->name('operador.destroy');
+Route::post('/admin/editar-operador', [AdminController::class, 'editarOperador']);
 //ADMINISTRADORES
 Route::get('get-administradores', [AdminController::class, 'getAdministradores'])->name('get-administradores');
 Route::post('/administrador/estatus', [AdminController::class, 'updateEstatus'])->name('update.administrador.estatus');
@@ -115,7 +123,7 @@ Route::post('/usuario/estatus', [AdminController::class, 'updateEstatusUser'])->
 Route::post('/guardar-usuario', [AdminController::class, 'guardarUsuario']);
 Route::delete('/usuario/{id}', [AdminController::class, 'destroyUser'])->name('user.destroy');
 //PLANTAS
-Route::get('/getPlantas', [AdminController::class, 'getPlantas']);
+Route::get('/getPlantas', [AdminController::class, 'getPlantas'])->name('get-plantas');
 Route::get('/getPlantasInfo', [AdminController::class, 'getPlantasInfo'])->name('getPlantasInfo');
 Route::post('/guardar-planta', [AdminController::class, 'guardarPlanta'])->name('guardarPlanta');
 Route::delete('/planta/{id}', [AdminController::class, 'destroyPlanta'])->name('planta.destroy');
@@ -215,6 +223,7 @@ Route::post('/areas/generate-permissions', [ClientController::class, 'generateMi
 Route::get('/get-areas/data', 'ClientController@getDataAreas')->name('get-areas.data');
 Route::post('/areas/update-name', [ClientController::class, 'updateNameArea'])->name('areas.update-name');
 Route::post('/areas/update-status', [ClientController::class, 'updateStatusArea'])->name('areas.update-status');
+Route::post('/asignar-permisos-area', [ClientController::class, 'asignarPermisosArea']);
 Route::post('areas/add', [ClientController::class, 'addArea']);
 Route::post('/areas/delete', [ClientController::class, 'deleteArea']);
 Route::get('export-excel-areas', [ClientController::class, 'exportExcelAreas']);

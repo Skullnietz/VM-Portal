@@ -156,6 +156,13 @@ class AdminController extends Controller
         $userId = $_SESSION['usuario']->Id_Usuario_Admon;
         return view('administracion.usuarios.administradores');
     }
+    public function OpView(){
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+        return view('administracion.usuarios.operadores');
+    }
     public function Usuarios(){
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -274,6 +281,25 @@ class AdminController extends Controller
             return response()->json(['message' => 'Error al eliminar el administrador: ' . $e->getMessage()], 500);
         }
     }
+
+    public function destroyOperador($id)
+    {
+        try {
+            // Busca el administrador por su ID
+            $operador = DB::table('Cat_Operadores')->where('Id_Operador', $id)->first();
+
+            if (!$operador) {
+                return response()->json(['message' => 'Operador no encontrado'], 404);
+            }
+
+            // Eliminar el registro
+            DB::table('Cat_Operadores')->where('Id_Operador', $id)->delete();
+
+            return response()->json(['message' => 'Operador eliminado exitosamente']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al eliminar el operador: ' . $e->getMessage()], 500);
+        }
+    }
     
     public function getAdministradores()
     {
@@ -294,6 +320,64 @@ class AdminController extends Controller
 
         return DataTables::of($administradores)->make(true);
     }
+
+    public function getOperadores()
+{
+    // Obtiene todos los nombres de plantas indexados por Id_Planta
+    $plantas = DB::table('Cat_Plantas')
+        ->pluck('Txt_Nombre_Planta', 'Id_Planta')
+        ->toArray();
+
+    $colores = ['primary', 'success', 'info', 'warning', 'danger', 'secondary', 'dark'];
+
+    $operadores = DB::table('Cat_Operadores as op')
+        ->select(
+            DB::raw("CONCAT(op.Txt_Nombre, ' ', op.Txt_ApellidoP, ' ', op.Txt_ApellidoM) as NombreCompleto"),
+            'op.Txt_Nombre',
+            'op.Txt_ApellidoP',
+            'op.Txt_ApellidoM',
+            'op.Id_Operador as id',
+            'op.Nick_Usuario as NombreUsuario',
+            'op.Txt_Estatus',
+            'op.Txt_Puesto',
+            'op.Fecha_Alta',
+            'op.Fecha_Modificacion',
+            'op.Fecha_Baja',
+            'op.PlantasConAcceso',
+            DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = op.Id_Usuario_Admon_Alta) as UsuarioAlta"),
+            DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = op.Id_Usuario_Admon_Modificacion) as UsuarioModificacion"),
+            DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = op.Id_Usuario_Admon_Baja) as UsuarioBaja")
+        )
+        ->get();
+
+    // Transformamos los resultados para formatear las plantas con etiquetas de colores
+    foreach ($operadores as $op) {
+        $ids = explode(',', $op->PlantasConAcceso);
+        $labels = [];
+
+        $idsLimpios = []; // para guardar solo los IDs limpios
+
+        foreach ($ids as $rawId) {
+            $id = trim($rawId);
+            if (is_numeric($id)) {
+                $idsLimpios[] = $id;
+
+                $nombre = isset($plantas[$id]) ? $plantas[$id] : 'Desconocida';
+                $color = $colores[$id % count($colores)];
+                $labels[] = '<span class="badge bg-' . $color . '">' . $nombre . '</span>';
+            }
+        }
+
+        $op->PlantasConAcceso = implode(' ', $labels); // el HTML bonito
+        $op->IdsPlantas = implode(',', $idsLimpios);   // los IDs reales
+    }
+
+    return DataTables::of($operadores)
+        ->rawColumns(['PlantasConAcceso'])
+        ->make(true);
+}
+
+
 
     public function getUsuarios()
     {
@@ -348,6 +432,49 @@ class AdminController extends Controller
         } else if ($nuevoEstatus == 'Baja') {
             DB::table('Cat_Usuarios_Administradores')
                 ->where('Id_Usuario_Admon', $adminId)
+                ->update([
+                    'Txt_Estatus' => 'Baja',
+                    'Fecha_Baja' => now(),
+                    'Id_Usuario_Admon_Baja' => $usuarioModificador,
+                ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Estatus actualizado correctamente.']);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+
+public function updateOpEstatus(Request $request)
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    try {
+        $OpId = $request->id;
+        $nuevoEstatus = $request->nuevoEstatus;
+        $usuarioModificador = $_SESSION['usuario']->Id_Usuario_Admon; // Obtenemos el usuario actual desde la sesión
+
+        // Verificamos si el administrador existe
+        $operador = DB::table('Cat_Operadores')->where('Id_Operador', $OpId)->first();
+        if (!$operador) {
+            return response()->json(['success' => false, 'message' => 'Operador no encontrado'], 404);
+        }
+
+        // Actualizamos los campos dependiendo del nuevo estatus
+        if ($nuevoEstatus == 'Alta') {
+            DB::table('Cat_Operadores')
+                ->where('Id_Operador', $OpId)
+                ->update([
+                    'Txt_Estatus' => 'Alta',
+                    'Fecha_Modificacion' => now(),
+                    'Fecha_Baja' => null,
+                    'Id_Usuario_Admon_Modificacion' => $usuarioModificador,
+                    'Id_Usuario_Admon_Baja' => null,
+                ]);
+        } else if ($nuevoEstatus == 'Baja') {
+            DB::table('Cat_Operadores')
+                ->where('Id_Operador', $OpId)
                 ->update([
                     'Txt_Estatus' => 'Baja',
                     'Fecha_Baja' => now(),
@@ -479,6 +606,84 @@ public function agregarAdministrador(Request $request)
     return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
 }
 }
+
+public function agregarOperador(Request $request)
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    try {
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'apellidoP' => 'required|string|max:255',
+            'apellidoM' => 'nullable|string|max:255',
+            'Nick_Usuario' => 'required|string|max:255|unique:Cat_Operadores',
+            'password' => 'required|string|min:6',
+            'plantas' => 'nullable|array',
+            'plantas.*' => 'integer|exists:Cat_Plantas,Id_Planta',
+            'puesto' => 'required|string|max:255',
+        ]);
+
+        $operadorId = DB::table('Cat_Operadores')->insertGetId([
+            'Txt_Nombre' => $request->nombre,
+            'Txt_ApellidoP' => $request->apellidoP,
+            'Txt_ApellidoM' => $request->apellidoM,
+            'Nick_Usuario' => $request->Nick_Usuario,
+            'Contrasenia' => bcrypt($request->password),
+            'Fecha_Alta' => now(),
+            'Id_Usuario_Admon_Alta' => $_SESSION['usuario']->Id_Usuario_Admon,
+            'Txt_Estatus' => "Alta",
+            'Txt_Rol' => "operador",
+            'Txt_Puesto' => $request->puesto,
+            'PlantasConAcceso' => is_array($request->plantas) ? implode(',', $request->plantas) : null,
+            
+
+        ]);
+
+        return response()->json(['message' => 'Operador agregado con éxito']);
+
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+
+public function editarOperador(Request $request)
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    try {
+        $request->validate([
+            'id_operador' => 'required|exists:Cat_Operadores,Id_Operador',
+            'nombre' => 'required|string|max:255',
+            'apellidoP' => 'required|string|max:255',
+            'apellidoM' => 'nullable|string|max:255',
+            'puesto' => 'required|string|max:255',
+            'plantas' => 'nullable|array',
+            'plantas.*' => 'integer|exists:Cat_Plantas,Id_Planta',
+        ]);
+
+        DB::table('Cat_Operadores')
+            ->where('Id_Operador', $request->id_operador)
+            ->update([
+                'Txt_Nombre' => $request->nombre,
+                'Txt_ApellidoP' => $request->apellidoP,
+                'Txt_ApellidoM' => $request->apellidoM,
+                'Txt_Puesto' => $request->puesto,
+                'PlantasConAcceso' => is_array($request->plantas) ? implode(',', $request->plantas) : null,
+                'Fecha_Modificacion' => now(),
+                'Id_Usuario_Admon_Modificacion' => $_SESSION['usuario']->Id_Usuario_Admon,
+            ]);
+
+        return response()->json(['success' => true, 'message' => 'Operador actualizado correctamente']);
+
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+
 
 public function guardarUsuario(Request $request)
 {
@@ -765,13 +970,13 @@ public function addArea(Request $request)
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
-    
-    $newName = $request->input('new_name');
-    $currentDate = now();
-    $plantaId = $request->input('idPlanta'); // Obtenemos el Id de Planta desde el request
-    $userId = 1; // Se mantiene el usuario como 1
 
-    // Verificar si el área ya existe en la misma planta
+    $newName = $request->input('new_name');
+    $currentDate = now()->toDateTimeString(); // precisión a segundos
+    $plantaId = $request->input('idPlanta');
+    $userId = 1;
+
+    // Verificar si el área ya existe
     $existingArea = DB::table('Cat_Area')
         ->where('Id_Planta', $plantaId)
         ->where('Txt_Nombre', $newName)
@@ -781,63 +986,92 @@ public function addArea(Request $request)
         return response()->json(['success' => false, 'message' => 'El área ya existe.']);
     }
 
-    // Insertar el nuevo área en la base de datos
-    $idArea = DB::table('Cat_Area')->insertGetId([
-        'Id_Planta' => $plantaId,
-        'Txt_Nombre' => $newName,
-        'Fecha_Alta' => $currentDate,
-        'Txt_Estatus' => 'Alta',
-        'Fecha_Modificacion' => null,
-        'Fecha_Baja' => null,
-        'Id_Usuario_Alta' => $userId,
-        'Id_Usuario_Modificacion' => null,
-        'Id_Usuario_Baja' => null
-    ]);
-
-    if ($idArea) {
-        // 1️⃣ Obtener las máquinas de la planta
-        $maquinas = DB::table('Ctrl_Mquinas')
-            ->where('Id_Planta', $plantaId)
-            ->pluck('Id_Maquina');
-
-        if ($maquinas->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
-        }
-
-        // 2️⃣ Obtener los artículos que están en esas máquinas (sin registros nulos)
-        $articulos = DB::table('Configuracion_Maquina')
-            ->whereIn('Id_Maquina', $maquinas)
-            ->whereNotNull('Id_Articulo')
-            ->distinct()
-            ->pluck('Id_Articulo');
-
-        Log::info('Artículos obtenidos:', $articulos->toArray());
-
-        if ($articulos->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
-        }
-
-        // 3️⃣ Registrar permisos en Ctrl_Permisos_x_Area solo para estos artículos
-        $permisos = [];
-        foreach ($articulos as $idArticulo) {
-            $permisos[] = [
-                'Id_Area' => $idArea,
-                'Id_Articulo' => $idArticulo,
-                'Frecuencia' => 0,
-                'Cantidad' => 0,
-                'Id_Planta' => $plantaId,
-                'Status' => 'Alta',
-            ];
-        }
-
-        // Insertar los permisos en la base de datos
-        DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
-
-        return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
-    } else {
-        return response()->json(['success' => false, 'message' => 'Error al crear el área.']);
+    try {
+        // Insertamos sin obtener el ID
+        DB::table('Cat_Area')->insert([
+            'Id_Planta' => $plantaId,
+            'Txt_Nombre' => $newName,
+            'Fecha_Alta' => $currentDate,
+            'Txt_Estatus' => 'Alta',
+            'Fecha_Modificacion' => null,
+            'Fecha_Baja' => null,
+            'Id_Usuario_Alta' => $userId,
+            'Id_Usuario_Modificacion' => null,
+            'Id_Usuario_Baja' => null
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error al insertar área: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Error al agregar el área.']);
     }
+
+    // 🔁 Esperar hasta que esté disponible
+    $idArea = null;
+    $maxRetries = 5;
+    $retries = 0;
+
+    while ($retries < $maxRetries) {
+        $area = DB::table('Cat_Area')
+            ->where('Txt_Nombre', $newName)
+            ->where('Id_Planta', $plantaId)
+            ->where('Fecha_Alta', $currentDate)
+            ->first();
+
+        if ($area) {
+            $idArea = $area->Id_Area;
+            break;
+        }
+
+        usleep(200000); // 200ms
+        $retries++;
+    }
+
+    if (!$idArea) {
+        return response()->json(['success' => false, 'message' => 'No se pudo confirmar la creación del área.']);
+    }
+
+    // Obtener máquinas
+    $maquinas = DB::table('Ctrl_Mquinas')
+        ->where('Id_Planta', $plantaId)
+        ->pluck('Id_Maquina');
+
+    if ($maquinas->isEmpty()) {
+        return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
+    }
+
+    // Obtener artículos
+    $articulos = DB::table('Configuracion_Maquina')
+        ->whereIn('Id_Maquina', $maquinas)
+        ->whereNotNull('Id_Articulo')
+        ->distinct()
+        ->pluck('Id_Articulo');
+
+    if ($articulos->isEmpty()) {
+        return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
+    }
+
+    // Crear permisos
+    $permisos = [];
+    foreach ($articulos as $idArticulo) {
+        $permisos[] = [
+            'Id_Area' => $idArea,
+            'Id_Articulo' => $idArticulo,
+            'Frecuencia' => 0,
+            'Cantidad' => 0,
+            'Id_Planta' => $plantaId,
+            'Status' => 'Alta',
+        ];
+    }
+
+    try {
+        DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
+    } catch (\Exception $e) {
+        Log::error('Error al insertar permisos: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'No se pudo crear los permisos del área.']);
+    }
+
+    return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
 }
+
 
 public function generateMissingPermissions(Request $request)
 {
@@ -923,7 +1157,7 @@ public function generateMissingPermissions(Request $request)
 
 public function generateAllMissingPermissions(Request $request)
 {
-    if (session_status() == PHP_SESSION_NONE) {
+    if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
 
@@ -935,7 +1169,7 @@ public function generateAllMissingPermissions(Request $request)
         ->where('Txt_Estatus', 'Alta')
         ->get();
 
-    // 2️⃣ Obtener las máquinas vending de la planta
+    // 2️⃣ Obtener las máquinas vending
     $maquinas = DB::table('Ctrl_Mquinas')
         ->where('Id_Planta', $plantaId)
         ->pluck('Id_Maquina');
@@ -944,36 +1178,42 @@ public function generateAllMissingPermissions(Request $request)
         return response()->json(['success' => false, 'message' => 'No hay máquinas vending en esta planta.']);
     }
 
-    // 3️⃣ Obtener los artículos que están en esas máquinas (sin repetir y eliminando NULLs)
+    // 3️⃣ Obtener artículos únicos configurados en máquinas
     $articulos = DB::table('Configuracion_Maquina')
         ->whereIn('Id_Maquina', $maquinas)
-        ->whereNotNull('Id_Articulo') // ⚠️ Filtrar artículos NULL
+        ->whereNotNull('Id_Articulo')
         ->distinct()
         ->pluck('Id_Articulo')
-        ->filter() // ⚠️ Asegurar que no haya valores vacíos o NULL
-        ->toArray(); // Convertir a array para facilidad de manejo
+        ->filter()
+        ->toArray();
 
     if (empty($articulos)) {
         return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
     }
 
-    // 4️⃣ Obtener permisos actuales para esta planta
+    // 4️⃣ Obtener todos los permisos actuales
     $permisosActuales = DB::table('Ctrl_Permisos_x_Area')
         ->where('Id_Planta', $plantaId)
-        ->get(['Id_Area', 'Id_Articulo']);
+        ->get();
 
-    // Convertir a un array asociativo para fácil búsqueda
     $permisosExistentes = [];
     foreach ($permisosActuales as $permiso) {
-        $permisosExistentes[$permiso->Id_Area][$permiso->Id_Articulo] = true;
+        $clave = $permiso->Id_Area . '-' . $permiso->Id_Articulo;
+        $permisosExistentes[$clave] = $permiso;
     }
 
-    // 5️⃣ Insertar permisos faltantes
-    $permisosNuevos = [];
+    // 5️⃣ Preparar nuevos, actualizables y claves válidas
+    $nuevos = [];
+    $actualizar = [];
+    $clavesNuevas = [];
+
     foreach ($areas as $area) {
         foreach ($articulos as $idArticulo) {
-            if (!isset($permisosExistentes[$area->Id_Area][$idArticulo])) {
-                $permisosNuevos[] = [
+            $clave = $area->Id_Area . '-' . $idArticulo;
+            $clavesNuevas[] = $clave;
+
+            if (!isset($permisosExistentes[$clave])) {
+                $nuevos[] = [
                     'Id_Area' => $area->Id_Area,
                     'Id_Articulo' => $idArticulo,
                     'Frecuencia' => 0,
@@ -981,28 +1221,73 @@ public function generateAllMissingPermissions(Request $request)
                     'Id_Planta' => $plantaId,
                     'Status' => 'Alta',
                 ];
+            } else {
+                $perm = $permisosExistentes[$clave];
+                if (
+                    $perm->Frecuencia != 0 ||
+                    $perm->Cantidad != 0 ||
+                    $perm->Status !== 'Alta'
+                ) {
+                    $actualizar[] = [
+                        'Id_Permiso' => $perm->Id_Permiso,
+                        'Frecuencia' => 0,
+                        'Cantidad' => 0,
+                        'Status' => 'Alta',
+                    ];
+                }
             }
         }
     }
 
-    if (!empty($permisosNuevos)) {
-        DB::table('Ctrl_Permisos_x_Area')->insert($permisosNuevos);
+    // 6️⃣ Insertar nuevos en chunks seguros (máx 300)
+    $insertados = 0;
+    if (!empty($nuevos)) {
+        $chunks = array_chunk($nuevos, 300);
+        foreach ($chunks as $chunk) {
+            DB::table('Ctrl_Permisos_x_Area')->insert($chunk);
+            $insertados += count($chunk);
+        }
     }
 
-    // 6️⃣ Eliminar permisos que ya no deberían existir
-    $permisosAEliminar = DB::table('Ctrl_Permisos_x_Area')
-        ->where('Id_Planta', $plantaId)
-        ->whereNotIn('Id_Articulo', $articulos) // Si el artículo no está en las máquinas vending
-        ->delete();
+    // 7️⃣ Actualizar permisos existentes modificados
+    $actualizados = 0;
+    foreach ($actualizar as $item) {
+        DB::table('Ctrl_Permisos_x_Area')
+            ->where('Id_Permiso', $item['Id_Permiso'])
+            ->update([
+                'Frecuencia' => $item['Frecuencia'],
+                'Cantidad' => $item['Cantidad'],
+                'Status' => $item['Status'],
+            ]);
+        $actualizados++;
+    }
+
+    // 8️⃣ Eliminar permisos obsoletos
+    $clavesValidas = array_flip($clavesNuevas);
+    $aEliminar = [];
+
+    foreach ($permisosExistentes as $clave => $perm) {
+        if (!isset($clavesValidas[$clave])) {
+            $aEliminar[] = $perm->Id_Permiso;
+        }
+    }
+
+    $eliminados = 0;
+    if (!empty($aEliminar)) {
+        DB::table('Ctrl_Permisos_x_Area')
+            ->whereIn('Id_Permiso', $aEliminar)
+            ->delete();
+        $eliminados = count($aEliminar);
+    }
 
     return response()->json([
         'success' => true,
-        'message' => 'Permisos actualizados correctamente.',
-        'nuevos' => count($permisosNuevos),
-        'eliminados' => $permisosAEliminar,
+        'message' => 'Permisos sincronizados correctamente.',
+        'insertados' => $insertados,
+        'actualizados' => $actualizados,
+        'eliminados' => $eliminados,
     ]);
 }
-
 
 public function exportExcelAreas(Request $request) {
     $idPlanta = $request->query('idPlanta'); // Obtener 'idPlanta' desde la URL
@@ -1248,6 +1533,8 @@ public function checkPermission(Request $request)
 }
 
 public function importCSV(Request $request) {
+    set_time_limit(0); // Permite ejecución ilimitada
+
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
@@ -1797,7 +2084,6 @@ public function storeVM(Request $request)
         session_start();
     }
 
-    // Validación de los datos del formulario
     $validator = Validator::make($request->all(), [
         'Txt_Nombre' => 'required|string|max:255',
         'Id_Planta' => 'required|integer',
@@ -1807,7 +2093,6 @@ public function storeVM(Request $request)
         'Id_Dispositivo' => 'integer|nullable',
     ]);
 
-    // Si la validación falla, devolver un error
     if ($validator->fails()) {
         return response()->json([
             'success' => false,
@@ -1816,17 +2101,16 @@ public function storeVM(Request $request)
         ], 400);
     }
 
-    // Obtener el ID del usuario desde la sesión
     $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+    $serie = $request->Txt_Serie_Maquina;
 
-    // Transacción para asegurar la consistencia de los datos
     DB::beginTransaction();
     try {
-        // Insertar la nueva máquina expendedora
-        $idMaquina = DB::table('Ctrl_Mquinas')->insertGetId([
+        // 1. Insertar la máquina sin depender de insertGetId
+        DB::table('Ctrl_Mquinas')->insert([
             'Txt_Nombre' => $request->Txt_Nombre,
             'Id_Planta' => $request->Id_Planta,
-            'Txt_Serie_Maquina' => $request->Txt_Serie_Maquina,
+            'Txt_Serie_Maquina' => $serie,
             'Txt_Tipo_Maquina' => $request->Txt_Tipo_Maquina,
             'Txt_Estatus' => 'Alta',
             'Capacidad' => $request->Capacidad,
@@ -1839,7 +2123,22 @@ public function storeVM(Request $request)
             'Id_Usuario_Admon_Baja' => null,
         ]);
 
-        // Crear las configuraciones para las charolas de la máquina
+        // 2. Obtener la máquina recién insertada por su serie única
+        $idMaquina = null;
+        for ($i = 0; $i < 6; $i++) {
+            $maquina = DB::table('Ctrl_Mquinas')->where('Txt_Serie_Maquina', $serie)->first();
+            if ($maquina) {
+                $idMaquina = $maquina->Id_Maquina;
+                break;
+            }
+            usleep(500000); // esperar medio segundo
+        }
+
+        if (!$idMaquina) {
+            throw new \Exception("La máquina no fue encontrada tras el insert. Posible bloqueo por replicación.");
+        }
+
+        // 3. Insertar configuraciones de charolas
         $charolas = [];
         $fechaAlta = now();
         for ($numCharola = 1; $numCharola <= 6; $numCharola++) {
@@ -1859,29 +2158,28 @@ public function storeVM(Request $request)
             }
         }
 
-        // Insertar las configuraciones en la tabla Configuracion_Maquina
         DB::table('Configuracion_Maquina')->insert($charolas);
 
-        // Confirmar la transacción
         DB::commit();
 
-        // Respuesta de éxito
         return response()->json([
             'success' => true,
-            'message' => 'Máquina expendedora y configuraciones de charolas creadas exitosamente.',
+            'message' => 'Máquina expendedora y configuraciones creadas correctamente.',
         ], 200);
 
     } catch (\Exception $e) {
-        // Revertir la transacción en caso de error
         DB::rollBack();
-
         return response()->json([
             'success' => false,
             'message' => 'Hubo un problema al agregar la máquina y sus configuraciones.',
             'error' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
         ], 500);
     }
 }
+
+
 
 public function guardarCambiosPlano(Request $request)
 {

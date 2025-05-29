@@ -273,11 +273,7 @@
                             <label for="area">
                                 <i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de Producto
                             </label>
-                            <select class="form-control" id="area" name="area" required>
-                                @foreach ($areas as $area)
-                                    <option value="{{ $area->Id_Area }}">{{ $area->Txt_Nombre }}</option>
-                                @endforeach
-                            </select>
+                            <select id="addArea" name="area" required></select>
                         </div>
                         <div class="text-center">
                             <button type="submit" class="btn btn-primary">Agregar</button>
@@ -296,6 +292,8 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <style>
     .input-group-text-fixed {
         min-width: 160px;
@@ -325,6 +323,54 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
+    $(document).ready(function () {
+        let areaSelect = document.getElementById("addArea");
+        let areaChoices;
+
+        function cargarAreasParaAgregar() {
+            $.ajax({
+                url: '{!! route('areas.data') !!}',
+                method: 'GET',
+                success: function (data) {
+                    areaSelect.innerHTML = ''; // Limpiar anteriores
+
+                    let options = data.map(area => ({
+                        value: area.Id_Area,
+                        label: area.Txt_Nombre
+                    }));
+
+                    if (areaChoices) {
+                        areaChoices.destroy();
+                    }
+
+                    areaChoices = new Choices(areaSelect, {
+                        searchEnabled: true,
+                        removeItemButton: false,
+                        placeholder: true,
+                        placeholderValue: "Seleccione un área",
+                        shouldSort: false
+                    });
+
+                    areaChoices.setChoices(options, 'value', 'label', true);
+                },
+                error: function (xhr) {
+                    console.error('Error al cargar áreas:', xhr.responseText);
+                }
+            });
+        }
+
+        // Cargar áreas al abrir el modal
+        $('#addEmployeeModal').on('shown.bs.modal', function () {
+            cargarAreasParaAgregar();
+        });
+    });
+</script>
+<script>
+    $.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    }
+});
     $(document).ready(function() {
         var table = $('#empleados-table').DataTable({
             processing: true,
@@ -438,11 +484,7 @@
             });
         };
 
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
+        
 
         $('#addEmployeeForm').on('submit', function(e) {
             e.preventDefault();

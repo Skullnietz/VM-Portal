@@ -299,7 +299,7 @@
                             </a>
                             </td>
                             <td>
-                            <a href="stock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm edit-btn">
+                            <a href="Astock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm edit-btn">
                                     Rellenar
                             </a>
                             </td>
