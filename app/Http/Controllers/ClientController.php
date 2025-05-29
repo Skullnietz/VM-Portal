@@ -351,6 +351,17 @@ public function getDataEmpleados()
     $message = 'Datos importados correctamente.';
     $nuevas_areas = [];
 
+    $file = $request->file('csv_file');
+
+dd([
+    'hasFile' => $request->hasFile('csv_file'),
+    'isValid' => $file ? $file->isValid() : false,
+    'realPath' => $file ? $file->getRealPath() : null,
+    'error' => $file ? $file->getError() : null,
+    'size' => $file ? $file->getSize() : null,
+]);
+
+
     if ($request->hasFile('csv_file')) {
         if (!$request->hasFile('csv_file')) {
             return back()->with('status', 'error')->with('message', 'No se recibió ningún archivo.');
