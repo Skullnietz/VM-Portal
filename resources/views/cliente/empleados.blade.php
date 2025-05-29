@@ -6,6 +6,7 @@
 @section('title', __('Empleados'))
 
 @section('content_header')
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="container-fluid">
     <div class="row">
         <!-- Columna izquierda: en móviles ocupa todo el ancho -->
@@ -293,7 +294,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 
-<meta name="csrf-token" content="{{ csrf_token() }}">
+
 <style>
     .input-group-text-fixed {
         min-width: 160px;
@@ -326,6 +327,7 @@
     $(document).ready(function () {
         let areaSelect = document.getElementById("addArea");
         let areaChoices;
+        
 
         function cargarAreasParaAgregar() {
             $.ajax({
@@ -366,9 +368,26 @@
     });
 </script>
 <script>
-    $.ajaxSetup({
-    headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    $.ajax({
+    url: `/delete-permiso-articulo/${id}`,
+    type: 'POST',
+    data: {
+        _token: $('meta[name="csrf-token"]').attr('content') // ✅ Añadir aquí el token
+    },
+    success: function(result) {
+        $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+        Swal.fire(
+            'Eliminado',
+            'Permiso eliminado con éxito',
+            'success'
+        );
+    },
+    error: function(xhr, status, error) {
+        Swal.fire(
+            'Error',
+            `Error eliminando el permiso: ${xhr.responseJSON?.error || xhr.responseText}`,
+            'error'
+        );
     }
 });
     $(document).ready(function() {
