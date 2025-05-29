@@ -352,6 +352,21 @@ public function getDataEmpleados()
     $nuevas_areas = [];
 
     if ($request->hasFile('csv_file')) {
+        if (!$request->hasFile('csv_file')) {
+            return back()->with('status', 'error')->with('message', 'No se recibió ningún archivo.');
+        }
+        
+        $file = $request->file('csv_file');
+        
+        if (!$file->isValid()) {
+            return back()->with('status', 'error')->with('message', 'El archivo no es válido o está corrupto.');
+        }
+        
+        $path = $file->getRealPath();
+        
+        if (!$path || !file_exists($path)) {
+            return back()->with('status', 'error')->with('message', 'No se pudo acceder al archivo en el servidor.');
+        }
         $path = $request->file('csv_file')->getRealPath();
 
         $lines = file($path);
