@@ -331,6 +331,8 @@ $(document).ready(function() {
     });
 
  // Función para eliminar un permiso
+// Dentro de $(document).ready(function() { ... })
+
 $('#permisos-articulos-table').on('click', '.delete-btn', function() {
     var id = $(this).data('id');
     Swal.fire({
@@ -345,7 +347,7 @@ $('#permisos-articulos-table').on('click', '.delete-btn', function() {
         if (result.isConfirmed) {
             $.ajax({
                 url: `/delete-permiso-articulo/${id}`,
-                type: 'POST',
+                type: 'POST', // o 'DELETE' si usas ruta DELETE
                 success: function(result) {
                     $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
                     Swal.fire(
@@ -357,7 +359,7 @@ $('#permisos-articulos-table').on('click', '.delete-btn', function() {
                 error: function(xhr, status, error) {
                     Swal.fire(
                         'Error',
-                        `Error eliminando el permiso: ${xhr.responseJSON.error || xhr.responseText}`,
+                        `Error eliminando el permiso: ${xhr.responseJSON?.error || xhr.responseText}`,
                         'error'
                     );
                 }
@@ -365,6 +367,7 @@ $('#permisos-articulos-table').on('click', '.delete-btn', function() {
         }
     });
 });
+
 
 // Función para cambiar el estado
 $('#permisos-articulos-table').on('click', '.toggle-status', function() {
