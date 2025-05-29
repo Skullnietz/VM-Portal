@@ -215,14 +215,19 @@ Route::get('/test-upload', function () {
 });
 
 Route::post('/test-upload', function (Request $request) {
-    $file = $request->file('csv_file'); // CORRECTO: usando la instancia $request
+    // Verificamos si PHP puede escribir en su directorio temporal
+    $tmpDir = sys_get_temp_dir(); // Por lo general /tmp en Linux o C:\Windows\Temp en Windows
+    $testFile = $tmpDir . '/test-upload.txt';
+
+    // Intentamos escribir un archivo de prueba
+    file_put_contents($testFile, 'Prueba de escritura desde Laravel');
 
     return response()->json([
-        'hasFile' => $request->hasFile('csv_file'),
-        'isValid' => $file ? $file->isValid() : false,
-        'realPath' => $file ? $file->getRealPath() : null,
-        'error' => $file ? $file->getError() : null,
-        'size' => $file ? $file->getSize() : null,
+        'tmp_dir' => $tmpDir,
+        'file_exists' => file_exists($testFile),
+        'writable' => is_writable($tmpDir),
+        'php_user' => get_current_user(),
+        'php_ini_upload_tmp_dir' => ini_get('upload_tmp_dir'),
     ]);
 });
 
