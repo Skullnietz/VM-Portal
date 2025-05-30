@@ -405,7 +405,7 @@ $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
             value: value
         },
         success: function(result) {
-            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+           
             
             // Mostrar Toast de éxito
             $(document).Toasts('create', {
