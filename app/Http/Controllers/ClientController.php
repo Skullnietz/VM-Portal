@@ -280,6 +280,7 @@ public function getDataEmpleados()
         )
         ->leftJoin('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
         ->where('Cat_Empleados.Id_Planta', $_SESSION['usuario']->Id_Planta)
+        ->where('Cat_Empleados.Txt_Estatus', 'Alta')
         ->get();
 
     // Convertir las fechas antes de enviarlas a DataTables

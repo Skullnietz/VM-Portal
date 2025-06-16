@@ -406,9 +406,7 @@ $('#permisos-articulos-table').on('change', '.update-cantidad', function() {
             field: 'Cantidad',
             value: value
         },
-        success: function(result) {
-           
-            
+        success: function(result) { 
             // Mostrar Toast de éxito
             $(document).Toasts('create', {
                 class: 'bg-success',
