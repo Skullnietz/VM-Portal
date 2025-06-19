@@ -272,7 +272,7 @@ public function getDataEmpleados()
             'Cat_Empleados.Nip',
             'Cat_Empleados.No_Tarjeta',
             'Cat_Empleados.Id_Area',
-            'Cat_Empleados.Tipo_Acceso',
+            'Cat_Empleados.Tipo_Acceso', 
             'Cat_Empleados.Fecha_alta',
             'Cat_Empleados.Fecha_Modificacion',
             'Cat_Empleados.Txt_Estatus',

@@ -48,7 +48,7 @@
             <div class="info-box">
                 <span class="info-box-icon bg-dark"><i class="fas fa-boxes"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">Artículos Consumidos</span>
+                    <span class="info-box-text">Artículos Consumidos Mes</span>
                     <span class="info-box-number" id="articulos-consumidos">Cargando...</span>
                 </div>
             </div>
@@ -270,7 +270,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Consumo de Artículos',
+                        label: 'Consumo de Artículos (Mes)',
                         data: values,
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.8)',
@@ -302,7 +302,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Consumo de Artículos',
+                        label: 'Consumo de Artículos (Mes)',
                         data: values,
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.8)',
@@ -320,7 +320,7 @@
                     responsive: true,
                     plugins: {
                         legend: { position: 'top' },
-                        title: { display: true, text: 'Consumo de Artículos' },
+                        title: { display: true, text: 'Consumo de Artículos (Mes)' },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -381,7 +381,7 @@
             plants.forEach(plant => {
                 const tab = document.createElement('div');
                 tab.classList.add('tab');
-                tab.textContent = plant;
+                tab.textContent = 'Almacenamiento & Estatus | Vending Machine';
                 tab.addEventListener('click', () => showTab(plant));
                 tabsContainer.appendChild(tab);
                 const tabContent = document.createElement('div');

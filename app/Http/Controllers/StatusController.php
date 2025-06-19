@@ -28,7 +28,7 @@ class StatusController extends Controller
             
     
             // Asignar "On" o "Off" basado en la diferencia de tiempo
-            $Stat->dispo = ($minutesDifference < 1) ? "On" : "Off";
+            $Stat->dispo = ($minutesDifference < 30) ? "On" : "Off";
             
             // Obtener el nombre de la planta
             $planta = DB::table('Cat_Plantas')
@@ -81,14 +81,19 @@ class StatusController extends Controller
 
     }
     public function getConsumoGraph()
-    {
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-        $currentMonth = date('m');
-        $currentYear = date('Y');
-        $consumoData = DB::table('Ctrl_Consumos')
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $plantaId = $_SESSION['usuario']->Id_Planta;
+    $currentMonth = date('m');
+    $currentYear = date('Y');
+
+    $consumoData = DB::table('Ctrl_Consumos')
         ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+        ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+        ->where('Ctrl_Mquinas.Id_Planta', $plantaId) // 👈 filtro necesario
         ->select(DB::raw('Cat_Articulos.Id_Articulo as id, Cat_Articulos.Txt_Codigo as nombre, SUM(Ctrl_Consumos.Cantidad) as total_cantidad'))
         ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
         ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
@@ -97,65 +102,68 @@ class StatusController extends Controller
         ->take(5)
         ->get();
 
-        return response()->json($consumoData);
+    return response()->json($consumoData);
+}
+
+public function getIndexDash(){
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
     }
 
-    public function getIndexDash(){
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-        $plantaId = $_SESSION['usuario']->Id_Planta;
-        $currentMonth = date('m');
-        $currentYear = date('Y');
+    $plantaId = $_SESSION['usuario']->Id_Planta;
+    $currentMonth = date('m');
+    $currentYear = date('Y');
 
-        // Obtener Producto más consumido
-        $productoMasConsumido = DB::table('Ctrl_Consumos')
-            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-            ->select('Cat_Articulos.Txt_Codigo')
-            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
-            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
-            ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
-            ->orderByRaw('COUNT(Ctrl_Consumos.Id_Articulo) DESC')
-            ->limit(1)
-            ->pluck('Cat_Articulos.Txt_Codigo')
-            ->first();
+    // Producto más consumido (solo de la planta)
+    $productoMasConsumido = DB::table('Ctrl_Consumos')
+        ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+        ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+        ->select('Cat_Articulos.Txt_Codigo')
+        ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+        ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+        ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
+        ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
+        ->orderByRaw('COUNT(Ctrl_Consumos.Id_Articulo) DESC')
+        ->limit(1)
+        ->pluck('Cat_Articulos.Txt_Codigo')
+        ->first();
 
-        // Obtener Área de alto consumo
-        $areaAltoConsumo = DB::table('Ctrl_Consumos')
-            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
-            ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-            ->select('Cat_Area.Txt_Nombre')
-            ->where('Cat_Empleados.Id_Planta', $plantaId)
-            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
-            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
-            ->groupBy('Cat_Empleados.Id_Area', 'Cat_Area.Txt_Nombre')
-            ->orderByRaw('COUNT(Cat_Empleados.Id_Area) DESC')
-            ->limit(1)
-            ->pluck('Cat_Area.Txt_Nombre')
-            ->first();
+    // Área de alto consumo (ya está bien)
+    $areaAltoConsumo = DB::table('Ctrl_Consumos')
+        ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+        ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+        ->select('Cat_Area.Txt_Nombre')
+        ->where('Cat_Empleados.Id_Planta', $plantaId)
+        ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+        ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
+        ->groupBy('Cat_Empleados.Id_Area', 'Cat_Area.Txt_Nombre')
+        ->orderByRaw('COUNT(Cat_Empleados.Id_Area) DESC')
+        ->limit(1)
+        ->pluck('Cat_Area.Txt_Nombre')
+        ->first();
 
-        // Obtener Vendings activas
-        $vendingsActivas = DB::table('Stat_Mquinas')
+    // Vendings activas (ya está bien)
+    $vendingsActivas = DB::table('Stat_Mquinas')
         ->join('Ctrl_Mquinas', 'Stat_Mquinas.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
         ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
-        ->whereRaw('DATEDIFF(MINUTE, Stat_Mquinas.Fecha_Reg, GETDATE()) <= 5')
+        ->whereRaw('DATEDIFF(MINUTE, Stat_Mquinas.Fecha_Reg, GETDATE()) <= 30')
         ->count();
-            
 
-        // Obtener Artículos consumidos
-        $articulosConsumidos = DB::table('Ctrl_Consumos')
-            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-            ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
-            ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
-            ->sum('Ctrl_Consumos.cantidad');
+    // Artículos consumidos (filtro por máquina -> planta)
+    $articulosConsumidos = DB::table('Ctrl_Consumos')
+        ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+        ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+        ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
+        ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
+        ->sum('Ctrl_Consumos.cantidad');
 
-        return response()->json([
-            'producto_mas_consumido' => $productoMasConsumido,
-            'area_alto_consumo' => $areaAltoConsumo,
-            'vendings_activas' => $vendingsActivas,
-            'articulos_consumidos' => $articulosConsumidos
-        ]);
-    }
+    return response()->json([
+        'producto_mas_consumido' => $productoMasConsumido,
+        'area_alto_consumo' => $areaAltoConsumo,
+        'vendings_activas' => $vendingsActivas,
+        'articulos_consumidos' => $articulosConsumidos
+    ]);
+}
 
     public function getAdminDash(){
         if (session_status() == PHP_SESSION_NONE) {
