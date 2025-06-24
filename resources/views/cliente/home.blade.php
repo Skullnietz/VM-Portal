@@ -142,14 +142,14 @@
                         </button>
                     </div>
                 </div>
-                <div class="card-body p-0 table-responsive" style="height:300px">
+                <div class="card-body p-0 table-responsive" style="height:740px">
                     <table class="table table-head-fixed text-nowrap">
                         <thead>
                             <tr>
-                                <th style="width: 10px">N#</th>
-                                <th>Producto</th>
-                                <th>VM</th>
                                 <th style="width: 40px">Fecha</th>
+                                <th style="width: 10px">Empleado</th>
+                                <th>Producto</th>
+                                <th>VM</th> 
                             </tr>
                         </thead>
                         <tbody id="recent-consumptions-body">
@@ -541,10 +541,11 @@
                         data.forEach((item, index) => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
-                                <td>${index + 1}</td>
+                                <td>${item.FechaHumana}</td>
+                                <td>${item.NombreEmpleado}</td>
                                 <td>${item.NArticulo}</td>
                                 <td>${item.NombreMaquina}</td>
-                                <td>${item.Fecha_Consumo}</td>
+                                
                             `;
                             tbody.appendChild(row);
                         });

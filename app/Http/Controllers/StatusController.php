@@ -92,17 +92,19 @@ class StatusController extends Controller
         return response()->json($data);
     }
 
-    public function ConsumosGet(){
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-        // Obtener las máquinas de la planta del usuario
-        $maquinas = DB::table('Ctrl_Mquinas')
+    public function ConsumosGet()
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // Obtener las máquinas de la planta del usuario
+    $maquinas = DB::table('Ctrl_Mquinas')
         ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
         ->pluck('Id_Maquina');
 
-        // Obtener los últimos 5 consumos de las máquinas de la planta del usuario
-        $consumos = DB::table('Ctrl_Consumos')
+    // Obtener los últimos 20 consumos de esas máquinas
+    $consumos = DB::table('Ctrl_Consumos')
         ->whereIn('Ctrl_Consumos.Id_Maquina', $maquinas)
         ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
         ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
@@ -111,17 +113,19 @@ class StatusController extends Controller
             DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as NombreEmpleado"),
             'Cat_Articulos.Txt_Descripcion as NArticulo',
             'Ctrl_Mquinas.Txt_Nombre as NombreMaquina',
-            'Ctrl_Consumos.Fecha_Consumo'
+            'Ctrl_Consumos.Fecha_Real'
         )
         ->orderBy('Ctrl_Consumos.Fecha_Consumo', 'desc')
-        ->take(5)
+        ->take(20)
         ->get();
 
-        return $consumos;
-
-
-
+    // Agregar columna FechaHumana a cada resultado
+    foreach ($consumos as $consumo) {
+        $consumo->FechaHumana = Carbon::parse($consumo->Fecha_Real)->diffForHumans();
     }
+
+    return $consumos;
+}
 
     public function ConsumosGetAdmin() {
         if (session_status() == PHP_SESSION_NONE) {
