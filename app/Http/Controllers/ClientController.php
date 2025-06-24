@@ -531,10 +531,14 @@ private function sanitizeString($string)
     {
         $empleado = DB::table('Cat_Empleados')->where('Id_Empleado', $id)->first();
         $nuevoEstatus = $empleado->Txt_Estatus === 'Alta' ? 'Baja' : 'Alta';
+        $nuevoNip = $nuevoEstatus === 'Baja' ? '0000' : '1234';
 
         DB::table('Cat_Empleados')
             ->where('Id_Empleado', $id)
-            ->update(['Txt_Estatus' => $nuevoEstatus]);
+            ->update([
+                'Txt_Estatus' => $nuevoEstatus,
+                'Nip' => $nuevoNip
+            ]);
 
         return response()->json(['success' => true]);
     }
