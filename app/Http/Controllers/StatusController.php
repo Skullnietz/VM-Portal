@@ -115,7 +115,7 @@ class StatusController extends Controller
             'Ctrl_Mquinas.Txt_Nombre as NombreMaquina',
             'Ctrl_Consumos.Fecha_Real'
         )
-        ->orderBy('Ctrl_Consumos.Fecha_Consumo', 'asc')
+        ->orderBy('Ctrl_Consumos.Fecha_Consumo', 'desc')
         ->take(20)
         ->get();
 
