@@ -45,11 +45,14 @@
                         <h5 class="card-title">Administrador de Empleados</h5>
                         <div class="card-tools">
                         <div class="btn-group">
-                            <select id="estatusFilter" class="form-control">
-                                <option value="Alta" selected>Altas</option>
-                                <option value="Baja">Bajas</option>
-                                <option value="">Todos</option>
-                            </select>
+                        <label for="estatusFilter" class="mr-2 mb-0">Filtrar por estatus:</label>
+                        <span id="estatusIndicator" class="estatus-light bg-success"></span>
+                        <select id="estatusFilter" class="form-control mr-2" style="width: 200px; margin-left: 5px;">
+                            <option value="Alta" selected>Altas</option>
+                            <option value="Baja">Bajas</option>
+                            <option value="">Todos</option>
+                        </select>
+                        
                             </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
@@ -291,6 +294,40 @@
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <style>
+    .estatus-light {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        margin-top: 5px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+        border: 1px solid #ccc;
+    }
+
+    .bg-success {
+        background-color: #28a745;
+        animation: blink-success 1s infinite;
+    }
+
+    .bg-danger {
+        background-color: #dc3545;
+        animation: blink-danger 1s infinite;
+    }
+
+    .bg-secondary {
+        background-color: #6c757d;
+        animation: none;
+    }
+
+    @keyframes blink-success {
+        0%, 100% { background-color: #28a745; }
+        50% { background-color: #1e7e34; }
+    }
+
+    @keyframes blink-danger {
+        0%, 100% { background-color: #dc3545; }
+        50% { background-color: #a71d2a; }
+    }
     .input-group-text-fixed {
         min-width: 160px;
         text-align: center;
@@ -570,7 +607,27 @@
             openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, area);
         });
 
-        $('#estatusFilter').on('change', function() {
+        function actualizarLuzEstatus() {
+            const valor = $('#estatusFilter').val();
+            const luz = $('#estatusIndicator');
+
+            luz.removeClass('bg-success bg-danger bg-secondary');
+
+            if (valor === 'Alta') {
+                luz.addClass('bg-success'); // Verde
+            } else if (valor === 'Baja') {
+                luz.addClass('bg-danger'); // Rojo
+            } else {
+                luz.addClass('bg-secondary'); // Gris para "Todos"
+            }
+        }
+
+        // Ejecutar al cargar la página
+        actualizarLuzEstatus();
+
+        // Actualizar cada vez que se cambia el filtro
+        $('#estatusFilter').on('change', function () {
+            actualizarLuzEstatus();
             table.ajax.reload();
         });
     });
