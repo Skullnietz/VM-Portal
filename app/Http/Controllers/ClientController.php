@@ -99,6 +99,8 @@ class ClientController extends Controller
         
     }
 
+    
+
     public function PermisosArticulos(){
         if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -256,11 +258,13 @@ class ClientController extends Controller
     }
 }
     
-public function getDataEmpleados()
+public function getDataEmpleados(Request $request)
 {
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
+
+    $estatus = $request->input('estatus');
 
     $data = DB::table('Cat_Empleados')
         ->select(
@@ -272,18 +276,19 @@ public function getDataEmpleados()
             'Cat_Empleados.Nip',
             'Cat_Empleados.No_Tarjeta',
             'Cat_Empleados.Id_Area',
-            'Cat_Empleados.Tipo_Acceso', 
+            'Cat_Empleados.Tipo_Acceso',
             'Cat_Empleados.Fecha_alta',
             'Cat_Empleados.Fecha_Modificacion',
             'Cat_Empleados.Txt_Estatus',
-            'Cat_Area.Txt_Nombre as NArea' // Se une la tabla Cat_Area
+            'Cat_Area.Txt_Nombre as NArea'
         )
         ->leftJoin('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
         ->where('Cat_Empleados.Id_Planta', $_SESSION['usuario']->Id_Planta)
-        ->where('Cat_Empleados.Txt_Estatus', 'Alta')
+        ->when($estatus !== null && $estatus !== '', function ($query) use ($estatus) {
+            return $query->where('Cat_Empleados.Txt_Estatus', $estatus);
+        })
         ->get();
 
-    // Convertir las fechas antes de enviarlas a DataTables
     foreach ($data as $empleado) {
         $empleado->AFecha = \Carbon\Carbon::parse($empleado->Fecha_alta)->format('l, j F Y H:i:s');
         $empleado->MFecha = \Carbon\Carbon::parse($empleado->Fecha_Modificacion)->format('l, j F Y H:i:s');
@@ -291,7 +296,6 @@ public function getDataEmpleados()
 
     return DataTables::of($data)->make(true);
 }
-
     public function exportExcel() {
         return Excel::download(new EmpleadosExport, 'empleados.xlsx');
     }

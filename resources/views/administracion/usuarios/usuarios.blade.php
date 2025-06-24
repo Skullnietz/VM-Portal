@@ -402,17 +402,18 @@ $('#saveAdmin').on('click', function() {
         function deleteAdmin(id) {
             if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
                 $.ajax({
-                    url: `/usuario/${id}`, // Asegúrate de que esta URL sea correcta
-                    type: 'DELETE',
+                    url: `/usuario/${id}`,
+                    type: 'POST',
                     data: {
-                        _token: '{{ csrf_token() }}' // Incluyendo el token CSRF
+                        _token: '{{ csrf_token() }}'
                     },
                     success: function(response) {
                         alert('Usuario eliminado exitosamente');
-                        $('#adminTable').DataTable().ajax.reload(); // Recargar la tabla
+                        $('#adminTable').DataTable().ajax.reload();
                     },
                     error: function(xhr) {
-                        alert('Error al eliminar usuario: ' + xhr.responseJSON.message);
+                        let mensaje = xhr.responseJSON?.message || 'Error desconocido';
+                        alert('Error al eliminar usuario: ' + mensaje);
                     }
                 });
             }

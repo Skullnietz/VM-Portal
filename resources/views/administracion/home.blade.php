@@ -27,7 +27,7 @@
         <div class="info-box">
             <span class="info-box-icon bg-info"><i class="fas fa-industry"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text">Área de Alto Consumo</span>
+                <span class="info-box-text">Planta de Alto Consumo</span>
                 <span class="info-box-number" id="area-alto-consumo">Cargando...</span>
             </div>
         </div>
@@ -64,7 +64,54 @@
                     </div>
                     </div>
                 </div>
-            </div>
+            
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-pie mr-1"></i>
+                                Gráficas
+                            </h3><br><br>
+                            <div class="card-tools">
+                                <ul class="nav nav-pills ml-auto" id="chartPills">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" data-chart="planta" href="#">Por Planta</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-chart="productos" href="#">Top Productos</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-chart="matriz" href="#">Matriz</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-chart="dia" href="#">Por Día</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <div id="chart-planta" class="chart-container">
+                                <h5 class="text-center">Consumo Total por Planta</h5>
+                                <canvas id="chartPlantas"></canvas>
+                            </div>
+                            <div id="chart-productos" class="chart-container d-none">
+                                <h5 class="text-center">Top 5 Productos</h5>
+                                <canvas id="chartTopProductos"></canvas>
+                            </div>
+                            <div id="chart-matriz" class="chart-container d-none">
+                                <h5 class="text-center">Consumo por Planta y Producto</h5>
+                                <canvas id="chartMatriz"></canvas>
+                            </div>
+                            <div id="chart-dia" class="chart-container d-none">
+                                <h5 class="text-center">Consumo Diario</h5>
+                                <canvas id="chartPorDia"></canvas>
+                            </div>
+                            </div>
+                            </div>
+                        
+                    
+                </div>
 
 
 
@@ -104,7 +151,7 @@
                                 </div>
 
                             </div>
-                            <div class="card-body p-0 table-responsive" style="height:300px">
+                            <div class="card-body p-0 table-responsive" style="height:740px">
                                 <table class="table table table-head-fixed text-nowrap">
                                     <thead>
                                         <tr>
@@ -123,60 +170,9 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col">
-                        <div class="card">
-                            <div class="card-header ui-sortable-handle" style="cursor: move;">
-                                <h3 class="card-title">
-                                    <i class="fas fa-chart-pie mr-1"></i>
-                                    Graficas
-                                </h3>
-                                <div class="card-tools">
-                                    <ul class="nav nav-pills ml-auto">
-                                        <li class="nav-item">
-                                            <a class="nav-link" href="#revenue-chart" data-toggle="tab">Barras</a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link active" href="#sales-chart" data-toggle="tab">Pastel</a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="tab-content p-0">
-
-                                    <div class="chart tab-pane" id="revenue-chart"
-                                        style="position: relative; height: 300px;">
-                                        <div class="chartjs-size-monitor">
-                                            <div class="chartjs-size-monitor-expand">
-                                                <div class=""></div>
-                                            </div>
-                                            <div class="chartjs-size-monitor-shrink">
-                                                <div class=""></div>
-                                            </div>
-                                        </div>
-                                        <canvas id="myChart" height="300"
-                                            style="height: 300px; display: block; width: 550px;"
-                                            class="chartjs-render-monitor" width="550"></canvas>
-                                    </div>
-                                    <div class="chart tab-pane active" id="sales-chart"
-                                        style="position: relative; height: 300px;">
-                                        <div class="chartjs-size-monitor">
-                                            <div class="chartjs-size-monitor-expand">
-                                                <div class=""></div>
-                                            </div>
-                                            <div class="chartjs-size-monitor-shrink">
-                                                <div class=""></div>
-                                            </div>
-                                        </div>
-                                        <canvas id="pastelChart" height="300"
-                                            style="height: 300px; display: block; width: 550px;"
-                                            class="chartjs-render-monitor" width="550"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                 <div class="col">
+                       <!-- Se puede agregar una card aqui -->
                     </div>
-                </div>
             </div>
         </div>
     </div>
@@ -201,6 +197,7 @@
             z-index: 2;
         }
 
+        
         .fill {
             position: absolute;
             bottom: 0;
@@ -211,6 +208,13 @@
             z-index: 1;
             transition: height 1s ease;
             margin-bottom: 2px
+        }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: flex;
         }
 
         .percentage {
@@ -265,12 +269,52 @@
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Control de tabs manual
+        $('#chartPills a').on('click', function (e) {
+            e.preventDefault();
+
+            // Cambiar clase activa
+            $('#chartPills a').removeClass('active');
+            $(this).addClass('active');
+
+            const chartTarget = $(this).data('chart');
+
+            // Ocultar todos los contenedores
+            $('.chart-container').addClass('d-none');
+
+            // Mostrar el seleccionado
+            $('#chart-' + chartTarget).removeClass('d-none');
+
+            // Redibujar la gráfica si es necesario
+            switch (chartTarget) {
+                case 'planta':
+                    if (window.chartPlantas) chartPlantas.resize();
+                    break;
+                case 'productos':
+                    if (window.chartTopProductos) chartTopProductos.resize();
+                    break;
+                case 'matriz':
+                    if (window.chartMatriz) chartMatriz.resize();
+                    break;
+                case 'dia':
+                    if (window.chartPorDia) chartPorDia.resize();
+                    break;
+            }
+        });
+    });
+</script>
+
+</script>
+    
+
+    <script>
         function updateInfoBoxes() {
     fetch('/vm-admin')
         .then(response => response.json())
         .then(data => {
             document.getElementById('producto-mas-consumido').innerText = data.producto_mas_consumido || 'N/A';
-            document.getElementById('area-alto-consumo').innerText = data.area_alto_consumo || 'N/A';
+            document.getElementById('area-alto-consumo').innerText = data.planta_alto_consumo || 'N/A';
             document.getElementById('vendings-activas').innerText = data.vendings_activas || '0';
             document.getElementById('articulos-consumidos').innerText = data.articulos_consumidos || '0';
         })
@@ -280,131 +324,128 @@
 setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
     </script>
     <script>
-        // Función para obtener datos desde la API
-        async function fetchData() {
-            const response = await fetch('/vm-graphs');
-            const data = await response.json();
-            return data;
-        }
-
-        // Función para actualizar las gráficas
-        function updateCharts(data) {
-            const labels = data.map(item => item.nombre);
-            const values = data.map(item => item.total_cantidad);
-            const ids = data.map(item => item.id);
-
-            const barCtx = document.getElementById('myChart').getContext('2d');
-            const pieCtx = document.getElementById('pastelChart').getContext('2d');
-
-            // Destruir las gráficas anteriores si existen
-            if (window.barChart) {
-                window.barChart.destroy();
-            }
-            if (window.pieChart) {
-                window.pieChart.destroy();
-            }
-
-            window.barChart = new Chart(barCtx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Consumo de Artículos',
-                        data: values,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(255, 159, 64, 0.8)',
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                            'rgba(201, 203, 207, 0.8)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    onClick: (evt, item) => {
-                        if (item.length > 0) {
-                            const index = item[0].index;
-                            const articleId = ids[index];
-                            window.open(`/articulo/${articleId}`, '_blank');
-                        }
-                    }
-                }
-            });
-
-            window.pieChart = new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Consumo de Artículos',
-                        data: values,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(255, 159, 64, 0.8)',
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                            'rgba(201, 203, 207, 0.8)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Consumo de Artículos'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed;
-                                    }
-                                    return label;
+                                async function fetchData() {
+                                    const response = await fetch('/vm-admingraphs');
+                                    return await response.json();
                                 }
-                            }
-                        }
-                    },
-                    onClick: (evt, item) => {
-                        if (item.length > 0) {
-                            const index = item[0].index;
-                            const articleId = ids[index];
-                            window.open(`/articulo/${articleId}`, '_blank');
-                        }
-                    }
-                }
-            });
-        }
-
-        // Llamar a la función fetchData y luego updateCharts
-        function refreshCharts() {
-            fetchData().then(data => updateCharts(data));
-        }
-
-        // Inicializar las gráficas al cargar la página
-        refreshCharts();
-
-        // Actualizar las gráficas cada minuto (60000 milisegundos)
-        setInterval(refreshCharts, 60000);
-    </script>
+                            
+                                function updateCharts(data) {
+                                    // Destruir si ya existen
+                                    ['chartPlantas', 'chartTopProductos', 'chartMatriz', 'chartPorDia'].forEach(id => {
+                                        const chart = window[id];
+                                        if (chart && typeof chart.destroy === 'function') {
+                                            chart.destroy();
+                                        }
+                                    });
+                            
+                                    // 1. Consumo por planta
+                                    const plantaLabels = data.porPlanta.map(p => p.planta);
+                                    const plantaValues = data.porPlanta.map(p => p.total_consumo);
+                                    window.chartPlantas = new Chart(document.getElementById('chartPlantas'), {
+                                        type: 'bar',
+                                        data: {
+                                            labels: plantaLabels,
+                                            datasets: [{
+                                                label: 'Total Consumido',
+                                                data: plantaValues,
+                                                backgroundColor: 'rgba(75,192,192,0.7)',
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            scales: { y: { beginAtZero: true } }
+                                        }
+                                    });
+                            
+                                    // 2. Top productos
+                                    const topLabels = data.topProductos.map(p => p.producto);
+                                    const topValues = data.topProductos.map(p => p.total);
+                                    window.chartTopProductos = new Chart(document.getElementById('chartTopProductos'), {
+                                        type: 'pie',
+                                        data: {
+                                            labels: topLabels,
+                                            datasets: [{
+                                                data: topValues,
+                                                backgroundColor: [
+                                                    'rgba(255,99,132,0.8)',
+                                                    'rgba(255,159,64,0.8)',
+                                                    'rgba(255,205,86,0.8)',
+                                                    'rgba(75,192,192,0.8)',
+                                                    'rgba(54,162,235,0.8)'
+                                                ]
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            plugins: { legend: { position: 'top' } }
+                                        }
+                                    });
+                            
+                                    // 3. Matriz por planta y producto
+                                    const productosUnicos = [...new Set(data.porPlantaYProducto.map(d => d.producto))];
+                                    const plantasUnicas = [...new Set(data.porPlantaYProducto.map(d => d.planta))];
+                                    const colores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+                            
+                                    const datasetsMatriz = plantasUnicas.map((planta, idx) => {
+                                        const datos = productosUnicos.map(prod => {
+                                            const found = data.porPlantaYProducto.find(d => d.planta === planta && d.producto === prod);
+                                            return found ? found.total : 0;
+                                        });
+                                        return {
+                                            label: planta,
+                                            data: datos,
+                                            backgroundColor: colores[idx % colores.length]
+                                        };
+                                    });
+                            
+                                    window.chartMatriz = new Chart(document.getElementById('chartMatriz'), {
+                                        type: 'bar',
+                                        data: {
+                                            labels: productosUnicos,
+                                            datasets: datasetsMatriz
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            plugins: {
+                                                tooltip: { mode: 'index', intersect: false },
+                                                legend: { position: 'top' }
+                                            },
+                                            scales: { y: { beginAtZero: true }, x: { stacked: true }, yAxes: { stacked: true } }
+                                        }
+                                    });
+                            
+                                    // 4. Consumo por día
+                                    const diaLabels = data.porDia.map(d => d.dia);
+                                    const diaValues = data.porDia.map(d => d.total);
+                            
+                                    window.chartPorDia = new Chart(document.getElementById('chartPorDia'), {
+                                        type: 'line',
+                                        data: {
+                                            labels: diaLabels,
+                                            datasets: [{
+                                                label: 'Total Diario',
+                                                data: diaValues,
+                                                fill: true,
+                                                backgroundColor: 'rgba(153,102,255,0.2)',
+                                                borderColor: 'rgba(153,102,255,1)',
+                                                tension: 0.1
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            scales: { y: { beginAtZero: true } }
+                                        }
+                                    });
+                                }
+                            
+                                function refreshCharts() {
+                                    fetchData().then(data => updateCharts(data));
+                                }
+                            
+                                // Inicializar y actualizar cada minuto
+                                refreshCharts();
+                                setInterval(refreshCharts, 60000);
+                            </script>
     <script>
         function goBack() {
             window.history.back();
@@ -432,60 +473,60 @@ setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
             fillElement.style.height = percentage + '%';
         }
 
-        function initializeTabs() {
+        function initializeTabs(currentActiveTab = null) {
             const tabsContainer = document.getElementById('tabs-container');
             const tabsContent = document.getElementById('tabs-content');
 
-            // Limpiar los contenedores
             tabsContainer.innerHTML = '';
             tabsContent.innerHTML = '';
 
-            // Crear pestañas y contenido para cada planta
-            const plants = [...new Set(vendingMachinesData.map(machine => machine.planta))]; // Obtener plantas únicas
+            const plants = [...new Set(vendingMachinesData.map(machine => machine.planta))];
 
             plants.forEach(plant => {
-                // Crear tab
+                const machineCount = vendingMachinesData.filter(m => m.planta === plant).length;
+
                 const tab = document.createElement('div');
                 tab.classList.add('tab');
-                tab.textContent = plant;
+                tab.textContent = `${plant} (${machineCount})`;
                 tab.addEventListener('click', () => showTab(plant));
                 tabsContainer.appendChild(tab);
 
-                // Crear contenido de la tab
                 const tabContent = document.createElement('div');
-                tabContent.classList.add('tab-content');
-                tabContent.classList.add('row');
+                tabContent.classList.add('tab-content', 'row');
                 tabContent.id = `tab-content-${plant}`;
                 tabsContent.appendChild(tabContent);
             });
 
-            // Mostrar la primera pestaña por defecto
+            // Restaurar la pestaña activa anterior, si existe
             if (plants.length > 0) {
-                showTab(plants[0]);
+                const tabToShow = currentActiveTab && plants.includes(currentActiveTab) ? currentActiveTab : plants[0];
+                showTab(tabToShow);
             }
         }
 
-        function showTab(plant) {
-            const tabs = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
+    function showTab(plant) {
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-            tabs.forEach(tab => {
-                tab.classList.remove('active');
-                if (tab.textContent === plant) {
-                    tab.classList.add('active');
-                }
-            });
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+            const tabName = tab.textContent.replace(/\s\(\d+\)$/, '');
+            if (tabName === plant) {
+                tab.classList.add('active');
+            }
+        });
 
-            tabContents.forEach(content => {
-                content.classList.remove('active');
-                if (content.id === `tab-content-${plant}`) {
-                    content.classList.add('active');
-                }
-            });
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+            content.style.display = 'none'; // 👈 Ocultamos todos
+        });
 
-            // Renderizar las máquinas expendedoras en el contenido de la pestaña seleccionada
-            renderMachines(plant);
-        }
+        const activeContent = document.getElementById(`tab-content-${plant}`);
+        activeContent.classList.add('active');
+        activeContent.style.display = 'flex'; // 👈 Mostramos solo el actual
+
+        renderMachines(plant);
+    }
 
         function renderMachines(plant) {
             const tabContent = document.getElementById(`tab-content-${plant}`);
@@ -520,10 +561,11 @@ setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
 
                 const cardDiv = document.createElement('div');
                 cardDiv.classList.add('card');
-                if (machine.dispo === "Off") {
+                if (machine.dispo !== "On") {
                     cardDiv.classList.add('bg-danger');
                     cardDiv.classList.add('disabled');
                 }
+                console.log(`Máquina ${machine.nombrevm} - dispo: ${machine.dispo}`);
 
                 const rowDiv = document.createElement('div');
                 rowDiv.classList.add('row');
@@ -554,7 +596,9 @@ setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
         }
 
         function fetchVendingMachinesData() {
-            $.getJSON('/vm-status', function(data) {
+            const currentActiveTab = document.querySelector('.tab.active')?.textContent.replace(/\s\(\d+\)$/, '');
+            
+            $.getJSON('/vm-allstatus', function(data) {
                 vendingMachinesData = data.map(stat => ({
                     planta: stat.Nplanta,
                     id: stat.Id_Maquina,
@@ -563,8 +607,11 @@ setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
                     dispo: stat.dispo
                 }));
 
-                // Inicializar las pestañas y renderizar las máquinas expendedoras
-                initializeTabs();
+                console.log(vendingMachinesData);
+
+            
+                // Inicializar las pestañas pasando la actual activa
+                initializeTabs(currentActiveTab);
             });
         }
 
@@ -577,7 +624,7 @@ setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
      <script>
         document.addEventListener('DOMContentLoaded', function() {
             function fetchRecentConsumptions() {
-                fetch('/vm-rconsum')
+                fetch('/vm-rallconsum')
                     .then(response => response.json())
                     .then(data => {
                         const tbody = document.getElementById('recent-consumptions-body');
@@ -603,4 +650,5 @@ setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
             setInterval(fetchRecentConsumptions, 60000); // 60000 ms = 1 minute
         });
     </script>
+   
 @stop

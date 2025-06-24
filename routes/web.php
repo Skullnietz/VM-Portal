@@ -122,7 +122,7 @@ Route::delete('/administrador/{id}', [AdminController::class, 'destroyAdmin'])->
 Route::get('get-usuarios', [AdminController::class, 'getUsuarios'])->name('get-usuarios');
 Route::post('/usuario/estatus', [AdminController::class, 'updateEstatusUser'])->name('update.user.estatus');
 Route::post('/guardar-usuario', [AdminController::class, 'guardarUsuario']);
-Route::delete('/usuario/{id}', [AdminController::class, 'destroyUser'])->name('user.destroy');
+Route::post('/usuario/{id}', [AdminController::class, 'eliminarUsuario'])->name('user.destroy');
 //PLANTAS
 Route::get('/getPlantas', [AdminController::class, 'getPlantas'])->name('get-plantas');
 Route::get('/getPlantasInfo', [AdminController::class, 'getPlantasInfo'])->name('getPlantasInfo');
@@ -194,9 +194,12 @@ Route::get('/getAreas', [AdminController::class, 'getAreas']);
 //##################################### REGISTRO DE ESTATUS ######################################################//
 Route::get('vm-admin', 'StatusController@getAdminDash')->name('getadmindash');
 Route::get('vm-dash', 'StatusController@getIndexDash')->name('getindexdash');
+Route::get('vm-allstatus', 'StatusController@GetAllStatus')->name('getallstatus');
 Route::get('vm-status', 'StatusController@GetStatus')->name('getstatus');
 Route::get('vm-rconsum', 'StatusController@ConsumosGet')->name('getconsum');
+Route::get('vm-rallconsum', 'StatusController@ConsumosGetAdmin')->name('getallconsum');
 Route::get('vm-graphs', 'StatusController@getConsumoGraph')->name('getgraph');
+Route::get('vm-admingraphs', 'StatusController@getAdminDashboardStats')->name('getadmingraph');
 
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° CLIENTES °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° //

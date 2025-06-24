@@ -44,21 +44,17 @@
                     <div class="card-header">
                         <h5 class="card-title">Administrador de Empleados</h5>
                         <div class="card-tools">
+                        <div class="btn-group">
+                            <select id="estatusFilter" class="form-control">
+                                <option value="Alta" selected>Altas</option>
+                                <option value="Baja">Bajas</option>
+                                <option value="">Todos</option>
+                            </select>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
                             </button>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-tool dropdown-toggle" data-toggle="dropdown">
-                                    <i class="fas fa-wrench"></i>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right" role="menu">
-                                    <a href="#" class="dropdown-item">Action</a>
-                                    <a href="#" class="dropdown-item">Another action</a>
-                                    <a href="#" class="dropdown-item">Something else here</a>
-                                    <div class="dropdown-divider"></div>
-                                    <a href="#" class="dropdown-item">Separated link</a>
-                                </div>
-                            </div>
+                            
                             <button type="button" class="btn btn-tool" data-card-widget="remove">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -375,7 +371,12 @@
         var table = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: '{!! route('empleados.data') !!}',
+            ajax: {
+                url: '{!! route('empleados.data') !!}',
+                data: function(d) {
+                    d.estatus = $('#estatusFilter').val(); // envía el filtro
+                }
+            },
             columns: [
                 { data: 'No_Empleado', name: 'No_Empleado' },
                 { data: 'Nip', name: 'Nip' },
@@ -568,6 +569,10 @@
             var area = $(this).data('area');
             openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, area);
         });
+
+        $('#estatusFilter').on('change', function() {
+            table.ajax.reload();
+        });
     });
 
     function openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, idArea) {
@@ -611,7 +616,10 @@
             }
         });
         $('#editModal').modal('show');
+
     }
+
+    
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {

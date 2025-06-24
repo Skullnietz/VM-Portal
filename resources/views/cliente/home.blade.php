@@ -66,6 +66,52 @@
                     <div id="tabs-content" class="container"></div>
                 </div>
             </div>
+            <div class="card">
+                <div class="card-header ui-sortable-handle" style="cursor: move;">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-pie mr-1"></i>
+                        Graficas
+                    </h3>
+                    <div class="card-tools">
+                        <ul class="nav nav-pills ml-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#chartxArea" data-toggle="tab">Grafica por Area</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#chart-Consumo" data-toggle="tab">Grafica por menor consumo</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#chartxMaquina" data-toggle="tab">Grafica por Maquina</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#revenue-chart" data-toggle="tab">Producto más consumido (Barras)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#sales-chart" data-toggle="tab">Producto más consumido (Pastel)</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content p-0">
+                    <div class="chart tab-pane" id="chartxMaquina" style="position: relative; max-height: 700px;">
+                            <canvas id="chartPorMaquina" height="100%" class="chartjs-render-monitor"></canvas>
+                        </div>
+                        <div class="chart tab-pane" id="chartxArea" style="position: relative; max-height: 700px;">
+                            <canvas id="chartPorArea" height="100%" class="chartjs-render-monitor"></canvas>
+                        </div>
+                        <div class="chart tab-pane" id="chart-Consumo" style="position: relative; max-height: 700px;">
+                            <canvas id="chartMenorConsumo" height="100%" class="chartjs-render-monitor"></canvas>
+                        </div>
+                        <div class="chart tab-pane" id="revenue-chart" style="position: relative; max-height: 700px;">
+                        <canvas id="chartArticulosBar"></canvas>
+                        </div>
+                        <div class="chart tab-pane active" id="sales-chart" style="position: relative; max-height: 700px;">
+                        <canvas id="chartArticulosPie"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <!-- Consumos Recientes y Graficas -->
         <div class="col-md-4 col-12">
@@ -112,34 +158,7 @@
                     </table>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-header ui-sortable-handle" style="cursor: move;">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-pie mr-1"></i>
-                        Graficas
-                    </h3>
-                    <div class="card-tools">
-                        <ul class="nav nav-pills ml-auto">
-                            <li class="nav-item">
-                                <a class="nav-link" href="#revenue-chart" data-toggle="tab">Barras</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link active" href="#sales-chart" data-toggle="tab">Pastel</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="tab-content p-0">
-                        <div class="chart tab-pane" id="revenue-chart" style="position: relative; height: 300px;">
-                            <canvas id="myChart" height="300" class="chartjs-render-monitor"></canvas>
-                        </div>
-                        <div class="chart tab-pane active" id="sales-chart" style="position: relative; height: 300px;">
-                            <canvas id="pastelChart" height="300" class="chartjs-render-monitor"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>
@@ -248,110 +267,150 @@
         setInterval(updateInfoBoxes, 5000);
     </script>
     <script>
-        async function fetchData() {
+        async function fetchGraphData() {
             const response = await fetch('/vm-graphs');
             const data = await response.json();
             return data;
         }
-        function updateCharts(data) {
-            const labels = data.map(item => item.nombre);
-            const values = data.map(item => item.total_cantidad);
-            const ids = data.map(item => item.id);
-            const barCtx = document.getElementById('myChart').getContext('2d');
-            const pieCtx = document.getElementById('pastelChart').getContext('2d');
-            if (window.barChart) {
-                window.barChart.destroy();
+        function renderGraficas(data) {
+        const maquinaLabels = data.por_maquina.map(item => item.maquina);
+        const maquinaData = data.por_maquina.map(item => item.total);
+
+        const areaLabels = data.por_area.map(item => item.area);
+        const areaData = data.por_area.map(item => item.total);
+
+        const menorLabels = data.menor_consumo.map(item => item.nombre);
+        const menorData = data.menor_consumo.map(item => item.total_cantidad);
+
+        const articuloLabels = data.articulos.map(item => item.nombre);
+        const articuloData = data.articulos.map(item => item.total_cantidad);
+        const articuloIds = data.articulos.map(item => item.id);
+
+        // 🔄 Destruir si existen antes de volver a crear
+        if (window.chartMaquina) window.chartMaquina.destroy();
+        if (window.chartArea) window.chartArea.destroy();
+        if (window.chartMenor) window.chartMenor.destroy();
+
+        // 📊 Consumo por Máquina
+        const ctx1 = document.getElementById('chartPorMaquina').getContext('2d');
+        window.chartMaquina = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: maquinaLabels,
+                datasets: [{
+                    label: 'Consumo por Máquina',
+                    data: maquinaData,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
             }
-            if (window.pieChart) {
-                window.pieChart.destroy();
+        });
+
+        // 📊 Consumo por Área
+        const ctx2 = document.getElementById('chartPorArea').getContext('2d');
+        window.chartArea = new Chart(ctx2, {
+            type: 'pie',
+            data: {
+                labels: areaLabels,
+                datasets: [{
+                    label: 'Consumo por Área',
+                    data: areaData,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    title: { display: true, text: 'Consumo por Área' }
+                }
             }
-            window.barChart = new Chart(barCtx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Consumo de Artículos (Mes)',
-                        data: values,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(255, 159, 64, 0.8)',
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                            'rgba(201, 203, 207, 0.8)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: { beginAtZero: true }
-                    },
-                    onClick: (evt, item) => {
-                        if (item.length > 0) {
-                            const index = item[0].index;
-                            const articleId = ids[index];
-                            window.open(`/articulo/${articleId}`, '_blank');
-                        }
+        });
+
+        // 📊 Artículos con Menor Consumo
+        const ctx3 = document.getElementById('chartMenorConsumo').getContext('2d');
+        window.chartMenor = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: menorLabels,
+                datasets: [{
+                    label: 'Menor Consumo',
+                    data: menorData,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true } },
+                plugins: {
+                    title: { display: true, text: 'Artículos con Menor Consumo' }
+                }
+            }
+        });
+    // 📊 Artículos más consumidos - BARRAS
+    const ctx4 = document.getElementById('chartArticulosBar').getContext('2d');
+        window.chartArticulosBar = new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: articuloLabels,
+                datasets: [{
+                    label: 'Consumo de Artículos (Mes)',
+                    data: articuloData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } },
+                onClick: (evt, item) => {
+                    if (item.length > 0) {
+                        const index = item[0].index;
+                        const id = articuloIds[index];
+                        window.open(`/articulo/${id}`, '_blank');
                     }
                 }
-            });
-            window.pieChart = new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Consumo de Artículos (Mes)',
-                        data: values,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(255, 159, 64, 0.8)',
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                            'rgba(201, 203, 207, 0.8)'
-                        ],
-                        borderWidth: 1
-                    }]
+            }
+        });
+
+        // 📊 Artículos más consumidos - PASTEL
+        const ctx5 = document.getElementById('chartArticulosPie').getContext('2d');
+        window.chartArticulosPie = new Chart(ctx5, {
+            type: 'pie',
+            data: {
+                labels: articuloLabels,
+                datasets: [{
+                    label: 'Consumo de Artículos (Mes)',
+                    data: articuloData,
+                    backgroundColor: articuloLabels.map((_, i) =>
+                        `hsl(${i * 360 / articuloLabels.length}, 70%, 60%)`
+                    ),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Distribución de Consumo de Artículos' }
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top' },
-                        title: { display: true, text: 'Consumo de Artículos (Mes)' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed;
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    onClick: (evt, item) => {
-                        if (item.length > 0) {
-                            const index = item[0].index;
-                            const articleId = ids[index];
-                            window.open(`/articulo/${articleId}`, '_blank');
-                        }
+                onClick: (evt, item) => {
+                    if (item.length > 0) {
+                        const index = item[0].index;
+                        const id = articuloIds[index];
+                        window.open(`/articulo/${id}`, '_blank');
                     }
                 }
-            });
-        }
-        function refreshCharts() {
-            fetchData().then(data => updateCharts(data));
-        }
-        refreshCharts();
-        setInterval(refreshCharts, 60000);
-    </script>
+            }
+        });
+    }
+
+    function refreshGraficas() {
+        fetchGraphData().then(data => renderGraficas(data));
+    }
+
+    refreshGraficas(); // Al cargar
+    setInterval(refreshGraficas, 60000); // Cada 60 segundos
+</script>
     <script>
         function goBack() {
             window.history.back();

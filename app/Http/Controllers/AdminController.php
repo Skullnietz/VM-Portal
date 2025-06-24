@@ -192,6 +192,68 @@ class AdminController extends Controller
         return DataTables::of($plantas)->make(true);
     }
 
+    public function eliminarUsuario($id)
+{
+    if (session_status() == PHP_SESSION_NONE) session_start();
+
+    // 1. Obtener usuario actual
+    $usuario = DB::table('Cat_Usuarios')->where('Id_Usuario', $id)->first();
+
+    if (!$usuario) {
+        return response()->json(['success' => false, 'message' => 'Usuario no encontrado'], 404);
+    }
+
+    if ($_SESSION['usuario']->Id_Usuario == $id) {
+        return response()->json(['success' => false, 'message' => 'No puedes eliminar tu propio usuario.'], 403);
+    }
+
+    // 2. Buscar nuevo usuario de la misma planta y más reciente
+    $nuevoIdUsuario = DB::table('Cat_Usuarios')
+        ->where('Id_Planta', $usuario->Id_Planta)
+        ->where('Fecha_Alta', '>', $usuario->Fecha_Alta)
+        ->where('Id_Usuario', '!=', $id)
+        ->where('Txt_Estatus', 'Alta')
+        ->orderBy('Fecha_Alta', 'asc')
+        ->value('Id_Usuario');
+
+    if (!$nuevoIdUsuario) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No hay otro usuario de la misma planta para reasignar los registros.'
+        ], 400);
+    }
+
+    // 3. Reasignar referencias
+    DB::table('Cat_Area')
+        ->where('Id_Usuario_Alta', $id)
+        ->update(['Id_Usuario_Alta' => $nuevoIdUsuario]);
+
+    DB::table('Cat_Empleados')
+        ->where('Id_Usuario_Alta', $id)
+        ->update(['Id_Usuario_Alta' => $nuevoIdUsuario]);
+
+    DB::table('Ctrl_Permisos_x_Area')
+        ->where('Id_Usuario_Alta', $id)
+        ->update(['Id_Usuario_Alta' => $nuevoIdUsuario]);
+
+    DB::table('Cat_Usuarios')
+        ->where('Id_Usuario_Admon_Alta', $id)
+        ->update(['Id_Usuario_Admon_Alta' => $nuevoIdUsuario]);
+
+    // 🆕 Reasignar en Cat_Usuarios_Administradores
+    DB::table('Cat_Usuarios_Administradores')
+        ->where('Id_Usuario_Admon', $id)
+        ->update(['Id_Usuario_Admon' => $nuevoIdUsuario]);
+
+    // 4. Eliminar el usuario original
+    DB::table('Cat_Usuarios')->where('Id_Usuario', $id)->delete();
+
+    return response()->json([
+        'success' => true,
+        'message' => "Usuario eliminado y todas las referencias fueron reasignadas al usuario con ID $nuevoIdUsuario"
+    ]);
+}
+
     public function destroyPlanta($id)
     {
         try {
