@@ -143,11 +143,16 @@ class StatusController extends Controller
                 'Cat_Articulos.Txt_Descripcion as NArticulo',
                 'Ctrl_Mquinas.Txt_Nombre as NombreMaquina',
                 'Cat_Plantas.Txt_Nombre_Planta as NombrePlanta',
-                'Ctrl_Consumos.Fecha_Consumo'
+                'Ctrl_Consumos.Fecha_Real'
             )
-            ->orderBy('Ctrl_Consumos.Fecha_Consumo', 'desc')
+            ->orderBy('Ctrl_Consumos.Fecha_Real', 'desc')
             ->take(20)
             ->get();
+
+            // Agregar columna FechaHumana a cada resultado
+            foreach ($consumos as $consumo) {
+                $consumo->FechaHumana = Carbon::parse($consumo->Fecha_Real)->diffForHumans();
+            }
     
         return $consumos;
     }

@@ -95,20 +95,24 @@
                 <div class="card-body">
                     <div class="tab-content p-0">
                     <div class="chart tab-pane" id="chartxMaquina" style="position: relative; max-height: 700px;">
-                            <canvas id="chartPorMaquina" height="100%" class="chartjs-render-monitor"></canvas>
-                        </div>
-                        <div class="chart tab-pane" id="chartxArea" style="position: relative; max-height: 700px;">
-                            <canvas id="chartPorArea" height="100%" class="chartjs-render-monitor"></canvas>
-                        </div>
-                        <div class="chart tab-pane" id="chart-Consumo" style="position: relative; max-height: 700px;">
-                            <canvas id="chartMenorConsumo" height="100%" class="chartjs-render-monitor"></canvas>
-                        </div>
-                        <div class="chart tab-pane" id="revenue-chart" style="position: relative; max-height: 700px;">
-                        <canvas id="chartArticulosBar"></canvas>
-                        </div>
-                        <div class="chart tab-pane active" id="sales-chart" style="position: relative; max-height: 700px;">
-                        <canvas id="chartArticulosPie"></canvas>
-                        </div>
+                        <div id="chartPorMaquina" style="width: 100%; height: 100%;"></div>
+                    </div>
+
+                    <div class="chart tab-pane" id="chartxArea" style="position: relative; max-height: 700px;">
+                        <div id="chartPorArea" style="width: 100%; height: 100%;"></div>
+                    </div>
+
+                    <div class="chart tab-pane" id="chart-Consumo" style="position: relative; max-height: 700px;">
+                        <div id="chartMenorConsumo" style="width: 100%; height: 100%;"></div>
+                    </div>
+
+                    <div class="chart tab-pane" id="revenue-chart" style="position: relative; max-height: 700px;">
+                        <div id="chartArticulosBar" style="width: 100%; height: 100%;"></div>
+                    </div>
+
+                    <div class="chart tab-pane active" id="sales-chart" style="position: relative; max-height: 700px;">
+                        <div id="chartArticulosPie" style="width: 100%; height: 100%;"></div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -251,7 +255,34 @@
 @stop
 
 @section('js')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+<script>
+    Highcharts.setOptions({
+    lang: {
+        contextButtonTitle: "Opciones de exportación",
+        downloadPNG: "Descargar imagen PNG",
+        downloadJPEG: "Descargar imagen JPEG",
+        downloadPDF: "Descargar PDF",
+        downloadSVG: "Descargar imagen SVG",
+        downloadCSV: "Descargar CSV",
+        downloadXLS: "Descargar Excel",
+        viewData: "Ver datos en tabla",
+        viewFullscreen: "Ver en pantalla completa",
+        exitFullscreen: "Salir de pantalla completa",
+        printChart: "Imprimir gráfica",
+        loading: "Cargando...",
+        noData: "No hay datos para mostrar",
+        thousandsSep: ",",
+        decimalPoint: "."
+    }
+});
+</script>
+
     <script>
         function updateInfoBoxes() {
             fetch('/vm-dash')
@@ -267,150 +298,135 @@
         setInterval(updateInfoBoxes, 5000);
     </script>
     <script>
-        async function fetchGraphData() {
-            const response = await fetch('/vm-graphs');
-            const data = await response.json();
-            return data;
-        }
-        function renderGraficas(data) {
-        const maquinaLabels = data.por_maquina.map(item => item.maquina);
-        const maquinaData = data.por_maquina.map(item => item.total);
+    async function fetchGraphData() {
+        const response = await fetch('/vm-graphs');
+        const data = await response.json();
+        return data;
+    }
 
-        const areaLabels = data.por_area.map(item => item.area);
-        const areaData = data.por_area.map(item => item.total);
+    async function renderGraficas() {
+        const data = await fetchGraphData();
 
-        const menorLabels = data.menor_consumo.map(item => item.nombre);
-        const menorData = data.menor_consumo.map(item => item.total_cantidad);
-
-        const articuloLabels = data.articulos.map(item => item.nombre);
-        const articuloData = data.articulos.map(item => item.total_cantidad);
-        const articuloIds = data.articulos.map(item => item.id);
-
-        // 🔄 Destruir si existen antes de volver a crear
-        if (window.chartMaquina) window.chartMaquina.destroy();
-        if (window.chartArea) window.chartArea.destroy();
-        if (window.chartMenor) window.chartMenor.destroy();
-
-        // 📊 Consumo por Máquina
-        const ctx1 = document.getElementById('chartPorMaquina').getContext('2d');
-        window.chartMaquina = new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: maquinaLabels,
-                datasets: [{
-                    label: 'Consumo por Máquina',
-                    data: maquinaData,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-
-        // 📊 Consumo por Área
-        const ctx2 = document.getElementById('chartPorArea').getContext('2d');
-        window.chartArea = new Chart(ctx2, {
-            type: 'pie',
-            data: {
-                labels: areaLabels,
-                datasets: [{
-                    label: 'Consumo por Área',
-                    data: areaData,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                plugins: {
-                    title: { display: true, text: 'Consumo por Área' }
-                }
-            }
-        });
-
-        // 📊 Artículos con Menor Consumo
-        const ctx3 = document.getElementById('chartMenorConsumo').getContext('2d');
-        window.chartMenor = new Chart(ctx3, {
-            type: 'bar',
-            data: {
-                labels: menorLabels,
-                datasets: [{
-                    label: 'Menor Consumo',
-                    data: menorData,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                scales: { x: { beginAtZero: true } },
-                plugins: {
-                    title: { display: true, text: 'Artículos con Menor Consumo' }
-                }
-            }
-        });
-    // 📊 Artículos más consumidos - BARRAS
-    const ctx4 = document.getElementById('chartArticulosBar').getContext('2d');
-        window.chartArticulosBar = new Chart(ctx4, {
-            type: 'bar',
-            data: {
-                labels: articuloLabels,
-                datasets: [{
-                    label: 'Consumo de Artículos (Mes)',
-                    data: articuloData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: { y: { beginAtZero: true } },
-                onClick: (evt, item) => {
-                    if (item.length > 0) {
-                        const index = item[0].index;
-                        const id = articuloIds[index];
-                        window.open(`/articulo/${id}`, '_blank');
-                    }
-                }
-            }
-        });
-
-        // 📊 Artículos más consumidos - PASTEL
-        const ctx5 = document.getElementById('chartArticulosPie').getContext('2d');
-        window.chartArticulosPie = new Chart(ctx5, {
-            type: 'pie',
-            data: {
-                labels: articuloLabels,
-                datasets: [{
-                    label: 'Consumo de Artículos (Mes)',
-                    data: articuloData,
-                    backgroundColor: articuloLabels.map((_, i) =>
-                        `hsl(${i * 360 / articuloLabels.length}, 70%, 60%)`
-                    ),
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    title: { display: true, text: 'Distribución de Consumo de Artículos' }
+        if (Array.isArray(data.por_maquina) && data.por_maquina.length > 0) {
+            Highcharts.chart('chartPorMaquina', {
+                chart: { type: 'column' },
+                title: { text: 'Consumo por Máquina' },
+                accessibility: { enabled: false },
+                xAxis: {
+                    categories: data.por_maquina.map(item => item?.maquina || 'Sin nombre')
                 },
-                onClick: (evt, item) => {
-                    if (item.length > 0) {
-                        const index = item[0].index;
-                        const id = articuloIds[index];
-                        window.open(`/articulo/${id}`, '_blank');
+                yAxis: {
+                    min: 0,
+                    title: { text: 'Total' }
+                },
+                series: [{
+                    name: 'Consumo',
+                    data: data.por_maquina.map(item => Number(item?.total) || 0)
+                }]
+            });
+        }
+
+        if (Array.isArray(data.por_area) && data.por_area.length > 0) {
+            Highcharts.chart('chartPorArea', {
+                chart: { type: 'pie' },
+                title: { text: 'Consumo por Área' },
+                accessibility: { enabled: false },
+                series: [{
+                    name: 'Consumo',
+                    colorByPoint: true,
+                    data: data.por_area.map(item => ({
+                        name: item?.area || 'Sin área',
+                        y: Number(item?.total) || 0
+                    }))
+                }]
+            });
+        }
+
+        if (Array.isArray(data.menor_consumo) && data.menor_consumo.length > 0) {
+            Highcharts.chart('chartMenorConsumo', {
+                chart: { type: 'bar' },
+                title: { text: 'Menor Consumo' },
+                accessibility: { enabled: false },
+                xAxis: {
+                    categories: data.menor_consumo.map(item => item?.nombre || 'Sin nombre')
+                },
+                yAxis: {
+                    min: 0,
+                    title: { text: 'Cantidad' }
+                },
+                series: [{
+                    name: 'Cantidad',
+                    data: data.menor_consumo.map(item => Number(item?.total_cantidad) || 0)
+                }]
+            });
+        }
+
+        if (Array.isArray(data.articulos) && data.articulos.length > 0) {
+            const ids = data.articulos.map(item => item?.id || 0);
+            const nombres = data.articulos.map(item => item?.nombre || 'Sin nombre');
+            const cantidades = data.articulos.map(item => Number(item?.total_cantidad) || 0);
+
+            Highcharts.chart('chartArticulosBar', {
+                chart: { type: 'column' },
+                title: { text: 'Artículos más Consumidos (Mes)' },
+                accessibility: { enabled: false },
+                xAxis: { categories: nombres },
+                yAxis: {
+                    min: 0,
+                    title: { text: 'Cantidad' }
+                },
+                plotOptions: {
+                    series: {
+                        cursor: 'pointer',
+                        point: {
+                            events: {
+                                click: function () {
+                                    const id = ids[this.index];
+                                    window.open(`/articulo/${id}`, '_blank');
+                                }
+                            }
+                        }
                     }
-                }
-            }
-        });
+                },
+                series: [{
+                    name: 'Cantidad',
+                    data: cantidades
+                }]
+            });
+
+            Highcharts.chart('chartArticulosPie', {
+                chart: { type: 'pie' },
+                title: { text: 'Distribución de Artículos' },
+                accessibility: { enabled: false },
+                plotOptions: {
+                    pie: {
+                        cursor: 'pointer',
+                        point: {
+                            events: {
+                                click: function () {
+                                    const id = ids[this.index];
+                                    window.open(`/articulo/${id}`, '_blank');
+                                }
+                            }
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Cantidad',
+                    colorByPoint: true,
+                    data: nombres.map((nombre, index) => ({
+                        name: nombre,
+                        y: cantidades[index]
+                    }))
+                }]
+            });
+        }
     }
 
-    function refreshGraficas() {
-        fetchGraphData().then(data => renderGraficas(data));
-    }
-
-    refreshGraficas(); // Al cargar
-    setInterval(refreshGraficas, 60000); // Cada 60 segundos
+    renderGraficas();
 </script>
+
+
     <script>
         function goBack() {
             window.history.back();

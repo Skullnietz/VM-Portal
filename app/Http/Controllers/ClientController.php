@@ -12,6 +12,7 @@ use App\Exports\EmpleadosExport;
 use App\Exports\PermisosExport;
 use App\Exports\AreasExport;
 use Illuminate\Support\Facades\Log;
+use App\Mail\ReporteEmpleadosMail;
 
 
 class ClientController extends Controller
@@ -61,6 +62,22 @@ class ClientController extends Controller
         }
 
         
+    }
+
+    public function enviarCSVporCorreo(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $idPlanta = $request->query('idPlanta');
+        $filename = $this->generarCSV($idPlanta);
+
+        $mensaje = "Este es el reporte de empleados correspondiente a la planta {$idPlanta}.";
+
+        Mail::to('destinatario@dominio.com')->send(new ReporteEmpleadosMail($mensaje, $filename));
+
+        return response()->json(['status' => 'Correo enviado con éxito.']);
     }
 
     public function exportPermisos(Request $request)
@@ -299,6 +316,40 @@ public function getDataEmpleados(Request $request)
     public function exportExcel() {
         return Excel::download(new EmpleadosExport, 'empleados.xlsx');
     }
+
+    public function generarCSV($idPlanta)
+{
+    $filename = "empleados_" . date('Ymd_His') . ".csv";
+    $path = storage_path("app/{$filename}");
+
+    $empleados = DB::table('Cat_Empleados')
+        ->select('No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'Id_Area', 'Txt_Estatus', 'Tipo_Acceso')
+        ->where('Id_Planta', $idPlanta)
+        ->get();
+
+    $columns = ['No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus'];
+
+    $file = fopen($path, 'w');
+    fputcsv($file, $columns);
+
+    foreach ($empleados as $empleado) {
+        $area = DB::table('Cat_Area')->where('Id_Area', $empleado->Id_Area)->value('Txt_Nombre');
+        $data = [
+            (string)$empleado->No_Empleado,
+            (string)$empleado->Nip,
+            (string)$empleado->No_Tarjeta,
+            $empleado->Nombre,
+            $empleado->APaterno,
+            $empleado->AMaterno,
+            $area,
+            $empleado->Txt_Estatus,
+        ];
+        fputcsv($file, $data);
+    }
+
+    fclose($file);
+    return $filename;
+}
 
     public function exportCSV() {
         if (session_status() == PHP_SESSION_NONE) {

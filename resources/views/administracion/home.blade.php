@@ -93,19 +93,19 @@
                         <div class="card-body">
                             <div id="chart-planta" class="chart-container">
                                 <h5 class="text-center">Consumo Total por Planta</h5>
-                                <canvas id="chartPlantas"></canvas>
+                                <div id="chartPlantas" style="height: 400px; margin-bottom: 30px;"></div>
                             </div>
                             <div id="chart-productos" class="chart-container d-none">
                                 <h5 class="text-center">Top 5 Productos</h5>
-                                <canvas id="chartTopProductos"></canvas>
+                                <div id="chartTopProductos" style="height: 400px; margin-bottom: 30px;"></div>
                             </div>
                             <div id="chart-matriz" class="chart-container d-none">
                                 <h5 class="text-center">Consumo por Planta y Producto</h5>
-                                <canvas id="chartMatriz"></canvas>
+                                <div id="chartMatriz" style="height: 400px; margin-bottom: 30px;"></div>
                             </div>
                             <div id="chart-dia" class="chart-container d-none">
                                 <h5 class="text-center">Consumo Diario</h5>
-                                <canvas id="chartPorDia"></canvas>
+                                <div id="chartPorDia" style="height: 400px; margin-bottom: 30px;"></div>
                             </div>
                             </div>
                             </div>
@@ -155,10 +155,10 @@
                                 <table class="table table table-head-fixed text-nowrap">
                                     <thead>
                                         <tr>
-                                            <th style="width: 10px">N#</th>
+                                            <th style="width: 10px">Fecha</th>
+                                            <th style="width: 40px">Empleado</th>
                                             <th>Producto</th>
                                             <th>VM</th>
-                                            <th style="width: 40px">Fecha</th>
                                         </tr>
                                     </thead>
                                     <tbody id="recent-consumptions-body">
@@ -268,6 +268,28 @@
 
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script>
+Highcharts.setOptions({
+    lang: {
+        contextButtonTitle: "Opciones de exportación",
+        downloadPNG: "Descargar imagen PNG",
+        downloadJPEG: "Descargar imagen JPEG",
+        downloadPDF: "Descargar PDF",
+        downloadSVG: "Descargar SVG",
+        downloadCSV: "Descargar CSV",
+        downloadXLS: "Descargar Excel",
+        viewData: "Ver datos en tabla",
+        viewFullscreen: "Ver en pantalla completa",
+        exitFullscreen: "Salir de pantalla completa",
+        printChart: "Imprimir gráfica",
+        loading: "Cargando...",
+        noData: "No hay datos para mostrar"
+    }
+});
+</script>
     <script>
     document.addEventListener("DOMContentLoaded", function () {
         // Control de tabs manual
@@ -324,128 +346,114 @@
 setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
     </script>
     <script>
-                                async function fetchData() {
-                                    const response = await fetch('/vm-admingraphs');
-                                    return await response.json();
-                                }
-                            
-                                function updateCharts(data) {
-                                    // Destruir si ya existen
-                                    ['chartPlantas', 'chartTopProductos', 'chartMatriz', 'chartPorDia'].forEach(id => {
-                                        const chart = window[id];
-                                        if (chart && typeof chart.destroy === 'function') {
-                                            chart.destroy();
-                                        }
-                                    });
-                            
-                                    // 1. Consumo por planta
-                                    const plantaLabels = data.porPlanta.map(p => p.planta);
-                                    const plantaValues = data.porPlanta.map(p => p.total_consumo);
-                                    window.chartPlantas = new Chart(document.getElementById('chartPlantas'), {
-                                        type: 'bar',
-                                        data: {
-                                            labels: plantaLabels,
-                                            datasets: [{
-                                                label: 'Total Consumido',
-                                                data: plantaValues,
-                                                backgroundColor: 'rgba(75,192,192,0.7)',
-                                            }]
-                                        },
-                                        options: {
-                                            responsive: true,
-                                            scales: { y: { beginAtZero: true } }
-                                        }
-                                    });
-                            
-                                    // 2. Top productos
-                                    const topLabels = data.topProductos.map(p => p.producto);
-                                    const topValues = data.topProductos.map(p => p.total);
-                                    window.chartTopProductos = new Chart(document.getElementById('chartTopProductos'), {
-                                        type: 'pie',
-                                        data: {
-                                            labels: topLabels,
-                                            datasets: [{
-                                                data: topValues,
-                                                backgroundColor: [
-                                                    'rgba(255,99,132,0.8)',
-                                                    'rgba(255,159,64,0.8)',
-                                                    'rgba(255,205,86,0.8)',
-                                                    'rgba(75,192,192,0.8)',
-                                                    'rgba(54,162,235,0.8)'
-                                                ]
-                                            }]
-                                        },
-                                        options: {
-                                            responsive: true,
-                                            plugins: { legend: { position: 'top' } }
-                                        }
-                                    });
-                            
-                                    // 3. Matriz por planta y producto
-                                    const productosUnicos = [...new Set(data.porPlantaYProducto.map(d => d.producto))];
-                                    const plantasUnicas = [...new Set(data.porPlantaYProducto.map(d => d.planta))];
-                                    const colores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
-                            
-                                    const datasetsMatriz = plantasUnicas.map((planta, idx) => {
-                                        const datos = productosUnicos.map(prod => {
-                                            const found = data.porPlantaYProducto.find(d => d.planta === planta && d.producto === prod);
-                                            return found ? found.total : 0;
-                                        });
-                                        return {
-                                            label: planta,
-                                            data: datos,
-                                            backgroundColor: colores[idx % colores.length]
-                                        };
-                                    });
-                            
-                                    window.chartMatriz = new Chart(document.getElementById('chartMatriz'), {
-                                        type: 'bar',
-                                        data: {
-                                            labels: productosUnicos,
-                                            datasets: datasetsMatriz
-                                        },
-                                        options: {
-                                            responsive: true,
-                                            plugins: {
-                                                tooltip: { mode: 'index', intersect: false },
-                                                legend: { position: 'top' }
-                                            },
-                                            scales: { y: { beginAtZero: true }, x: { stacked: true }, yAxes: { stacked: true } }
-                                        }
-                                    });
-                            
-                                    // 4. Consumo por día
-                                    const diaLabels = data.porDia.map(d => d.dia);
-                                    const diaValues = data.porDia.map(d => d.total);
-                            
-                                    window.chartPorDia = new Chart(document.getElementById('chartPorDia'), {
-                                        type: 'line',
-                                        data: {
-                                            labels: diaLabels,
-                                            datasets: [{
-                                                label: 'Total Diario',
-                                                data: diaValues,
-                                                fill: true,
-                                                backgroundColor: 'rgba(153,102,255,0.2)',
-                                                borderColor: 'rgba(153,102,255,1)',
-                                                tension: 0.1
-                                            }]
-                                        },
-                                        options: {
-                                            responsive: true,
-                                            scales: { y: { beginAtZero: true } }
-                                        }
-                                    });
-                                }
-                            
-                                function refreshCharts() {
-                                    fetchData().then(data => updateCharts(data));
-                                }
-                            
-                                // Inicializar y actualizar cada minuto
-                                refreshCharts();
-                                setInterval(refreshCharts, 60000);
-                            </script>
+    async function fetchData() {
+        const response = await fetch('/vm-admingraphs');
+        return await response.json();
+    }
+
+    function updateCharts(data) {
+        // 1. Consumo por planta
+        if (data.porPlanta?.length) {
+            Highcharts.chart('chartPlantas', {
+                chart: { type: 'column' },
+                title: { text: 'Consumo por Planta' },
+                accessibility: { enabled: false },
+                xAxis: { categories: data.porPlanta.map(p => p.planta) },
+                yAxis: {
+                    min: 0,
+                    title: { text: 'Total Consumido' }
+                },
+                series: [{
+                    name: 'Consumo',
+                    data: data.porPlanta.map(p => Number(p.total_consumo) || 0)
+                }]
+            });
+        }
+
+        // 2. Top productos (pastel)
+        if (data.topProductos?.length) {
+            Highcharts.chart('chartTopProductos', {
+                chart: { type: 'pie' },
+                title: { text: 'Top Productos Consumidos' },
+                accessibility: { enabled: false },
+                series: [{
+                    name: 'Total',
+                    colorByPoint: true,
+                    data: data.topProductos.map(p => ({
+                        name: p.producto,
+                        y: Number(p.total) || 0
+                    }))
+                }]
+            });
+        }
+
+        // 3. Matriz planta-producto (barras apiladas)
+        if (data.porPlantaYProducto?.length) {
+            const productos = [...new Set(data.porPlantaYProducto.map(d => d.producto))];
+            const plantas = [...new Set(data.porPlantaYProducto.map(d => d.planta))];
+            const colores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+
+            const datasets = plantas.map((planta, idx) => {
+                const datos = productos.map(prod => {
+                    const found = data.porPlantaYProducto.find(d => d.planta === planta && d.producto === prod);
+                    return found ? Number(found.total) : 0;
+                });
+                return {
+                    name: planta,
+                    data: datos,
+                    color: colores[idx % colores.length]
+                };
+            });
+
+            Highcharts.chart('chartMatriz', {
+                chart: { type: 'column' },
+                title: { text: 'Consumo por Planta y Producto' },
+                accessibility: { enabled: false },
+                xAxis: { categories: productos },
+                yAxis: {
+                    min: 0,
+                    title: { text: 'Total Consumido' },
+                    stackLabels: {
+                        enabled: true,
+                        formatter: function () {
+                            return this.total;
+                        }
+                    }
+                },
+                plotOptions: {
+                    column: { stacking: 'normal' }
+                },
+                series: datasets
+            });
+        }
+
+        // 4. Consumo por día (línea)
+        if (data.porDia?.length) {
+            Highcharts.chart('chartPorDia', {
+                chart: { type: 'line' },
+                title: { text: 'Consumo Diario Total' },
+                accessibility: { enabled: false },
+                xAxis: { categories: data.porDia.map(d => d.dia) },
+                yAxis: {
+                    title: { text: 'Total Diario' },
+                    min: 0
+                },
+                series: [{
+                    name: 'Total Diario',
+                    data: data.porDia.map(d => Number(d.total) || 0),
+                    marker: { enabled: true }
+                }]
+            });
+        }
+    }
+
+    function refreshCharts() {
+        fetchData().then(data => updateCharts(data));
+    }
+
+    refreshCharts();
+    setInterval(refreshCharts, 60000); // cada minuto
+</script>
     <script>
         function goBack() {
             window.history.back();
@@ -632,10 +640,10 @@ setInterval(updateInfoBoxes, 5000); // Actualizar cada 5 segundos
                         data.forEach((item, index) => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
-                                <td>${index + 1}</td>
+                                <td>${item.FechaHumana}</td>
+                                <td>${item.NombreEmpleado}</td>
                                 <td>${item.NArticulo}</td>
                                 <td>${item.NombreMaquina}</td>
-                                <td>${item.Fecha_Consumo}</td>
                             `;
                             tbody.appendChild(row);
                         });

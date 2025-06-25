@@ -24,7 +24,9 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
     public function collection()
 {
     // Limpia el buffer de salida para evitar problemas con el export
-    ob_end_clean();
+    if (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     ob_start();
     
     // Construye la consulta base

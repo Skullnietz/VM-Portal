@@ -554,4 +554,43 @@ public function exportConsumoxVending(Request $request)
     return Excel::download(new ConsumoxVendingExport($request, $idPlanta), 'vending-consumos.xlsx');
 }
 
+public function verConfiguracion()
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $idUsuario = $_SESSION['usuario']->Id_Usuario;
+
+    $config = DB::table('Configuracion_Reportes')
+                ->where('Id_Usuario', $idUsuario)
+                ->first();
+
+    return view('cliente.reportes.configurar', compact('config'));
+}
+
+public function guardarConfiguracion(Request $request)
+{
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $idUsuario = $_SESSION['usuario']->Id_Usuario;
+    $recibir = $request->has('notificaciones') ? 1 : 0;
+    $frecuencia = $request->input('frecuencia');
+    $email = $request->input('email');
+
+    DB::table('Configuracion_Reportes')->updateOrInsert(
+        ['Id_Usuario' => $idUsuario],
+        [
+            'Frecuencia' => $frecuencia,
+            'Email' => $email,
+            'Recibir_Notificaciones' => $recibir,
+            'updated_at' => now()
+        ]
+    );
+
+    return redirect()->back()->with('success', 'Configuración guardada exitosamente.');
+}
+
 }

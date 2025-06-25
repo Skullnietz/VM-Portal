@@ -36,6 +36,12 @@ return[
             'icon_color' => 'cyan',
             'url' => '/cli/permisos-cli',
         ],
+        [
+            'text' => ' Alertas',
+            'icon' => 'fas fa-exclamation-triangle',
+            'icon_color' => 'cyan',
+            'url' => '/cli/reportes/configurar',
+        ],
         ['header' => 'REPORTES'],
         [
             'text' => 'Consumos',

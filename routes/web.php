@@ -85,6 +85,8 @@ Route::prefix('{language}')->group(function () {
     Route::get('/config/plano/{id}', 'AdminController@Planograma')->name('planograma'); // Administracion Planograma
     // RELLENAR
     Route::get('/Astock/rellenar/{id}', 'AdminController@Surtir')->name('Arellenar'); // Administracion Surtido
+    // ALERTAS
+    Route::get('/reportes/configurar', [ReportesClienteController::class, 'verConfiguracion'])->name('cliente.reportes.configurar');
     
     
 
@@ -187,6 +189,11 @@ Route::delete('/dispositivos/destroy/{id}', [AdminController::class, 'destroyDis
 Route::get('/maquinas/list', [AdminController::class, 'listMquinas'])->name('maquinas.list');
 //AREAS
 Route::get('/getAreas', [AdminController::class, 'getAreas']);
+
+/////////////////////////////////////// NOTIFICACION VIA MAIL ///////////////////////////////////////////////////
+
+
+Route::post('/reportes/guardar-configuracion', [ReportesClienteController::class, 'guardarConfiguracion'])->name('reportes.guardar_configuracion');
 
 
 

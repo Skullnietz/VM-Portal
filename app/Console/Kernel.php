@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\CheckVendingDeactivations::class,
+        \App\Console\Commands\EnviarReportesProgramados::class,
     ];
 
     /**
@@ -25,6 +26,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('vending:register-notifications');
+        $schedule->command('reportes:enviar')->dailyAt('06:00'); // Cambia la hora si lo deseas
     }
 
     /**
