@@ -243,7 +243,7 @@ Route::post('/test-upload', function (Request $request) {
 
 
 Route::post('empleado/toggle-status/{id}', 'ClientController@toggleStatus');
-Route::get('empleados/data', 'ClientController@getDataEmpleados')->name('empleados.data');
+Route::post('empleados/data', 'ClientController@getDataEmpleados')->name('empleados.data');
 Route::get('export-csv-employees', 'ClientController@exportCSV');
 Route::post('import-csv-employees', 'ClientController@importCSV');
 Route::get('empleado/delete/{Id_Empleado}','ClientController@destroyEmployee')->name('empleado.delete');

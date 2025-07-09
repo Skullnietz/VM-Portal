@@ -407,8 +407,10 @@
             
             ajax: {
                 url: '{{ url("empleados/data") }}',
+                type: 'POST',
                 data: function(d) {
                     d.estatus = $('#estatusFilter').val(); // envía el filtro
+                    d._token = '{{ csrf_token() }}'; // muy importante
                 }
             },
             columns: [
