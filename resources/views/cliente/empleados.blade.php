@@ -404,8 +404,9 @@
         var table = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
+            
             ajax: {
-                url: '{!! route('empleados.data') !!}',
+                url: '{{ url("empleados/data") }}',
                 data: function(d) {
                     d.estatus = $('#estatusFilter').val(); // envía el filtro
                 }
