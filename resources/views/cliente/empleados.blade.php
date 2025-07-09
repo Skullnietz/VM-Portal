@@ -399,11 +399,7 @@
     });
 </script>
 <script>
-    $.ajaxSetup({
-    headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-    }
-});
+    
     $(document).ready(function() {
         var table = $('#empleados-table').DataTable({
             processing: true,
@@ -645,7 +641,7 @@
         }
         areaSelect.innerHTML = '';
         $.ajax({
-            url: '{!! route('areas.data') !!}',
+            url: '{{route('areas.data', [], false)}}',
             method: 'GET',
             success: function(data) {
                 var idAreaStr = idArea.toString();
