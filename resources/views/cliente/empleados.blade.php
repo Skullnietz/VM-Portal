@@ -420,21 +420,30 @@
                 { data: 'AMaterno', name: 'AMaterno', defaultContent: '' },
                 { data: 'NArea', name: 'NArea' },
                 {
-                    data: null,
+                    data: 'Permisos',
+                    name: 'Permisos',
+                    orderable: false,
+                    searchable: false,
                     name: 'Permisos',
                     render: function(data, type, row) {
                         return `<a href="/cli/areas/permissions/${row.Id_Area}" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
                     }
                 },
                 {
-                    data: null,
+                    data: 'Editar',
+                    name: 'Editar',
+                    orderable: false,
+                    searchable: false,
                     name: 'Editar',
                     render: function(data, type, row) {
                         return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${row.Nombre}" data-apaterno="${row.APaterno}" data-amaterno="${row.AMaterno}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
                     }
                 },
                 {
-                    data: null,
+                    data: 'Eliminar',
+                    name: 'Eliminar',
+                    orderable: false,
+                    searchable: false,
                     name: 'Eliminar',
                     render: function(data, type, row) {
                         return `<button class="btn btn-xs btn-danger" onclick="confirmDelete(${row.Id_Empleado}, '${row.Nombre} ${row.APaterno} ${row.AMaterno}')">Eliminar <i class="fas fa-trash"></i></button>`;
