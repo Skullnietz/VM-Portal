@@ -1,36 +1,18 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Alerta de sincronización</title>
-</head>
-<body>
-    <h2>❌ Alerta de sincronización</h2>
+@component('mail::message')
+# ❌ Alerta de sincronización
 
-    <p>Se ha detectado que las siguientes máquinas de la planta <strong>{{ $nombrePlanta }}</strong> no están sincronizadas correctamente:</p>
+Se ha detectado que las siguientes máquinas de la planta **{{ $nombrePlanta }}** no están sincronizadas correctamente:
 
-    <table border="1" cellpadding="8" cellspacing="0">
-        <thead>
-            <tr>
-                <th>ID de Máquina</th>
-                <th>Nombre de Máquina</th>
-                <th>Estatus</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($maquinas as $m)
-                <tr>
-                    <td>{{ $m->Id_Maquina }}</td>
-                    <td>{{ $m->Txt_Nombre }}</td>
-                    <td>{{ $m->Txt_Estatus }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+@component('mail::table')
+| ID de Máquina | Nombre de Máquina | Estatus     |
+|---------------|-------------------|-------------|
+@foreach ($maquinas as $m)
+| {{ $m->Id_Maquina }} | {{ $m->Txt_Nombre }} | {{ $m->Txt_Estatus }} |
+@endforeach
+@endcomponent
 
-    <p>Por favor, revise el estado de estas máquinas en el sistema.</p>
+Por favor, revise el estado de estas máquinas en el sistema.
 
-    <p>Gracias,<br>
-    Portal VM</p>
-</body>
-</html>
+Gracias,  
+Portal USI VM
+@endcomponent

@@ -22,8 +22,8 @@ class ReporteEmpleadosMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Reporte de Consumos')
-                    ->view('emails.reporte_consumos')
+        return $this->subject('📊 Reporte de Consumos')
+                    ->markdown('emails.reporte_consumos')
                     ->attach(storage_path("app/{$this->filename}"));
     }
 }

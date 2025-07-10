@@ -22,6 +22,6 @@ class FalloSincronizacionMail extends Mailable
     public function build()
     {
         return $this->subject("⚠️ Falla de sincronización en planta: {$this->nombrePlanta}")
-                    ->view('emails.fallo_sincronizacion');
+                    ->markdown('emails.fallo_sincronizacion');
     }
 }
