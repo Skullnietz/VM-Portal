@@ -9,7 +9,7 @@ use App\Mail\ReporteEmpleadosMail;
 use App\Mail\FalloSincronizacionMail;
 use App\Mail\MaquinaDesactualizadaUsuarioMail;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ConsumoxEmpleadoExport;
+use App\Exports\ConsumoxEmpleadoMultiExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -232,7 +232,7 @@ class EnviarReportesProgramados extends Command
         ]);
 
         $filename = 'reporte_consumos_' . $frecuencia . '_' . date('Ymd_His') . '.xlsx';
-        Excel::store(new ConsumoxEmpleadoExport($fakeRequest, $idPlanta), $filename, 'local');
+        Excel::store(new ConsumoxEmpleadoMultiExport($fakeRequest, $idPlanta), $filename, 'local');
 
         return $filename;
     }
