@@ -437,7 +437,7 @@ public function exportConsumoxEmpleado(Request $request)
 }
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
-    return Excel::download(new ConsumoxEmpleadoExport($request, $idPlanta), 'consumos-empleado.xlsx');
+    Excel::download(new ConsumoxEmpleadoMultiExport($request, $idPlanta), 'reporte_consumos.xlsx');
 }
 public function exportConsumoxArea(Request $request)
 {

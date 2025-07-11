@@ -154,9 +154,10 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
             'No.Empleado',
             'Area',
             'Descripción del Artículo',
-            'Código de Cliente',
             'Código de Urvina',
+            'Código de Cliente',
             'Fecha de Consumo',
+            'Cantidad',
         ];
     }
 
