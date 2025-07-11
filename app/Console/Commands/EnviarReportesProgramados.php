@@ -88,6 +88,11 @@ class EnviarReportesProgramados extends Command
 
                     [$start, $end] = $this->getRangoFechas($config->Frecuencia);
 
+                    if (!$start || !$end) {
+                        $this->info("📭 Reporte omitido para usuario ID: {$config->Id_Usuario} (frecuencia: {$config->Frecuencia}, día no válido)");
+                        continue;
+                    }
+
                     $desactualizadas = $this->maquinasDesactualizadas($idPlanta, $end);
 
                     if (count($desactualizadas) > 0) {
@@ -129,7 +134,10 @@ class EnviarReportesProgramados extends Command
                     $filename = $this->generarExcelDesdeRango($idPlanta, $start, $end, $config->Frecuencia);
 
                     Mail::to($config->Email)->send(new ReporteEmpleadosMail(
-                        "Reporte automático de consumos por empleado.", $filename
+                        "Este reporte cubre el periodo del {$start->format('d/m/Y')} al {$end->format('d/m/Y')}.",
+                        $filename,
+                        $start,
+                        $end
                     ));
                 } else {
                     $this->warn("⚠️ El usuario {$config->Id_Usuario} no tiene correo configurado.");
@@ -144,17 +152,33 @@ class EnviarReportesProgramados extends Command
     {
         switch ($frecuencia) {
             case 'diario':
-                $start = Carbon::yesterday()->startOfDay();
-                $end = Carbon::yesterday()->endOfDay();
+                $hoy = Carbon::now();
+                $dia = $hoy->dayOfWeekIso; // 1 = lunes, 7 = domingo
+
+                if ($dia === 1) {
+                    // Lunes → enviar viernes, sábado y domingo
+                    $start = Carbon::now()->subDays(3)->startOfDay(); // viernes
+                    $end = Carbon::now()->subDay()->endOfDay();       // domingo
+                } elseif (in_array($dia, [6, 7])) {
+                    // Sábado y domingo → no se envía
+                    return [null, null];
+                } else {
+                    // Martes a viernes → día anterior
+                    $start = Carbon::yesterday()->startOfDay();
+                    $end = Carbon::yesterday()->endOfDay();
+                }
                 break;
+
             case 'semanal':
                 $start = Carbon::now()->subWeek()->startOfWeek(Carbon::MONDAY);
                 $end = Carbon::now()->subWeek()->endOfWeek(Carbon::SUNDAY);
                 break;
+
             case 'mensual':
                 $start = Carbon::now()->subMonthNoOverflow()->startOfMonth();
                 $end = Carbon::now()->subMonthNoOverflow()->endOfMonth();
                 break;
+
             default:
                 $start = Carbon::yesterday()->startOfDay();
                 $end = Carbon::yesterday()->endOfDay();
@@ -163,6 +187,7 @@ class EnviarReportesProgramados extends Command
 
         return [$start, $end];
     }
+
 
     private function maquinasDesactualizadas($idPlanta, Carbon $hasta)
     {

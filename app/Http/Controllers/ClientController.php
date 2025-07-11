@@ -13,6 +13,7 @@ use App\Exports\PermisosExport;
 use App\Exports\AreasExport;
 use Illuminate\Support\Facades\Log;
 use App\Mail\ReporteEmpleadosMail;
+use App\Exports\EmpleadosMultiSheetExport;
 
 
 class ClientController extends Controller
@@ -314,7 +315,7 @@ public function getDataEmpleados(Request $request)
     return DataTables::of($data)->make(true);
 }
     public function exportExcel() {
-        return Excel::download(new EmpleadosExport, 'empleados.xlsx');
+        return Excel::download(new EmpleadosMultiSheetExport, 'reporte_empleados.xlsx');
     }
 
     public function generarCSV($idPlanta)

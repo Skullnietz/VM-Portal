@@ -1,7 +1,9 @@
 @component('mail::message')
 # 📊 Reporte de Consumos
 
-{{ $mensaje }}
+Este correo contiene el reporte de consumos correspondiente al periodo:
+
+**{{ $fechaInicio->format('d/m/Y') }} al {{ $fechaFin->format('d/m/Y') }}**
 
 Se adjunta el archivo **Excel** con la información solicitada.
 
