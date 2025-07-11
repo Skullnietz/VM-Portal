@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Exports\ConsumoxEmpleadoExport;
+use App\Exports\ConsumoxEmpleadoMultiExport;
 use App\Exports\ConsumoxAreaExport;
 use App\Exports\ConsumoxVendingExport;
 use App\Exports\InventarioVM;
