@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Exports\ConsumoxEmpleadoExport;
-use App\Exports\ConsumoxEmpleadoMultiExport;
 use App\Exports\ConsumoxAreaExport;
 use App\Exports\ConsumoxVendingExport;
 use App\Exports\InventarioVM;
@@ -438,7 +437,7 @@ public function exportConsumoxEmpleado(Request $request)
 }
     $idPlanta = $_SESSION['usuario']->Id_Planta;
 
-    Excel::download(new ConsumoxEmpleadoMultiExport($request, $idPlanta), 'reporte_consumos.xlsx');
+    return Excel::download(new ConsumoxEmpleadoExport($request, $idPlanta), 'reporte_consumos.xlsx');
 }
 public function exportConsumoxArea(Request $request)
 {
