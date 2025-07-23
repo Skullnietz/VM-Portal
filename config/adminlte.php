@@ -63,9 +63,9 @@ return [
     |
     */
 
-    'logo' => '<b>USI</b> VM',
+    'logo' => ' ',
     'logo_img' => 'vendor/adminlte/dist/img/vending-machine2.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo_img_class' => ' img-circle elevation-3 custom-logo-size',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
     'logo_img_alt' => 'Admin Logo',
@@ -116,10 +116,13 @@ return [
             'path' => 'vendor/adminlte/dist/img/vending-machine2.png',
             'alt' => 'AdminLTE Preloader Image',
             'effect' => 'animation__shake',
-            'width' => 100,
-            'height' => 100,
+            'width' => 200,
+            'height' => 200,
         ],
+        
     ],
+
+    
 
     /*
     |--------------------------------------------------------------------------
