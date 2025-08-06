@@ -110,7 +110,7 @@ Route::prefix('{language}')->group(function () {
 
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° ADMINISTRADORES °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° //
 //OPERADORES 
-Route::get('get-operadores', [AdminController::class, 'getOperadores'])->name('get-operadores');
+Route::post('get-operadores', [AdminController::class, 'getOperadores'])->name('get-operadores');
 Route::post('/operadores/add', [AdminController::class, 'agregarOperador'])->name('add.operador');
 Route::post('/operadores/estatus', [AdminController::class, 'updateOpEstatus'])->name('update.operador.estatus');
 Route::delete('/operadores/{id}', [AdminController::class, 'destroyOperador'])->name('operador.destroy');
@@ -127,7 +127,7 @@ Route::post('/guardar-usuario', [AdminController::class, 'guardarUsuario']);
 Route::post('/usuario/{id}', [AdminController::class, 'eliminarUsuario'])->name('user.destroy');
 //PLANTAS
 Route::post('/getPlantas', [AdminController::class, 'getPlantas'])->name('get-plantas');
-Route::get('/getPlantasInfo', [AdminController::class, 'getPlantasInfo'])->name('getPlantasInfo');
+Route::post('/getPlantasInfo', [AdminController::class, 'getPlantasInfo'])->name('getPlantasInfo');
 Route::post('/guardar-planta', [AdminController::class, 'guardarPlanta'])->name('guardarPlanta');
 Route::delete('/planta/{id}', [AdminController::class, 'destroyPlanta'])->name('planta.destroy');
 Route::post('/planta/estatus', [AdminController::class, 'updateEstatusPlanta'])->name('update.planta.estatus');
@@ -153,7 +153,7 @@ Route::post('/planta/import-csv-employees', 'AdminController@importCSV');
 Route::get('/planta/export-excel-employees', 'AdminController@exportExcel');
 Route::post('/planta/empleado/add', 'AdminController@storeemployee');
 //ARTICULOS
-Route::get('/articulos-datatable', [AdminController::class, 'getArticulosDataTable']);
+Route::post('/articulos-datatable', [AdminController::class, 'getArticulosDataTable']);
 Route::post('/cambiar-estatus-articulo', [AdminController::class, 'cambiarEstatus'])->name('cambiar.estatus.articulo');
 Route::post('/articulos/store', [AdminController::class, 'storeArticulo']);
 Route::delete('/articulos/{id}/delete', [AdminController::class, 'deleteArticulo']);
@@ -188,7 +188,7 @@ Route::post('/dispositivos/update/{id}', [AdminController::class, 'updateDisposi
 Route::delete('/dispositivos/destroy/{id}', [AdminController::class, 'destroyDispositivo'])->name('dispositivos.destroy');
 Route::get('/maquinas/list', [AdminController::class, 'listMquinas'])->name('maquinas.list');
 //AREAS
-Route::get('/getAreas', [AdminController::class, 'getAreas']);
+Route::post('/getAreas', [AdminController::class, 'getAreas']);
 
 /////////////////////////////////////// NOTIFICACION VIA MAIL ///////////////////////////////////////////////////
 

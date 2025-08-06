@@ -152,14 +152,13 @@
             $('#adminTable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: {
                     ajax: {
                     url: '{{ route('get-administradores') }}',
                     type: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}'
-                    }
-                },
+                    },
+                
                     columns: [
                     { data: 'NombreCompleto', name: 'NombreCompleto' },
                     { data: 'NombreUsuario', name: 'NombreUsuario' },
