@@ -173,7 +173,13 @@
         $('#plantasTable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: '{{ route("getPlantasInfo") }}',
+            ajax: {
+                url: '{{ route("getPlantasInfo") }}',
+                type: 'POST',
+                data: function (d) {
+                    d._token = '{{ csrf_token() }}';
+                }
+            },
             columns: [
                 {
                     data: null,
@@ -266,7 +272,10 @@
         // Cargar las plantas en el select2
         $.ajax({
             url: '/getPlantas',
-            method: 'GET',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
             success: function (data) {
                 $.each(data, function (index, planta) {
                     $('#planta').append(new Option(planta.Txt_Nombre_Planta, planta.Id_Planta));
