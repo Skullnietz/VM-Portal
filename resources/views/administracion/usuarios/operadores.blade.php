@@ -463,6 +463,8 @@
             }
         });
     });
+    });
+    });
 
     // Eliminar operador
     function deleteAdmin(id) {
