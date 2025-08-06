@@ -936,6 +936,9 @@ $(document).ready(function() {
         ajax: {
             url: '/planta/get-permisos-articulos/{{$planta->Id_Planta}}',
             type: 'POST',
+            data: function (d) {
+                d._token = '{{ csrf_token() }}';
+            },
             dataSrc: function(json) {
                 // Asegúrate de que el formato de datos es el esperado
                 console.log(json);
@@ -1252,6 +1255,10 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
                     ajax: { 
                     url: '/planta/empleados/data/{{$planta->Id_Planta}}',
                     type: 'POST',
+                    data: function (d) {
+                        d._token = '{{ csrf_token() }}';
+                        return d;
+                    }
                 },
             columns: [
                 { data: 'No_Empleado', name: 'No_Empleado' },
