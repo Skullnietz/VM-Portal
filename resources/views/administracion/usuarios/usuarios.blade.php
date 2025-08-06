@@ -200,7 +200,13 @@
             $('#adminTable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: '{{ route('get-usuarios') }}',
+                ajax: {
+                    url: '{{ route('get-usuarios') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    }
+                },
                     columns: [
                     { data: 'NombreCompleto', name: 'NombreCompleto' },
                     { data: 'NombreUsuario', name: 'NombreUsuario' },
@@ -280,7 +286,10 @@
     // Cargar plantas desde el servidor
     $.ajax({
         url: '/getPlantas', // Cambia esta URL a la que retorna tus plantas
-        method: 'GET',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}'
+        },
         success: function(data) {
             $.each(data, function(index, planta) {
                 $('#planta').append(new Option(planta.Txt_Nombre_Planta, planta.Id_Planta));

@@ -121,12 +121,12 @@ Route::post('/administrador/estatus', [AdminController::class, 'updateEstatus'])
 Route::post('/administrador/add', [AdminController::class, 'agregarAdministrador'])->name('add.administrador');
 Route::delete('/administrador/{id}', [AdminController::class, 'destroyAdmin'])->name('administrador.destroy');
 //USUARIOS
-Route::get('get-usuarios', [AdminController::class, 'getUsuarios'])->name('get-usuarios');
+Route::post('get-usuarios', [AdminController::class, 'getUsuarios'])->name('get-usuarios');
 Route::post('/usuario/estatus', [AdminController::class, 'updateEstatusUser'])->name('update.user.estatus');
 Route::post('/guardar-usuario', [AdminController::class, 'guardarUsuario']);
 Route::post('/usuario/{id}', [AdminController::class, 'eliminarUsuario'])->name('user.destroy');
 //PLANTAS
-Route::get('/getPlantas', [AdminController::class, 'getPlantas'])->name('get-plantas');
+Route::post('/getPlantas', [AdminController::class, 'getPlantas'])->name('get-plantas');
 Route::get('/getPlantasInfo', [AdminController::class, 'getPlantasInfo'])->name('getPlantasInfo');
 Route::post('/guardar-planta', [AdminController::class, 'guardarPlanta'])->name('guardarPlanta');
 Route::delete('/planta/{id}', [AdminController::class, 'destroyPlanta'])->name('planta.destroy');
