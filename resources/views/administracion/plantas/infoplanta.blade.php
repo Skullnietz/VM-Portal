@@ -935,7 +935,10 @@ $(document).ready(function() {
         serverSide: true,
         ajax: {
             url: '/planta/get-permisos-articulos/{{$planta->Id_Planta}}',
-            type: 'GET',
+            type: 'POST',
+            data: function (d) {
+                d._token = '{{ csrf_token() }}';
+            },
             dataSrc: function(json) {
                 // Asegúrate de que el formato de datos es el esperado
                 console.log(json);
@@ -1246,15 +1249,12 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
     var table = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: { 
+                    ajax: { 
                     url: '/planta/empleados/data/{{$planta->Id_Planta}}',
-                    type: 'GET',
-                    dataSrc: function(json) {
-                        // Asegúrate de que el formato de datos es el esperado
-                        console.log(json);
-                        return json.data;
-                    }
-                },
+                    type: 'POST',
+                    data: function (d) {
+                        d._token = '{{ csrf_token() }}';
+                    },
             columns: [
                 { data: 'No_Empleado', name: 'No_Empleado' },
                 { data: 'Nip', name: 'Nip' },
@@ -1319,6 +1319,7 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
                 sortDescending: ": activar para ordenar la columna de manera descendente"
             }
         }
+    }
     });
 
 
@@ -1352,7 +1353,10 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
                 if (result.isConfirmed) {
                     $.ajax({
                         url: `/empleado/delete/${employeeId}`,
-                        method: 'GET',
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
                         success: function(response) {
                             table.ajax.reload(null, false); // false to keep current paging
                             Swal.fire(
