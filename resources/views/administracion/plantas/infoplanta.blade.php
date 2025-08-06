@@ -1162,7 +1162,10 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
         serverSide: true,
         ajax: {
             url: `/admin/plantas/PlantaView/${idPlanta}/permisos/${idArea}`,
-            type: 'GET',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
             dataSrc: function(json) {
                 // Asegúrate de que el formato de datos es el esperado
                 console.log(json);
@@ -1493,9 +1496,12 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
 
         // Cargar opciones de áreas en el select
         $.ajax({
-        url: '{!! route('areas.data') !!}', // Ruta para obtener áreas
-        method: 'GET',
-        success: function(data) {
+            url: '{!! route('areas.data') !!}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(data) {
             console.log('Datos de áreas recibidos:', data); // Verificar datos recibidos
             var $areaSelect = $('#area');
             $areaSelect.empty(); // Limpiar opciones existentes
