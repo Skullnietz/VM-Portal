@@ -347,10 +347,7 @@
             $('#edit_usuario').val(operador.Nick_Usuario);
             $('#edit_puesto').val(operador.Txt_Puesto);
 
-            // Obtener las plantas y cargar opciones
-            $.ajax({
-                $.ajax({
-                // Obtener las plantas y cargar opciones
+            // Obtener las plantas y cargar opciones (CAMBIADO A POST)
             $.ajax({
                 url: '{{ route('get-plantas') }}',
                 type: 'POST',
@@ -391,6 +388,9 @@
                             choicesInstanceEdit.setChoiceByValue(id);
                         });
                     }, 100);
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar las plantas:', xhr);
                 }
             });
 
@@ -425,12 +425,11 @@
             plantasSelect.empty();
 
             $.ajax({
-        
                 url: '{{ route('get-plantas') }}',
                 type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}'
-                },
+                    data: {
+                        _token: '{{ csrf_token() }}' // Incluyendo el token CSRF
+                    },
                 dataType: 'json',
                 success: function(data) {
                     $.each(data, function(key, planta) {
@@ -462,8 +461,6 @@
                 choicesInstanceEdit = null;
             }
         });
-    });
-    });
     });
 
     // Eliminar operador
