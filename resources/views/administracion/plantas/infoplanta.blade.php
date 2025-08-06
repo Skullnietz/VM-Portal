@@ -1258,6 +1258,7 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
                     data: function (d) {
                         d._token = '{{ csrf_token() }}';
                     },
+                }
             columns: [
                 { data: 'No_Empleado', name: 'No_Empleado' },
                 { data: 'Nip', name: 'Nip' },
@@ -1322,7 +1323,7 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
                 sortDescending: ": activar para ordenar la columna de manera descendente"
             }
         }
-    }
+    
     });
 
 
