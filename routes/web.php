@@ -145,7 +145,7 @@ Route::post('/planta/get-permisos-articulos/{idPlanta}', 'AdminController@getPer
 Route::post('/planta/check-permission', [AdminController::class, 'checkPermission']);
 Route::post('/planta/add-permission', [AdminController::class, 'addPermission']);
 Route::get('/planta/export-excel-permissions', [AdminController::class, 'exportPermisos'])->name('admin-exportar.permisos');
-Route::get('/admin/plantas/PlantaView/{idPlanta}/permisos/{idArea}', [AdminController::class, 'filtrarPermisosPorArea']);
+Route::post('/admin/plantas/PlantaView/{idPlanta}/permisos/{idArea}', [AdminController::class, 'filtrarPermisosPorArea']);
 //PLANTA EMPLEADOS
 Route::post('/planta/empleados/data/{idPlanta}', 'AdminController@getDataEmpleados')->name('admin-empleados.data');
 Route::get('/planta/export-csv-employees', 'AdminController@exportCSV');
