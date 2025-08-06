@@ -158,7 +158,6 @@
                     data: {
                         _token: '{{ csrf_token() }}'
                     },
-                
                     columns: [
                     { data: 'NombreCompleto', name: 'NombreCompleto' },
                     { data: 'NombreUsuario', name: 'NombreUsuario' },
