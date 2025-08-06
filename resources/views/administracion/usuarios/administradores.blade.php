@@ -152,13 +152,14 @@
             $('#adminTable').DataTable({
                 processing: true,
                 serverSide: true,
-                    ajax: {
+                ajax: {
                     url: '{{ route('get-administradores') }}',
                     type: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}'
-                    },
-                    columns: [
+                    }
+                },
+                columns: [ // ← Este bloque debe estar fuera de ajax
                     { data: 'NombreCompleto', name: 'NombreCompleto' },
                     { data: 'NombreUsuario', name: 'NombreUsuario' },
                     {
@@ -167,11 +168,8 @@
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
-                            // Generar el icono dependiendo del estatus
                             let iconClass = row.Txt_Estatus === 'Alta' ? 'fa-toggle-on fa-2x text-success' : 'fa-toggle-off fa-2x text-danger';
                             let nuevoEstatus = row.Txt_Estatus === 'Alta' ? 'Baja' : 'Alta';
-                            
-                            // Retornar el HTML del icono con el evento onclick
                             return `
                                 <i id="estatus-icon-${row.id}" 
                                 class="fas ${iconClass}" 
@@ -185,7 +183,6 @@
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
-                            // Agregar botón de eliminar
                             return `
                                 <button class="btn btn-danger btn-sm" 
                                 onclick="deleteAdmin(${row.id})" 
@@ -203,17 +200,12 @@
                     { data: 'Fecha_Baja', name: 'Fecha_Baja' }
                 ],
                 createdRow: function(row, data, dataIndex) {
-                    // Agrega clase a la columna de Alta
                     $('td', row).eq(4).addClass('alta');
-                    $('td', row).eq(5).addClass('alta'); // Usuario Alta
-                    
-                    // Agrega clase a la columna de Modificación
+                    $('td', row).eq(5).addClass('alta');
                     $('td', row).eq(6).addClass('modificacion');
-                    $('td', row).eq(7).addClass('modificacion'); // Usuario Modificación
-                    
-                    // Agrega clase a la columna de Baja
+                    $('td', row).eq(7).addClass('modificacion');
                     $('td', row).eq(8).addClass('baja');
-                    $('td', row).eq(9).addClass('baja'); // Usuario Baja
+                    $('td', row).eq(9).addClass('baja');
                 },
                 order: [[0, 'asc']],
                 responsive: true,
@@ -221,11 +213,7 @@
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.10.19/i18n/Spanish.json"
                 }
-            }});
-
-           
-
-            
+            });   
         });
 
         // Función para eliminar un administrador
