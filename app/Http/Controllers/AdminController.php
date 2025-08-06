@@ -437,6 +437,7 @@ class AdminController extends Controller
     return DataTables::of($operadores)
         ->rawColumns(['PlantasConAcceso'])
         ->make(true);
+        //Algo raro pasa aqui
 }
 
 
