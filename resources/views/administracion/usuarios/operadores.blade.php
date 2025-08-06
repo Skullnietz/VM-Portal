@@ -350,6 +350,8 @@
             // Obtener las plantas y cargar opciones
             $.ajax({
                 $.ajax({
+                // Obtener las plantas y cargar opciones
+            $.ajax({
                 url: '{{ route('get-plantas') }}',
                 type: 'POST',
                 data: {
@@ -423,7 +425,7 @@
             plantasSelect.empty();
 
             $.ajax({
-                $.ajax({
+        
                 url: '{{ route('get-plantas') }}',
                 type: 'POST',
                 data: {
