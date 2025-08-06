@@ -233,7 +233,7 @@
             if (confirm('¿Estás seguro de que deseas eliminar este administrador?')) {
                 $.ajax({
                     url: `/administrador/${id}`, // Asegúrate de que esta URL sea correcta
-                    type: 'DELETE',
+                    type: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}' // Incluyendo el token CSRF
                     },

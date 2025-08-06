@@ -119,7 +119,7 @@ Route::post('/admin/editar-operador', [AdminController::class, 'editarOperador']
 Route::post('get-administradores', [AdminController::class, 'getAdministradores'])->name('get-administradores');
 Route::post('/administrador/estatus', [AdminController::class, 'updateEstatus'])->name('update.administrador.estatus');
 Route::post('/administrador/add', [AdminController::class, 'agregarAdministrador'])->name('add.administrador');
-Route::delete('/administrador/{id}', [AdminController::class, 'destroyAdmin'])->name('administrador.destroy');
+Route::post('/administrador/{id}', [AdminController::class, 'destroyAdmin'])->name('administrador.destroy');
 //USUARIOS
 Route::post('get-usuarios', [AdminController::class, 'getUsuarios'])->name('get-usuarios');
 Route::post('/usuario/estatus', [AdminController::class, 'updateEstatusUser'])->name('update.user.estatus');
