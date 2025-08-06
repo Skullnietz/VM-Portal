@@ -218,7 +218,13 @@
         $('#OpTable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: '{{ route('get-operadores') }}',
+            ajax: {
+                url: '{{ route('get-operadores') }}',
+                type: 'POST',
+                data: function (d) {
+                    d._token = '{{ csrf_token() }}';
+                }
+            },
             columns: [
                 { data: 'NombreCompleto', name: 'NombreCompleto' },
                 { data: 'NombreUsuario', name: 'NombreUsuario' },
@@ -343,8 +349,12 @@
 
             // Obtener las plantas y cargar opciones
             $.ajax({
+                $.ajax({
                 url: '{{ route('get-plantas') }}',
-                type: 'GET',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
                 dataType: 'json',
                 success: function(data) {
                     let selectEdit = $('#edit_plantas');
@@ -413,8 +423,12 @@
             plantasSelect.empty();
 
             $.ajax({
+                $.ajax({
                 url: '{{ route('get-plantas') }}',
-                type: 'GET',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
                 dataType: 'json',
                 success: function(data) {
                     $.each(data, function(key, planta) {
