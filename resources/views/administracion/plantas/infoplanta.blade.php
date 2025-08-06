@@ -1250,80 +1250,82 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
 });
     
     var table = $('#empleados-table').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: { 
-        url: '/planta/empleados/data/{{$planta->Id_Planta}}',
-        type: 'POST',
-        data: function (d) {
-            d._token = '{{ csrf_token() }}';
+            processing: true,
+            serverSide: true,
+                    ajax: { 
+                    url: '/planta/empleados/data/{{$planta->Id_Planta}}',
+                    type: 'POST',
+                    data: function (d) {
+                        d._token = '{{ csrf_token() }}';
+                        return d;
+                    }
+                },
+            columns: [
+                { data: 'No_Empleado', name: 'No_Empleado' },
+                { data: 'Nip', name: 'Nip' },
+                { data: 'No_Tarjeta', name: 'No_Tarjeta' },
+                { data: 'Nombre', name: 'Nombre' },
+                { data: 'APaterno', name: 'APaterno' },
+                { data: 'AMaterno', name: 'AMaterno', defaultContent: '' },
+                { data: 'NArea', name: 'NArea' },
+                {
+                    data: null,
+                    name: 'Permisos',
+                    render: function(data, type, row) {
+                        return `<a href="#" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
+                    }
+                },
+                {
+                    data: null,
+                    name: 'Editar',
+                    render: function(data, type, row) {
+                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${row.Nombre}" data-apaterno="${row.APaterno}" data-amaterno="${row.AMaterno}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
+                    }
+                },
+                {
+                    data: null,
+                    name: 'Eliminar',
+                    render: function(data, type, row) {
+                        return `<button class="btn btn-xs btn-danger" onclick="confirmDelete(${row.Id_Empleado}, '${row.Nombre} ${row.APaterno} ${row.AMaterno}')">Eliminar <i class="fas fa-trash"></i></button>`;
+                    }
+                },
+                {
+                    data: 'Txt_Estatus', 
+                    name: 'Txt_Estatus',
+                    render: function(data, type, row) {
+                        var btnClass = row.Txt_Estatus === 'Alta' ? 'btn-danger' : 'btn-success';
+                        var btnText = row.Txt_Estatus === 'Alta' ? 'Desactivar <i class="fas fa-lock"></i>' : '&nbsp;&nbsp;Activar&nbsp;&nbsp; <i class="fas fa-lock-open"></i>';
+                        return `<button class="btn btn-xs ${btnClass}" onclick="toggleStatus(${row.Id_Empleado})">${btnText}</button>`;
+                    }
+                },
+                { data: 'MFecha', name: 'MFecha' }
+            ],
+            responsive: true,
+            scrollX: true,
+        language: {
+            processing: "Procesando...",
+            search: "Buscar:",
+            lengthMenu: "Mostrar _MENU_ registros",
+            info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+            infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+            infoFiltered: "(filtrado de un total de _MAX_ registros)",
+            infoPostFix: "",
+            loadingRecords: "Cargando...",
+            zeroRecords: "No se encontraron resultados",
+            emptyTable: "No hay datos disponibles en la tabla",
+            paginate: {
+                first: "Primero",
+                previous: "Anterior",
+                next: "Siguiente",
+                last: "Último"
+            },
+            aria: {
+                sortAscending: ": activar para ordenar la columna de manera ascendente",
+                sortDescending: ": activar para ordenar la columna de manera descendente"
+            }
         }
-    },
-    columns: [
-        { data: 'No_Empleado', name: 'No_Empleado' },
-        { data: 'Nip', name: 'Nip' },
-        { data: 'No_Tarjeta', name: 'No_Tarjeta' },
-        { data: 'Nombre', name: 'Nombre' },
-        { data: 'APaterno', name: 'APaterno' },
-        { data: 'AMaterno', name: 'AMaterno', defaultContent: '' },
-        { data: 'NArea', name: 'NArea' },
-        {
-            data: null,
-            name: 'Permisos',
-            render: function(data, type, row) {
-                return `<a href="#" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
-            }
-        },
-        {
-            data: null,
-            name: 'Editar',
-            render: function(data, type, row) {
-                return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${row.Nombre}" data-apaterno="${row.APaterno}" data-amaterno="${row.AMaterno}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
-            }
-        },
-        {
-            data: null,
-            name: 'Eliminar',
-            render: function(data, type, row) {
-                return `<button class="btn btn-xs btn-danger" onclick="confirmDelete(${row.Id_Empleado}, '${row.Nombre} ${row.APaterno} ${row.AMaterno}')">Eliminar <i class="fas fa-trash"></i></button>`;
-            }
-        },
-        {
-            data: 'Txt_Estatus', 
-            name: 'Txt_Estatus',
-            render: function(data, type, row) {
-                var btnClass = row.Txt_Estatus === 'Alta' ? 'btn-danger' : 'btn-success';
-                var btnText = row.Txt_Estatus === 'Alta' ? 'Desactivar <i class="fas fa-lock"></i>' : '&nbsp;&nbsp;Activar&nbsp;&nbsp; <i class="fas fa-lock-open"></i>';
-                return `<button class="btn btn-xs ${btnClass}" onclick="toggleStatus(${row.Id_Empleado})">${btnText}</button>`;
-            }
-        },
-        { data: 'MFecha', name: 'MFecha' }
-    ],
-    responsive: true,
-    scrollX: true,
-    language: {
-        processing: "Procesando...",
-        search: "Buscar:",
-        lengthMenu: "Mostrar _MENU_ registros",
-        info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-        infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
-        infoFiltered: "(filtrado de un total de _MAX_ registros)",
-        infoPostFix: "",
-        loadingRecords: "Cargando...",
-        zeroRecords: "No se encontraron resultados",
-        emptyTable: "No hay datos disponibles en la tabla",
-        paginate: {
-            first: "Primero",
-            previous: "Anterior",
-            next: "Siguiente",
-            last: "Último"
-        },
-        aria: {
-            sortAscending: ": activar para ordenar la columna de manera ascendente",
-            sortDescending: ": activar para ordenar la columna de manera descendente"
-        }
-    }
-});
+    
+    });
 
 
         window.toggleStatus = function(employeeId) {
