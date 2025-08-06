@@ -156,7 +156,9 @@
                     ajax: {
                     url: '{{ route('get-administradores') }}',
                     type: 'POST',
-                    
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    }
                 },
                     columns: [
                     { data: 'NombreCompleto', name: 'NombreCompleto' },
@@ -221,7 +223,7 @@
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.10.19/i18n/Spanish.json"
                 }
-            });
+            }});
 
            
 
