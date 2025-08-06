@@ -1257,7 +1257,7 @@ $('#areas,#empleados').on('click', '.btn-info', function(e) {
                     type: 'POST',
                     data: function (d) {
                         d._token = '{{ csrf_token() }}';
-                    },
+                    }
                 },
             columns: [
                 { data: 'No_Empleado', name: 'No_Empleado' },
