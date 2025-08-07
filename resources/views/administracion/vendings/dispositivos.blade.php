@@ -157,9 +157,17 @@
 $('.select2').select2({
     placeholder: "Selecciona una máquina",
     ajax: {
+        ajax: {
         url: "{{ route('maquinas.list') }}", // Ruta para obtener las máquinas
         dataType: 'json',
         delay: 250,
+        type: 'POST',
+        data: function (params) {
+            return {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                search: params.term
+            };
+        },
         processResults: function (data) {
             return {
                 results: data.map(function (item) {
@@ -168,6 +176,7 @@ $('.select2').select2({
             };
         },
         cache: true
+    }
     }
 });
 
@@ -200,7 +209,13 @@ $(document).on('click', '.edit-btn', function () {
         $('#dispositivosTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: "{{ route('dispositivos.get') }}",
+        ajax: {
+            url: "{{ route('dispositivos.get') }}",
+            type: 'POST',
+            data: function (d) {
+                d._token = $('meta[name="csrf-token"]').attr('content');
+            }
+        },
         columns: [
             { data: 'Id_Dispositivo', name: 'Id_Dispositivo' },
             { data: 'Txt_Serie_Dispositivo', name: 'Txt_Serie_Dispositivo' },
