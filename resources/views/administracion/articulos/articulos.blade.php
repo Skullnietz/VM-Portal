@@ -202,7 +202,9 @@ $(document).ready(function () {
         serverSide: true,
         ajax: {
             url: '/articulos-datatable',
+            type: 'POST',
             data: function (d) {
+                d._token = $('meta[name="csrf-token"]').attr('content');
                 d.descripcion = $('#filterDescripcion').val();
                 d.codigo = $('#filterCodigo').val();
                 d.tamanoEspiral = $('#filterTamanoEspiral').val();
