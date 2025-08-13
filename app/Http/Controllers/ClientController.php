@@ -135,27 +135,46 @@ class ClientController extends Controller
 
     }
 
-    public function PermisosArticulosFilter($lang,$areaId){
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-        $idPlanta = $_SESSION['usuario']->Id_Planta;
+    public function PermisosArticulosFilter($lang, $areaId) {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+    // Nombre del área
     $QAreaName = DB::table('Cat_Area')
-    ->where('Id_Planta', $idPlanta)
-    ->where('Id_Area', $areaId)
-    ->first();
-    $areaName= $QAreaName->Txt_Nombre;
-    
-    
+        ->where('Id_Planta', $idPlanta)
+        ->where('Id_Area', $areaId)
+        ->first();
+    $areaName = $QAreaName->Txt_Nombre ?? '';
+
+    // Todas las áreas de la planta
     $areas = DB::table('Cat_Area')
-                ->where('Id_Planta', $idPlanta)
-                ->get();
+        ->where('Id_Planta', $idPlanta)
+        ->get();
 
+    // 🔹 Obtener las máquinas de la planta
+    $maquinas = DB::table('Ctrl_Mquinas')
+        ->where('Id_Planta', $idPlanta)
+        ->pluck('Id_Maquina')
+        ->toArray();
+
+    // 🔹 Obtener los artículos configurados en esas máquinas
+    $articulosIds = DB::table('Configuracion_Maquina')
+        ->whereIn('Id_Maquina', $maquinas)
+        ->whereNotNull('Id_Articulo')
+        ->distinct()
+        ->pluck('Id_Articulo')
+        ->toArray();
+
+    // 🔹 Obtener los detalles de esos artículos
     $articulos = DB::table('Cat_Articulos')
-                ->get();
-                //dd($articulos);
-        return view('cliente.perarea', compact('areas', 'articulos','areaId','areaName'));
+        ->whereIn('Id_Articulo', $articulosIds)
+        ->select('Id_Articulo', 'Txt_Descripcion')
+        ->get();
 
+    return view('cliente.perarea', compact('areas', 'articulos', 'areaId', 'areaName'));
     }
 
     public function getPermisosArticulos(Request $request)

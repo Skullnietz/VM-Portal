@@ -84,7 +84,7 @@ return[
         ],
         [
             'text' => 'Alarmas',
-            'url' => 'admin/pages',
+            'url' => '/admin/alertas',
             'icon' => 'fas fa-fw fa-flag',
             'icon_color' => 'red',
             'label_color' => 'success',
@@ -98,24 +98,19 @@ return[
             'url' => '#',
             'submenu' => [
                 [
-                    'text' => 'Consumos',
+                    'text' => 'Reporte de Consumos',
                     'icon_color' => 'cyan',
-                    'url' => '#',
+                    'url' => '/all/reportesCE',
                 ],
                 [
-                    'text' => 'Activación NIP',
+                    'text' => 'Reporte de Activación NIP',
                     'icon_color' => 'cyan',
-                    'url' => '#',
+                    'url' => '/activaciones',
                 ],
                 [
-                    'text' => 'Consumo empleado',
+                    'text' => 'Reporte Consumo por area',
                     'icon_color' => 'cyan',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'Config Reportes',
-                    'icon_color' => 'cyan',
-                    'url' => '#',
+                    'url' => '/all/reportesCA',
                 ],
             ]
         ],

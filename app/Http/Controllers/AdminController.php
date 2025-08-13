@@ -2449,6 +2449,37 @@ public function getDispositivos()
     return response()->json(['success' => 'Dispositivo eliminado correctamente.']);
 }
 
+public function Alertas(){
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+        return view('administracion.alertas.alertas');
+    }
+    
+
+public function getConfiguracionesReportes()
+{
+    $configuraciones = DB::table('Configuracion_Reportes as cr')
+        ->join('Cat_Usuarios as u', 'cr.Id_Usuario', '=', 'u.Id_Usuario') // Relación con usuarios
+        ->leftJoin('Cat_Usuarios_Administradores as ua', 'cr.Id_Usuario_Admon', '=', 'ua.Id_Usuario_Admon') // Relación con administradores, usando leftJoin
+        ->join('Cat_Plantas as p', 'u.Id_Planta', '=', 'p.Id_Planta') // Relación con plantas, usando Id_Planta desde Cat_Usuarios
+        ->select(
+            'cr.Id',
+            'cr.Id_Usuario',
+            'u.Nick_Usuario',
+            DB::raw("CONCAT(u.Txt_Nombre, ' ', u.Txt_ApellidoP, ' ', u.Txt_ApellidoM) as NombreCompleto"),
+            'p.Txt_Nombre_Planta',
+            'cr.Frecuencia',
+            'cr.created_at',
+            'cr.updated_at',
+            'cr.Email',
+            'cr.Recibir_Notificaciones'
+        )
+        ->get();
+
+    return DataTables::of($configuraciones)->make(true);
+}
 
 
 }

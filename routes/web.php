@@ -86,7 +86,7 @@ Route::prefix('{language}')->group(function () {
     // RELLENAR
     Route::get('/Astock/rellenar/{id}', 'AdminController@Surtir')->name('Arellenar'); // Administracion Surtido
     // ALERTAS
-    Route::get('/reportes/configurar', [ReportesClienteController::class, 'verConfiguracion'])->name('cliente.reportes.configurar');
+    Route::get('/alertas', [AdminController::class, 'Alertas']);
     
     
 
@@ -187,8 +187,10 @@ Route::get('/dispositivos/{id}', [AdminController::class, 'showDispositivo'])->n
 Route::post('/dispositivos/update/{id}', [AdminController::class, 'updateDispositivo'])->name('dispositivos.update');
 Route::delete('/dispositivos/destroy/{id}', [AdminController::class, 'destroyDispositivo'])->name('dispositivos.destroy');
 Route::get('/maquinas/list', [AdminController::class, 'listMquinas'])->name('maquinas.list');
-//AREAS
+// //AREAS
 Route::post('/getAreas', [AdminController::class, 'getAreas']);
+// ALERTAS 
+Route::post('/allalertas', [AdminController::class, 'getConfiguracionesReportes'])->name('alertas.get');
 
 /////////////////////////////////////// NOTIFICACION VIA MAIL ///////////////////////////////////////////////////
 

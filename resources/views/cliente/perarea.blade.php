@@ -137,7 +137,7 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
     <!-- Incluir CSS de Select2 -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/styles/choices.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
         #areasTable {
@@ -167,7 +167,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Incluir JavaScript de Select2 -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/scripts/choices.min.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
         $.ajaxSetup({
@@ -176,8 +176,12 @@
             }
         });
 
-        $('.select3').select2({
-            width: '100%' // Ajusta el ancho según sea necesario
+                document.querySelectorAll('.select3').forEach(function(element) {
+            new Choices(element, {
+                // Options for Choices.js, if needed.
+                // For example, to match the width:
+                // width: '100%', // Choices.js handles width automatically based on parent
+            });
         });
 
         $('#submitBtn').click(function(e) {
