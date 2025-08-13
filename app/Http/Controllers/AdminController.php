@@ -2481,5 +2481,57 @@ public function getConfiguracionesReportes()
     return DataTables::of($configuraciones)->make(true);
 }
 
+public function getSyncData(Request $request)
+    {
+        $t0 = microtime(true);
+        try {
+            // Evita “active result contains no fields”
+            DB::statement('SET NOCOUNT ON');
+
+            // Si tu SP está en dbo, deja dbo.; ajusta si es otro esquema
+            $rows = DB::select('EXEC dbo.SP_Consulta_Sincronizacion');
+
+            // Mapeo a las claves que espera el front
+            $data = collect($rows)->map(function ($r) {
+                $cliente = $r->cliente ?? $r->Cliente ?? '';
+                $base    = $r->Base_Datos_Suscriptor ?? $r->Base_Datos ?? $r->BaseDatos ?? '';
+                $ultima  = $r->Ultima_Sincronizacion ?? $r->UltimaSincronizacion ?? null;
+                $planta  = $r->Id_Planta ?? $r->ID_Planta ?? $r->Planta ?? null;
+                $maq     = $r->Id_Maquina ?? $r->ID_Maquina ?? $r->Maquina ?? null;
+
+                // Formato estable para el JS: YYYY-MM-DD HH:mm:ss.SSS
+                $dt = $ultima ? Carbon::parse($ultima) : null;
+                $ultimaFmt = $dt ? $dt->format('Y-m-d H:i:s.v') : null;
+
+                return [
+                    'cliente'               => (string)$cliente,
+                    'Base_Datos_Suscriptor' => (string)$base,
+                    'Ultima_Sincronizacion' => $ultimaFmt,
+                    'Id_Planta'             => $planta !== null ? (int)$planta : null,
+                    'Id_Maquina'            => $maq !== null ? (int)$maq : null,
+                ];
+            })->values();
+
+            return response()->json([
+                'ok'          => true,
+                'server_time' => now()->format('Y-m-d H:i:s.v'),
+                'elapsed_ms'  => round((microtime(true)-$t0)*1000,1),
+                'data'        => $data,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error al ejecutar SP_Consulta_Sincronizacion', [
+                'msg' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'ok'      => false,
+                'message' => 'No se pudo obtener la información de sincronización.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        } finally {
+            // Restablece (opcional)
+            try { DB::statement('SET NOCOUNT OFF'); } catch (\Throwable $e) {}
+        }
+    }
 
 }

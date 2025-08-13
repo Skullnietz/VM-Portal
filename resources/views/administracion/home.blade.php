@@ -53,6 +53,8 @@
 </div>
         <div class="row">
             <div class="col-8">
+
+            
                 <div class="card card-tabs">
                     <div class="card-header ">
                     <div id="tabs-container"></div>
@@ -63,6 +65,118 @@
                         
                     </div>
                     </div>
+                </div>
+                <div class="card card-urvina-sync shadow-lg border-0">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                    <div class="pulse-dot mr-2"></div>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sync-alt mr-2"></i> Sincronización de Máquinas Vending
+                    </h5>
+                    </div>
+
+                    <div class="card-tools d-flex align-items-center">
+                    <div class="custom-control custom-switch mr-2" title="Auto-actualizar cada 60s">
+                        <input type="checkbox" class="custom-control-input" id="autoRefreshToggle">
+                        <label class="custom-control-label text-white-50" for="autoRefreshToggle">Auto</label>
+                    </div>
+
+                    <button type="button" class="btn btn-tool" id="refreshSyncBtn" title="Actualizar ahora">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Colapsar">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="maximize" title="Pantalla completa">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- KPIs -->
+                    <div class="row text-center mb-3">
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="kpi-box kpi-total">
+                        <div class="kpi-label">Total</div>
+                        <div class="kpi-value" id="kpiTotal">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="kpi-box kpi-ok">
+                        <div class="kpi-label">En línea</div>
+                        <div class="kpi-value" id="kpiOk">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="kpi-box kpi-warn">
+                        <div class="kpi-label">Con retraso</div>
+                        <div class="kpi-value" id="kpiWarn">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="kpi-box kpi-crit">
+                        <div class="kpi-label">Sin sincronizar</div>
+                        <div class="kpi-value" id="kpiCrit">—</div>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Salud global -->
+                    <div class="mb-3">
+                    <small class="text-white-50">Salud de sincronización</small>
+                    <div class="progress" style="height:12px;">
+                        <div id="syncHealthBar" class="progress-bar bg-success" role="progressbar" style="width:0%"></div>
+                    </div>
+                    </div>
+
+                    <!-- Filtros rápidos -->
+                    <div class="form-row mb-3">
+                    <div class="col-sm-6 mb-2">
+                        <input id="syncSearch" class="form-control" placeholder="Buscar por cliente, base o VM…">
+                    </div>
+                    <div class="col-sm-3 mb-2">
+                        <select id="statusFilter" class="form-control">
+                        <option value="">Todos los estados</option>
+                        <option value="ok">En línea</option>
+                        <option value="warn">Con retraso</option>
+                        <option value="crit">Sin sincronizar</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-3 mb-2">
+                        <select id="plantFilter" class="form-control">
+                        <option value="">Todas las plantas</option>
+                        </select>
+                    </div>
+                    </div>
+
+                    <!-- Tabla -->
+                    <div class="table-responsive" style="max-height:460px; overflow:auto;">
+                    <table class="table table-hover table-borderless mb-0" id="syncTable">
+                        <thead class="thead-dark sticky-top">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Base Suscriptor</th>
+                            <th>Última sincronización</th>
+                            <th class="text-center">Hace</th>
+                            <th class="text-center">Planta</th>
+                            <th class="text-center">VM</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    </div>
+
+                </div>
+
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <small class="text-white-50">Actualizado: <span id="lastUpdated">—</span></small>
+                    <small class="text-white-50">Umbrales: OK ≤ 15 min · Retraso ≤ 60 min · Crítico &gt; 60 min</small>
+                </div>
                 </div>
             
                     
@@ -120,6 +234,7 @@
             <div class="col-4">
                 <div class="row">
                     <div class="col">
+                        
                         <div class="card">
 
                             <div class="card-header">
@@ -262,7 +377,65 @@
             pointer-events: none;
         }
     
-    </style>
+    
+
+/* Tema llamativo */
+.card-urvina-sync{
+  background: linear-gradient(135deg,#0e1b2d 0%, #11344b 40%, #0e1b2d 100%);
+  color:#e8f1f7;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.05) inset;
+  overflow: hidden;
+}
+.card-urvina-sync .card-header{
+  background: linear-gradient(90deg,#0ea5a5, #0ea56a);
+  color:#fff;
+  border-bottom: none;
+}
+.card-urvina-sync .card-footer{
+  background: transparent;
+  border-top: 1px dashed rgba(255,255,255,.15);
+}
+.pulse-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:#9cf6ff; box-shadow:0 0 0 0 rgba(156,246,255,.7);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse{
+  0%{transform:scale(.95); box-shadow:0 0 0 0 rgba(156,246,255,.7)}
+  70%{transform:scale(1); box-shadow:0 0 0 10px rgba(156,246,255,0)}
+  100%{transform:scale(.95); box-shadow:0 0 0 0 rgba(156,246,255,0)}
+}
+
+/* KPIs */
+.kpi-box{
+  border-radius: 16px;
+  padding:.6rem 1rem;
+  background: rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(4px);
+}
+.kpi-label{font-size:.8rem;opacity:.8}
+.kpi-value{font-size:1.4rem;font-weight:700;letter-spacing:.3px}
+.kpi-total{box-shadow: inset 0 0 16px rgba(255,255,255,.05)}
+.kpi-ok{border-color:rgba(40,167,69,.55)}
+.kpi-warn{border-color:rgba(255,193,7,.65)}
+.kpi-crit{border-color:rgba(220,53,69,.65)}
+
+/* Tabla */
+#syncTable tbody tr td{vertical-align: middle;}
+.badge-dot{
+  display:inline-flex;align-items:center;padding:.35rem .6rem;border-radius:20px;font-weight:600;
+}
+.badge-dot i{font-size:.6rem;margin-right:.4rem}
+.badge-ok{background:rgba(40,167,69,.15); color:#a4ffb1; border:1px solid rgba(40,167,69,.45)}
+.badge-warn{background:rgba(255,193,7,.12); color:#ffe08a; border:1px solid rgba(255,193,7,.45)}
+.badge-crit{background:rgba(220,53,69,.15); color:#ffb3be; border:1px solid rgba(220,53,69,.45)}
+.thead-dark th{position: sticky; top:0; z-index: 1;}
+/* Inputs */
+#syncSearch, #statusFilter, #plantFilter{background:#0f2536;border:1px solid rgba(255,255,255,.15);color:#e8f1f7}
+#syncSearch::placeholder{color:#a6bdc9}
+</style>
 
 @stop
 
@@ -271,6 +444,163 @@
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script>
+const SYNC_THRESHOLDS_MIN = { ok: 15, warn: 60 }; // minutos
+
+let syncData = []; // variable global para guardar la última data
+let autoTimer = null;
+
+const $tbody = document.querySelector('#syncTable tbody');
+const $kpiTotal = document.getElementById('kpiTotal');
+const $kpiOk = document.getElementById('kpiOk');
+const $kpiWarn = document.getElementById('kpiWarn');
+const $kpiCrit = document.getElementById('kpiCrit');
+const $bar = document.getElementById('syncHealthBar');
+const $updated = document.getElementById('lastUpdated');
+
+const $search = document.getElementById('syncSearch');
+const $statusFilter = document.getElementById('statusFilter');
+const $plantFilter = document.getElementById('plantFilter');
+const $refreshBtn = document.getElementById('refreshSyncBtn');
+const $auto = document.getElementById('autoRefreshToggle');
+
+// === Llamada AJAX al controlador ===
+function fetchSyncData(){
+  return $.post('{{ route('sync.data') }}', { _token: '{{ csrf_token() }}' })
+    .then(function(res){
+      if (!res || res.ok !== true || !Array.isArray(res.data)) {
+        throw new Error(res && res.message ? res.message : 'Respuesta inválida del servidor');
+      }
+      return res.data;
+    });
+}
+
+function parseDate(s){ return new Date(s.replace(' ', 'T')); }
+function minutesDiff(d){ return Math.floor((new Date() - d) / 60000); }
+function timeAgoES(min){
+  if (min < 1) return 'ahora';
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min/60);
+  const m = min % 60;
+  return m ? `hace ${h}h ${m}m` : `hace ${h}h`;
+}
+function statusFromMinutes(min){
+  if (min <= SYNC_THRESHOLDS_MIN.ok) return 'ok';
+  if (min <= SYNC_THRESHOLDS_MIN.warn) return 'warn';
+  return 'crit';
+}
+function iconForStatus(s){
+  return s==='ok' ? 'fas fa-check-circle' :
+         s==='warn' ? 'fas fa-exclamation-circle' :
+                      'fas fa-times-circle';
+}
+
+function fillPlantFilter(data){
+  const unique = [...new Set(data.map(r=>r.Id_Planta))].sort((a,b)=>a-b);
+  $plantFilter.innerHTML =
+    '<option value="">Todas las plantas</option>' +
+    unique.map(p=>`<option value="${p}">Planta ${p}</option>`).join('');
+}
+
+function renderTable(data){
+  const q = ($search.value||'').toLowerCase().trim();
+  const byStatus = $statusFilter.value;
+  const byPlant = $plantFilter.value;
+
+  const filtered = data.filter(r=>{
+    const d = parseDate(r.Ultima_Sincronizacion);
+    const min = minutesDiff(d);
+    const st = statusFromMinutes(min);
+    r.__minutes=min; r.__status=st; r.__date=d;
+    const text = `${r.cliente} ${r.Base_Datos_Suscriptor} ${r.Id_Maquina}`.toLowerCase();
+    const okSearch = !q || text.includes(q);
+    const okStatus = !byStatus || st===byStatus;
+    const okPlant = !byPlant || String(r.Id_Planta)===String(byPlant);
+    return okSearch && okStatus && okPlant;
+  });
+
+  // KPIs
+  const total = data.length;
+  const ok = data.filter(x=>statusFromMinutes(minutesDiff(parseDate(x.Ultima_Sincronizacion)))==='ok').length;
+  const warn = data.filter(x=>statusFromMinutes(minutesDiff(parseDate(x.Ultima_Sincronizacion)))==='warn').length;
+  const crit = total - ok - warn;
+
+  $kpiTotal.textContent = total;
+  $kpiOk.textContent = ok;
+  $kpiWarn.textContent = warn;
+  $kpiCrit.textContent = crit;
+
+  const health = total ? Math.round((ok/total)*100) : 0;
+  $bar.style.width = health+'%';
+  $bar.className = 'progress-bar ' + (health>80?'bg-success':health>50?'bg-warning':'bg-danger');
+  $updated.textContent = new Date().toLocaleString();
+
+  // filas
+  $tbody.innerHTML = filtered.map(r=>{
+    const ago = timeAgoES(r.__minutes);
+    const st = r.__status;
+    const badgeClass = st==='ok'?'badge-ok':(st==='warn'?'badge-warn':'badge-crit');
+    return `
+      <tr class="row-${st}">
+        <td><strong>${r.cliente}</strong></td>
+        <td><code>${r.Base_Datos_Suscriptor}</code></td>
+        <td><span title="${r.Ultima_Sincronizacion}">${r.__date.toLocaleString()}</span></td>
+        <td class="text-center">${ago}</td>
+        <td class="text-center"><span class="badge badge-info">#${r.Id_Planta}</span></td>
+        <td class="text-center"><span class="badge badge-primary">VM ${r.Id_Maquina}</span></td>
+        <td class="text-center">
+          <span class="badge-dot ${badgeClass}">
+            <i class="${iconForStatus(st)}"></i> ${st==='ok'?'En línea':st==='warn'?'Retraso':'Crítico'}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function initSyncCard(){
+  refreshNow();
+
+  [$search,$statusFilter,$plantFilter].forEach(el=>
+    el.addEventListener('input', ()=>renderTable(syncData))
+  );
+  $refreshBtn.addEventListener('click', ()=>refreshNow());
+  $auto.addEventListener('change', ()=>{
+    if($auto.checked){
+      autoTimer = setInterval(refreshNow, 60000);
+    }else{
+      clearInterval(autoTimer);
+    }
+  });
+}
+
+function refreshNow(){
+  // Opcional: feedback visual mientras carga
+  $tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">
+    <i class="fas fa-circle-notch fa-spin"></i> Cargando...
+  </td></tr>`;
+
+  fetchSyncData()
+    .then(data=>{
+      syncData = data;
+      fillPlantFilter(syncData);
+      renderTable(syncData);
+    })
+    .catch(err=>{
+      console.error('Error cargando datos de sincronización:', err);
+      $tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">
+        <i class="fas fa-exclamation-triangle"></i> Error al cargar: ${ (err && err.message) ? err.message : 'desconocido' }
+      </td></tr>`;
+      // Opcional: reset KPIs
+      [$kpiTotal,$kpiOk,$kpiWarn,$kpiCrit].forEach(el=>el.textContent='—');
+      $bar.style.width='0%'; $bar.className='progress-bar bg-danger';
+      $updated.textContent = new Date().toLocaleString();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initSyncCard);
+</script>
+
     <script>
 Highcharts.setOptions({
     lang: {

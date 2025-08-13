@@ -191,6 +191,8 @@ Route::get('/maquinas/list', [AdminController::class, 'listMquinas'])->name('maq
 Route::post('/getAreas', [AdminController::class, 'getAreas']);
 // ALERTAS 
 Route::post('/allalertas', [AdminController::class, 'getConfiguracionesReportes'])->name('alertas.get');
+//SYNCRONIZACION
+Route::post('/sync/data', [AdminController::class, 'getSyncData'])->name('sync.data');
 
 /////////////////////////////////////// NOTIFICACION VIA MAIL ///////////////////////////////////////////////////
 

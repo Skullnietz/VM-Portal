@@ -44,11 +44,12 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="area">Área</label>
-                        <select name="Id_Area" class="form-control select3" required>
+                        <select class="form-control select3" required disabled>
                             @foreach($areas as $area)
-                                <option value="{{ $area->Id_Area }}">{{ $area->Txt_Nombre }}</option>
+                                <option value="{{ $area->Id_Area }}" {{ $area->Id_Area == $areaId ? 'selected' : '' }}>{{ $area->Txt_Nombre }}</option>
                             @endforeach
                         </select>
+                        <input type="hidden" name="Id_Area" value="{{ $areaId }}">
                     </div>
                     <div class="form-group">
                         <label for="articulo">Artículo</label>
