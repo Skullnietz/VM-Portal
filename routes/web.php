@@ -101,6 +101,11 @@ Route::prefix('{language}')->group(function () {
     Route::get('/reporte/consumoxvending', [ReportesClienteController::class, 'indexConsumoxVending'])->name('consumosxvending.index');
     ///////////////////////////////////// REPORTE DE VENDINGS /////////////////////////////
     Route::get('/reporte/inventariovm', [ReportesClienteController::class, 'indexInventarioVM'])->name('inventariovm.index');
+    ///////////////////////////////////// REPORTE DE PERMISOS /////////////////////////////
+    Route::get('/reporte/consultaconsumos', [ReportesClienteController::class, 'indexConsultaConsumos'])
+    ->name('consultasconsumo.index');
+    Route::post('/reporte/consultaconsumos/data', [ReportesClienteController::class, 'dataConsultaConsumos'])
+    ->name('consultasconsumo.data'); // <- endpoint de datos (POST)
 
     //RELLENADO DE VENDINGS | OPERADOR
     Route::get('/stock/rellenar/{id}', 'OperadorController@Surtir')->name('rellenar'); // Administracion Surtido
@@ -284,6 +289,7 @@ Route::get('/export/consumoxvending', [ReportesClienteController::class, 'export
 Route::get('/getinventariovm/data', [ReportesClienteController::class, 'getInventarioVM'])->name('inventariovm.data');
 Route::get('/getstockvm/data/{idMaquina}', [ReportesClienteController::class, 'getInvStock'])->name('stockvm.data');
 Route::get('/export-inventariovm', [ReportesClienteController::class, 'exportInventarioVM'])->name('export.inventariovm');
+
 ///////////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////////////////
 
 Route::get('/notifications/unread', [NotificationController::class, 'showNotifications'])->name('getUnreadNotifications');

@@ -64,6 +64,7 @@ return[
                     'icon_color' => 'green',
                     'url' => '/cli/reporte/consumoxvending',
                 ],
+                
             ]
         ],
         [
@@ -76,6 +77,19 @@ return[
                     'text' => 'Inventario Vendings',
                     'icon_color' => 'green',
                     'url' => '/cli/reporte/inventariovm',
+                ],
+            ]
+        ],
+        [
+            'text' => 'Permisos',
+            'url' => 'admin/settings',
+            'icon_color' => 'green',
+            'icon' => 'fas fa-fw fa-user-lock',
+            'submenu' => [
+                [
+                    'text' => 'Consulta de Consumos',
+                    'icon_color' => 'green',
+                    'url' => '/cli/reporte/consultaconsumos',
                 ],
             ]
         ],

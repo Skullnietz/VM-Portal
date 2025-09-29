@@ -24,6 +24,61 @@ class ReportesClienteController extends Controller
 
     }
 
+    public function indexConsultaConsumos()
+{
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    if (!isset($_SESSION['usuario']->Id_Planta)) {
+        abort(403, 'Sesión inválida: falta Id_Planta.');
+    }
+
+    $idPlantaSesion = (int) $_SESSION['usuario']->Id_Planta;
+
+    $empleados = \DB::table('Cat_Empleados')
+        ->select('Id_Empleado','No_Empleado','Nombre','APaterno','AMaterno')
+        ->where('Id_Planta', $idPlantaSesion)
+        ->orderBy('APaterno')->orderBy('Nombre')
+        ->get();
+
+    return view('cliente.reportes.consultaconsumos', [
+        'empleados' => $empleados,
+        'idPlantaSesion' => $idPlantaSesion,
+    ]);
+}
+
+public function dataConsultaConsumos(\Illuminate\Http\Request $request)
+{
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    if (!isset($_SESSION['usuario']->Id_Planta)) {
+        return response()->json(['data'=>[], 'error'=>'Sesión inválida'], 403);
+    }
+
+    $validated = $request->validate([
+        'NoEmpleado' => ['nullable','string','max:50'], // aquí llega el No_Empleado (o vacío)
+    ]);
+
+    $idPlanta   = (int) $_SESSION['usuario']->Id_Planta;
+    $noEmpleado = ($validated['NoEmpleado'] ?? '') === '' ? null : $validated['NoEmpleado'];
+
+    $rows = \DB::select(
+        'SET NOCOUNT ON;EXEC dbo.SP_Consulta_Consumos @Id_Planta = ?, @NoEmpleado = ?',
+        [$idPlanta, $noEmpleado]
+    );
+
+    $data = array_map(function($r){
+        $r = (array)$r;
+        return [
+            'No_Empleado'        => $r['No_Empleado']        ?? $r['no_empleado']        ?? '',
+            'Nombre'             => $r['Nombre']             ?? $r['nombre']             ?? '',
+            'Articulo'           => $r['Articulo']           ?? $r['articulo']           ?? '',
+            'Frecuencia'         => (int)($r['Frecuencia']   ?? $r['frecuencia']         ?? 0),
+            'Cantidad_Permitida' => (int)($r['Cantidad_Permitida'] ?? $r['cantidad_permitida'] ?? 0),
+            'Cantidad_Consumida' => (int)($r['Cantidad_Consumida'] ?? $r['cantidad_consumida'] ?? 0),
+            'Disponible'         => (int)($r['Disponible']   ?? $r['disponible']         ?? 0),
+        ];
+    }, $rows);
+
+    return response()->json(['data'=>$data]);
+}
     public function getInvStock($idMaquina)
 {
     if (session_status() == PHP_SESSION_NONE) {
@@ -553,6 +608,8 @@ public function exportConsumoxVending(Request $request)
 
     return Excel::download(new ConsumoxVendingExport($request, $idPlanta), 'vending-consumos.xlsx');
 }
+
+
 
 public function verConfiguracion()
 {
