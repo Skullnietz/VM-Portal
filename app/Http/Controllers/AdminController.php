@@ -1638,25 +1638,6 @@ class AdminController extends Controller
 
             if (!$file->isValid()) {
                 return response()->json(['status' => 'error', 'message' => 'El archivo subido no es válido. Error: ' . $file->getErrorMessage()], 400);
-            }
-
-            try {
-                // Guardar el archivo en storage/app/temp
-                $relativePath = $file->store('temp');
-                $fullPath = storage_path('app/' . $relativePath);
-
-                if (!file_exists($fullPath)) {
-                    Log::error('ImportCSV: El archivo no se guardó correctamente.', ['path' => $fullPath]);
-                    return response()->json(['status' => 'error', 'message' => 'Error al guardar el archivo temporalmente.'], 500);
-                }
-
-                $data = array_map('str_getcsv', file($fullPath));
-
-                // Eliminar el archivo después de leerlo
-                Storage::delete($relativePath);
-
-                if (count($data) > 0) {
-                    $header = array_shift($data); // Obtener y eliminar el encabezado
 
                     foreach ($data as $row) {
                         $no_empleado = !empty($row[0]) ? $row[0] : null;
