@@ -1638,6 +1638,7 @@ class AdminController extends Controller
 
             if (!$file->isValid()) {
                 return response()->json(['status' => 'error', 'message' => 'El archivo subido no es válido. Error: ' . $file->getErrorMessage()], 400);
+            }
 
             try {
                 // Guardar el archivo en storage/app/temp
