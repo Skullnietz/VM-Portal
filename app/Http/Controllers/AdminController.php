@@ -1634,96 +1634,155 @@ class AdminController extends Controller
         $message = 'Datos importados correctamente.';
 
         if ($request->hasFile('csv_file')) {
-            $path = $request->file('csv_file')->getRealPath();
-            $data = array_map('str_getcsv', file($path));
+            $path = null;
+            try {
+                $file = $request->file('csv_file');
+                // Guardar en una ubicación temporal controlada dentro de storage
+                // Esto asegura que funcione tanto en local como en producción
+                $filename = 'import_' . uniqid() . '.csv';
+                $path = $file->storeAs('temp_imports', $filename);
 
-            if (count($data) > 0) {
-                $header = array_shift($data); // Obtener y eliminar el encabezado
+                // Obtener la ruta absoluta del archivo
+                $fullPath = Storage::path($path);
 
-                foreach ($data as $row) {
-                    $no_empleado = !empty($row[0]) ? $row[0] : null;
-                    $nip = !empty($row[1]) ? $row[1] : '1234';
-                    $no_tarjeta = !empty($row[2]) ? $this->sanitizeString($row[2]) : null;
-                    $nombre = !empty($row[3]) ? $this->sanitizeString($row[3]) : null;
-                    $a_paterno = !empty($row[4]) ? $this->sanitizeString($row[4]) : null;
-                    $a_materno = !empty($row[5]) ? $this->sanitizeString($row[5]) : '';
-                    $n_area = !empty($row[6]) ? $this->sanitizeString($row[6]) : null;
-                    $estatus = !empty($row[7]) ? $this->sanitizeString($row[7]) : 'Alta';
+                if (($handle = fopen($fullPath, "r")) !== FALSE) {
+                    // Leer la primera fila (encabezados)
+                    $header = fgetcsv($handle, 1000, ",");
 
-                    if (is_null($no_empleado)) {
-                        $status = 'error';
-                        $message = "El campo No_Empleado está vacío. No se ha importado este registro.";
-                        break;
-                    }
+                    // Aquí podrías validar los encabezados si es estricto
+                    // $expectedHeaders = ['No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus'];
+                    // if ($header !== $expectedHeaders) { ... }
 
-                    if (empty($nombre) || empty($a_paterno)) {
-                        $status = 'error';
-                        $message = "El campo Nombre y/o Apellido Paterno está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
-                        break;
-                    }
+                    while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                        // Saltar filas vacías
+                        if (array_filter($row) == [])
+                            continue;
 
-                    if (is_null($n_area)) {
-                        $status = 'error';
-                        $message = "El campo de área está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
-                        break;
-                    } else {
-                        $id_area = DB::table('Cat_Area')->where('Txt_Nombre', $n_area)->value('Id_Area');
+                        $no_empleado = !empty($row[0]) ? $row[0] : null;
+                        $nip = !empty($row[1]) ? $row[1] : '1234';
+                        $no_tarjeta = !empty($row[2]) ? $this->sanitizeString($row[2]) : null;
+                        $nombre = !empty($row[3]) ? $this->sanitizeString($row[3]) : null;
+                        $a_paterno = !empty($row[4]) ? $this->sanitizeString($row[4]) : null;
+                        $a_materno = !empty($row[5]) ? $this->sanitizeString($row[5]) : '';
+                        $n_area = !empty($row[6]) ? $this->sanitizeString($row[6]) : null;
+                        $estatus = !empty($row[7]) ? $this->sanitizeString($row[7]) : 'Alta';
 
-                        if (!$id_area) {
+                        if (is_null($no_empleado)) {
                             $status = 'error';
-                            $message = "El área '$n_area' no se encontró en la base de datos para el empleado '$no_empleado'. No se ha importado este registro.";
+                            $message = "El campo No_Empleado está vacío. No se ha importado este registro.";
                             break;
                         }
-                    }
 
-                    $empleado = DB::table('Cat_Empleados')->where('No_Empleado', $no_empleado)->first();
+                        if (empty($nombre) || empty($a_paterno)) {
+                            $status = 'error';
+                            $message = "El campo Nombre y/o Apellido Paterno está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
+                            break;
+                        }
 
-                    if ($empleado) {
-                        // Actualizar empleado existente
-                        DB::table('Cat_Empleados')
-                            ->where('No_Empleado', $no_empleado)
-                            ->update([
+                        if (is_null($n_area)) {
+                            $status = 'error';
+                            $message = "El campo de área está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
+                            break;
+                        } else {
+                            // Buscar el área por nombre y planta para evitar duplicados en la misma planta
+                            $id_area = DB::table('Cat_Area')
+                                ->where('Txt_Nombre', $n_area)
+                                ->where('Id_Planta', $id_planta)
+                                ->value('Id_Area');
+
+                            // Si no existe, crearla
+                            if (!$id_area) {
+                                try {
+                                    // Usamos insert() en lugar de insertGetId() para evitar problemas con triggers en SQL Server
+                                    DB::table('Cat_Area')->insert([
+                                        'Id_Planta' => $id_planta,
+                                        'Txt_Nombre' => $n_area,
+                                        'Txt_Estatus' => 'Alta',
+                                        'Fecha_Alta' => now(),
+                                        'Fecha_Modificacion' => now(),
+                                        'Id_Usuario_Alta' => $usuario,
+                                        'Id_Usuario_Modificacion' => $usuario,
+                                    ]);
+
+                                    // Recuperamos el ID consultando nuevamente
+                                    $id_area = DB::table('Cat_Area')
+                                        ->where('Txt_Nombre', $n_area)
+                                        ->where('Id_Planta', $id_planta)
+                                        ->value('Id_Area');
+
+                                    if (!$id_area) {
+                                        throw new \Exception("No se pudo recuperar el ID del área recién creada.");
+                                    }
+
+                                } catch (\Exception $e) {
+                                    $status = 'error';
+                                    $message = "No se pudo crear el área '$n_area' para el empleado '$no_empleado'. Error: " . $e->getMessage();
+                                    break;
+                                }
+                            }
+                        }
+
+                        $empleado = DB::table('Cat_Empleados')->where('No_Empleado', $no_empleado)->first();
+
+                        if ($empleado) {
+                            // Actualizar empleado existente
+                            DB::table('Cat_Empleados')
+                                ->where('No_Empleado', $no_empleado)
+                                ->update([
+                                    'Nip' => $nip,
+                                    'No_Tarjeta' => $no_tarjeta,
+                                    'Nombre' => $nombre,
+                                    'APaterno' => $a_paterno,
+                                    'AMaterno' => $a_materno,
+                                    'Id_Area' => $id_area,
+                                    'Fecha_Modificacion' => now(),
+                                    'Txt_Estatus' => $estatus,
+                                    'Id_Usuario_Modificacion' => $usuario,
+                                ]);
+                        } else {
+                            // Verificar si el No_Tarjeta ya existe antes de crear un nuevo registro
+                            if (!empty($no_tarjeta)) {
+                                $tarjeta_existente = DB::table('Cat_Empleados')->where('No_Tarjeta', $no_tarjeta)->first();
+
+                                if ($tarjeta_existente) {
+                                    $status = 'error';
+                                    $message = "El número de tarjeta '$no_tarjeta' ya está registrado para otro empleado. No se ha importado este registro.";
+                                    break;
+                                }
+                            }
+
+                            // Crear nuevo empleado
+                            DB::table('Cat_Empleados')->insert([
+                                'No_Empleado' => $no_empleado,
                                 'Nip' => $nip,
                                 'No_Tarjeta' => $no_tarjeta,
                                 'Nombre' => $nombre,
                                 'APaterno' => $a_paterno,
                                 'AMaterno' => $a_materno,
                                 'Id_Area' => $id_area,
+                                'Id_Planta' => $id_planta,
+                                'Fecha_alta' => now(),
                                 'Fecha_Modificacion' => now(),
-                                'Txt_Estatus' => $estatus,
+                                'Txt_Estatus' => 'Alta',
+                                'Tipo_Acceso' => 'E',
+                                'Id_Usuario_Alta' => $usuario,
                                 'Id_Usuario_Modificacion' => $usuario,
+                                'Id_Usuario_Baja' => NULL,
                             ]);
-                    } else {
-                        // Verificar si el No_Tarjeta ya existe antes de crear un nuevo registro
-                        if (!empty($no_tarjeta)) {
-                            $tarjeta_existente = DB::table('Cat_Empleados')->where('No_Tarjeta', $no_tarjeta)->first();
-
-                            if ($tarjeta_existente) {
-                                $status = 'error';
-                                $message = "El número de tarjeta '$no_tarjeta' ya está registrado para otro empleado. No se ha importado este registro.";
-                                break;
-                            }
                         }
-
-                        // Crear nuevo empleado
-                        DB::table('Cat_Empleados')->insert([
-                            'No_Empleado' => $no_empleado,
-                            'Nip' => $nip,
-                            'No_Tarjeta' => $no_tarjeta,
-                            'Nombre' => $nombre,
-                            'APaterno' => $a_paterno,
-                            'AMaterno' => $a_materno,
-                            'Id_Area' => $id_area,
-                            'Id_Planta' => $id_planta,
-                            'Fecha_alta' => now(),
-                            'Fecha_Modificacion' => now(),
-                            'Txt_Estatus' => 'Alta',
-                            'Tipo_Acceso' => 'E',
-                            'Id_Usuario_Alta' => $usuario,
-                            'Id_Usuario_Modificacion' => $usuario,
-                            'Id_Usuario_Baja' => NULL,
-                        ]);
                     }
+                    fclose($handle);
+                } else {
+                    throw new \Exception("No se pudo abrir el archivo CSV.");
+                }
+
+            } catch (\Exception $e) {
+                $status = 'error';
+                $message = 'Error al procesar el archivo: ' . $e->getMessage();
+            } finally {
+                // Eliminar el archivo temporal
+                if ($path && Storage::exists($path)) {
+                    Storage::delete($path);
                 }
             }
         } else {
