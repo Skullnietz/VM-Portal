@@ -2187,6 +2187,46 @@ class AdminController extends Controller
                     'Id_Dispositivo' => $validated['Id_Dispositivo'],
                 ]);
 
+            // Lógica para agregar charolas si la capacidad aumentó
+            $nuevaCapacidad = $validated['Capacidad'];
+            $charolasNecesarias = floor($nuevaCapacidad / 10);
+            if ($charolasNecesarias < 1)
+                $charolasNecesarias = 1;
+
+            // Obtener el número actual de charolas
+            $maxCharola = DB::table('Configuracion_Maquina')
+                ->where('Id_Maquina', $request->id_maquina)
+                ->max('Num_Charola');
+
+            $maxCharola = $maxCharola ?: 0;
+
+            if ($charolasNecesarias > $maxCharola) {
+                $nuevasCharolas = [];
+                $fechaAlta = now();
+                $userId = $_SESSION['usuario']->Id_Usuario_Admon ?? 1; // Fallback a 1 si no hay sesión (raro en update)
+
+                for ($numCharola = $maxCharola + 1; $numCharola <= $charolasNecesarias; $numCharola++) {
+                    for ($seleccion = 0; $seleccion <= 9; $seleccion++) {
+                        $nuevasCharolas[] = [
+                            'Id_Maquina' => $request->id_maquina,
+                            'Num_Charola' => $numCharola,
+                            'Seleccion' => (int) ("{$numCharola}{$seleccion}"),
+                            'Id_Articulo' => null,
+                            'Cantidad_Max' => 0,
+                            'Cantidad_Min' => 0,
+                            'Stock' => 0,
+                            'Txt_Estatus' => 'Alta',
+                            'Fecha_Alta' => $fechaAlta,
+                            'Id_Usuario_Admon_Alta' => $userId,
+                        ];
+                    }
+                }
+
+                if (!empty($nuevasCharolas)) {
+                    DB::table('Configuracion_Maquina')->insert($nuevasCharolas);
+                }
+            }
+
             // Obtenemos el número de serie del dispositivo actualizado para devolverlo a la vista
             $deviceSerie = DB::table('Cat_Dispositivo')
                 ->where('Id_Dispositivo', $validated['Id_Dispositivo'])
@@ -2290,7 +2330,13 @@ class AdminController extends Controller
             // 3. Insertar configuraciones de charolas
             $charolas = [];
             $fechaAlta = now();
-            for ($numCharola = 1; $numCharola <= 6; $numCharola++) {
+
+            // Calcular número de charolas basado en la capacidad (10 selecciones por charola)
+            $numCharolas = floor($request->Capacidad / 10);
+            if ($numCharolas < 1)
+                $numCharolas = 1; // Asegurar al menos 1 charola si la capacidad es baja pero > 0
+
+            for ($numCharola = 1; $numCharola <= $numCharolas; $numCharola++) {
                 for ($seleccion = 0; $seleccion <= 9; $seleccion++) {
                     $charolas[] = [
                         'Id_Maquina' => $idMaquina,
@@ -2567,6 +2613,97 @@ class AdminController extends Controller
             ->get();
 
         return DataTables::of($configuraciones)->make(true);
+    }
+
+    public function getUsersForAlerts()
+    {
+        $users = DB::table('Cat_Usuarios')
+            ->select('Id_Usuario', DB::raw("CONCAT(Txt_Nombre, ' ', Txt_ApellidoP, ' ', Txt_ApellidoM) as NombreCompleto"))
+            ->where('Txt_Estatus', 'Alta')
+            ->orderBy('Txt_Nombre')
+            ->get();
+        return response()->json($users);
+    }
+
+    public function StoreAlertaAdmin(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $validator = Validator::make($request->all(), [
+            'Id_Usuario' => 'required|exists:Cat_Usuarios,Id_Usuario',
+            'Frecuencia' => 'required|in:diario,semanal,mensual',
+            'Email' => 'required|email',
+            'Recibir_Notificaciones' => 'boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $idAdmin = $_SESSION['usuario']->Id_Usuario_Admon;
+
+        // Check if user already has an alert configuration
+        $exists = DB::table('Configuracion_Reportes')->where('Id_Usuario', $request->Id_Usuario)->exists();
+        if ($exists) {
+            return response()->json(['error' => 'El usuario ya tiene una configuración de alertas.'], 400);
+        }
+
+        DB::table('Configuracion_Reportes')->insert([
+            'Id_Usuario' => $request->Id_Usuario,
+            'Id_Usuario_Admon' => $idAdmin,
+            'Frecuencia' => $request->Frecuencia,
+            'Email' => $request->Email,
+            'Recibir_Notificaciones' => $request->Recibir_Notificaciones ? 1 : 0,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['success' => 'Alerta creada correctamente.']);
+    }
+
+    public function getAlerta($id)
+    {
+        $alerta = DB::table('Configuracion_Reportes')->where('Id', $id)->first();
+        if (!$alerta) {
+            return response()->json(['error' => 'Alerta no encontrada'], 404);
+        }
+        return response()->json($alerta);
+    }
+
+    public function UpdateAlertaAdmin(Request $request, $id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $validator = Validator::make($request->all(), [
+            'Frecuencia' => 'required|in:diario,semanal,mensual',
+            'Email' => 'required|email',
+            'Recibir_Notificaciones' => 'boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // $idAdmin = $_SESSION['usuario']->Id_Usuario_Admon; // Optional: track who updated it
+
+        DB::table('Configuracion_Reportes')->where('Id', $id)->update([
+            'Frecuencia' => $request->Frecuencia,
+            'Email' => $request->Email,
+            'Recibir_Notificaciones' => $request->Recibir_Notificaciones ? 1 : 0,
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['success' => 'Alerta actualizada correctamente.']);
+    }
+
+    public function destroyAlerta($id)
+    {
+        DB::table('Configuracion_Reportes')->where('Id', $id)->delete();
+        return response()->json(['success' => 'Alerta eliminada correctamente.']);
     }
 
     public function getSyncData(Request $request)
