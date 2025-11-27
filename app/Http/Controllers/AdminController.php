@@ -1639,6 +1639,32 @@ class AdminController extends Controller
             if (!$file->isValid()) {
                 return response()->json(['status' => 'error', 'message' => 'El archivo subido no es válido. Error: ' . $file->getErrorMessage()], 400);
 
+            try {
+                // Guardar el archivo en storage/app/temp
+                $relativePath = $file->store('temp');
+
+                if ($relativePath === false) {
+                    Log::error('ImportCSV: Falló el almacenamiento del archivo (store devolvió false).');
+                    return response()->json(['status' => 'error', 'message' => 'Error al guardar el archivo temporalmente (store failed).'], 500);
+                }
+
+                $fullPath = storage_path('app/' . $relativePath);
+
+                Log::info('ImportCSV: Archivo guardado.', ['relativePath' => $relativePath, 'fullPath' => $fullPath]);
+
+                if (!file_exists($fullPath)) {
+                     Log::error('ImportCSV: El archivo no existe en la ruta completa.', ['path' => $fullPath]);
+                     return response()->json(['status' => 'error', 'message' => 'Error: El archivo no se encuentra en la ruta esperada.'], 500);
+                }
+
+                $data = array_map('str_getcsv', file($fullPath));
+                
+                // Eliminar el archivo después de leerlo
+                Storage::delete($relativePath);
+
+                if (count($data) > 0) {
+                    $header = array_shift($data); // Obtener y eliminar el encabezado
+
                     foreach ($data as $row) {
                         $no_empleado = !empty($row[0]) ? $row[0] : null;
                         $nip = !empty($row[1]) ? $row[1] : '1234';
@@ -1724,6 +1750,7 @@ class AdminController extends Controller
                             ]);
                         }
                     }
+                }
                 }
             } catch (\Exception $e) {
                 Log::error('ImportCSV: Excepción al procesar archivo.', ['error' => $e->getMessage()]);
