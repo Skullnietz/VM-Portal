@@ -2415,6 +2415,7 @@ class AdminController extends Controller
                 'Configuracion_Maquina.Cantidad_Min',
                 'Configuracion_Maquina.Seleccion',
                 'Configuracion_Maquina.Num_Charola',
+                'Configuracion_Maquina.Talla',
                 'Cat_Articulos.Txt_Codigo',
                 'Cat_Articulos.Txt_Descripcion',
                 'Cat_Articulos.Tamano_Espiral',
@@ -2452,12 +2453,54 @@ class AdminController extends Controller
 
     public function updateStock(Request $request)
     {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
         $updatedStock = $request->input('updatedStock');
+        $userId = null;
+        $userType = null;
+
+        if (isset($_SESSION['usuario'])) {
+            if (isset($_SESSION['usuario']->Id_Usuario_Admon)) {
+                $userId = $_SESSION['usuario']->Id_Usuario_Admon;
+                $userType = 'Admin';
+            } elseif (isset($_SESSION['usuario']->Id_Operador)) {
+                $userId = $_SESSION['usuario']->Id_Operador;
+                $userType = 'Operador';
+            }
+        }
 
         foreach ($updatedStock as $stock) {
-            DB::table('Configuracion_Maquina')
+            $config = DB::table('Configuracion_Maquina')
                 ->where('Id_Configuracion', $stock['id'])
-                ->update(['Stock' => $stock['stock']]);
+                ->first();
+
+            if ($config) {
+                $cantidadAnterior = $config->Stock;
+                $cantidadNueva = $stock['stock'];
+                $cantidadRellenada = $cantidadNueva - $cantidadAnterior;
+
+                if ($cantidadRellenada > 0) {
+                    DB::table('Historial_Relleno')->insert([
+                        'Id_Configuracion' => $config->Id_Configuracion,
+                        'Id_Maquina' => $config->Id_Maquina,
+                        'Id_Articulo' => $config->Id_Articulo,
+                        'Cantidad_Anterior' => $cantidadAnterior,
+                        'Cantidad_Rellenada' => $cantidadRellenada,
+                        'Cantidad_Nueva' => $cantidadNueva,
+                        'Fecha_Relleno' => now(),
+                        'Id_Usuario' => $userId,
+                        'Tipo_Usuario' => $userType,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                DB::table('Configuracion_Maquina')
+                    ->where('Id_Configuracion', $stock['id'])
+                    ->update(['Stock' => $stock['stock']]);
+            }
         }
 
         return response()->json(['message' => 'Stock actualizado correctamente']);

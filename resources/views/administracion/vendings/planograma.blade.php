@@ -77,19 +77,6 @@
                                                                 <div class="contenido-seleccion"
                                                                     style="display: {{ isset($seleccion->Id_Articulo) ? 'block' : 'none' }};">
                                                                     <div class="contenido-header">
-                                                                        <img src="/Images/product.png" class="img-fluid"
-                                                                            alt="Artículo"
-                                                                            style="max-height: 100px; min-width: 100px; min-height: 100px; max-width: 100px;">
-                                                                        <p class="text-muted mt-1 TxtCodigo">
-                                                                            {{ $seleccion->Txt_Codigo ?? '' }}
-                                                                        </p>
-                                                                        <small
-                                                                            class="TxtDescripcion">{{ $seleccion->Txt_Descripcion ?? '' }}</small>
-                                                                        <!-- Mostrar Tamano_Espiral si existe -->
-                                                                        @if(isset($seleccion->Tamano_Espiral))
-                                                                            <div class="bg-secondary tamano-espiral">
-                                                                                Espiral {{ $seleccion->Tamano_Espiral }}
-                                                                            </div>
                                                                         @endif
                                                                     </div>
                                                                     <form class="setminmax bg-dark">

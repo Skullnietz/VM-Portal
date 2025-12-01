@@ -144,4 +144,51 @@ class ReportesAdministradorController extends Controller
             'data' => $data
         ]);
     }
+    public function ReporteHistorialRelleno(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Obtener todas las plantas para el selector
+        $plantas = DB::table('Cat_Plantas')->select('Id_Planta', 'Txt_Nombre_Planta as Nombre')->get();
+
+        return view('administracion.reportes.historialrelleno', compact('plantas'));
+    }
+
+    public function getReporteHistorialRellenoData(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $query = DB::table('Historial_Relleno')
+            ->join('Configuracion_Maquina', 'Historial_Relleno.Id_Configuracion', '=', 'Configuracion_Maquina.Id_Configuracion')
+            ->join('Ctrl_Mquinas', 'Historial_Relleno.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+            ->join('Cat_Articulos', 'Historial_Relleno.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin('Cat_Usuarios', 'Historial_Relleno.Id_Usuario', '=', 'Cat_Usuarios.Id_Usuario') // Asumiendo que Id_Usuario es FK a Cat_Usuarios
+            ->select(
+                'Historial_Relleno.Id_Historial',
+                'Ctrl_Mquinas.Txt_Nombre as Maquina',
+                'Cat_Articulos.Txt_Descripcion as Articulo',
+                'Historial_Relleno.Cantidad_Anterior',
+                'Historial_Relleno.Cantidad_Rellenada',
+                'Historial_Relleno.Cantidad_Nueva',
+                'Historial_Relleno.Fecha_Relleno',
+                'Historial_Relleno.Tipo_Usuario',
+                DB::raw("CONCAT(Cat_Usuarios.Txt_Nombre, ' ', Cat_Usuarios.Txt_ApellidoP) as Usuario")
+            );
+
+        if ($request->has('planta_id') && $request->planta_id) {
+            $query->where('Ctrl_Mquinas.Id_Planta', $request->planta_id);
+        }
+
+        if ($request->filled('startDate') && $request->filled('endDate')) {
+            $startDate = $request->startDate . ' 00:00:00';
+            $endDate = $request->endDate . ' 23:59:59';
+            $query->whereBetween('Historial_Relleno.Fecha_Relleno', [$startDate, $endDate]);
+        }
+
+        return DataTables::of($query)->make(true);
+    }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\OperadorController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportesClienteController;
+use App\Http\Controllers\ReportesAdministradorController;
 use Illuminate\Http\Request;
 
 
@@ -107,9 +108,14 @@ Route::group(['middleware' => 'checkSession'], function () {
         Route::post('/reporte/consultaconsumos/data', [ReportesClienteController::class, 'dataConsultaConsumos'])
             ->name('consultasconsumo.data'); // <- endpoint de datos (POST)
 
+        ///////////////////////////////////// REPORTE DE HISTORIAL DE RELLENO //////////////////
+        Route::get('/reporte/historialrelleno', [ReportesAdministradorController::class, 'ReporteHistorialRelleno'])->name('historialrelleno.index');
+        Route::get('/reporte/historialrelleno/data', [ReportesAdministradorController::class, 'getReporteHistorialRellenoData'])->name('historialrelleno.data');
+
         //RELLENADO DE VENDINGS | OPERADOR
         Route::get('/stock/rellenar/{id}', 'OperadorController@Surtir')->name('rellenar'); // Administracion Surtido
         Route::get('/op-vendings', 'OperadorController@Vendings')->name('op-vendings'); // Administracion VENDINGS
+        Route::post('/operador/update-stock', [OperadorController::class, 'updateStock'])->name('operador.update.stock');
     });
 
 
