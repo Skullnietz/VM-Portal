@@ -178,23 +178,53 @@
         justify-content: space-between;
         align-items: center;
         padding: 15px 20px;
-        background-color: #007bff;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
         color: #fff;
-        border-radius: 5px;
-        font-size: 1rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
     }
 
     .card-h:hover {
-        background-color: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
     }
 
     .card-bh {
-        padding: 15px;
-        background-color: #f9f9f9;
+        padding: 20px;
+        background-color: #ffffff;
+        border: 1px solid #e9ecef;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
     }
 
     .grouped-table {
-        margin-left: auto; /* Alinea el icono completamente a la derecha */
+        margin-left: auto;
+    }
+
+    /* Custom Table Styling */
+    .table-custom thead th {
+        background-color: #343a40;
+        color: white;
+        border: none;
+    }
+    
+    .table-custom tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.001);
+        transition: all 0.2s;
+    }
+
+    .accordion .card {
+        border: none;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .accordion .card-header {
+        border-radius: 8px !important;
+        border: none;
     }
 </style>
 @stop
@@ -245,29 +275,34 @@
                 // Creamos un grupo colapsable para cada planta
                 const plantaGroup = $(`
                     <div class="card mb-3">
-                        <div class="card-header d-flex align-items-center bg-light text-white"
+                        <div class="card-header d-flex align-items-center card-h"
                              id="heading${index}" data-toggle="collapse" data-target="#collapse${index}" 
                              aria-expanded="false" aria-controls="collapse${index}" style="cursor: pointer;">
-                            <img src="${plantaImage}" alt="Planta" class="rounded-circle mr-3" style="width: 40px; height: 40px;">
-                            <h5 class="mb-0">
-                                ${planta}
-                            </h5>
+                            <div class="d-flex align-items-center">
+                                <img src="${plantaImage}" alt="Planta" class="rounded-circle mr-3 border border-white" style="width: 45px; height: 45px; object-fit: cover;">
+                                <div>
+                                    <h5 class="mb-0 font-weight-bold">
+                                        ${planta}
+                                    </h5>
+                                    <small class="text-white-50"><i class="fas fa-industry mr-1"></i> Planta</small>
+                                </div>
+                            </div>
                             <i class="fas fa-chevron-down ml-auto"></i>
                         </div>
                         <div id="collapse${index}" class="collapse" aria-labelledby="heading${index}" data-parent="#groupedVendingsContainer">
-                            <div class="card-body">
-                                <table id="table${index}" class=" display table table-striped table-bordered" >
-                                    <thead>
+                            <div class="card-body card-bh">
+                                <table id="table${index}" class="display table table-hover table-custom table-bordered" style="width:100%">
+                                    <thead class="thead-dark">
                                         <tr>
-                                            <th>Nombre</th>
-                                            <th>Serie</th>
-                                            <th>Tipo</th>
-                                            <th>Estatus</th>
-                                            <th>Capacidad</th>
-                                            <th>Configuración</th>
-                                            <th>Stock</th>
-                                            <th>Fecha Alta</th>
-                                            <th>Opciones</th> 
+                                            <th><i class="fas fa-cube mr-1"></i> Nombre</th>
+                                            <th><i class="fas fa-barcode mr-1"></i> Serie</th>
+                                            <th><i class="fas fa-cogs mr-1"></i> Tipo</th>
+                                            <th><i class="fas fa-toggle-on mr-1"></i> Estatus</th>
+                                            <th><i class="fas fa-box mr-1"></i> Capacidad</th>
+                                            <th><i class="fas fa-tools mr-1"></i> Configuración</th>
+                                            <th><i class="fas fa-dolly mr-1"></i> Stock</th>
+                                            <th><i class="far fa-calendar-alt mr-1"></i> Fecha Alta</th>
+                                            <th><i class="fas fa-sliders-h mr-1"></i> Opciones</th> 
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -283,34 +318,39 @@
                 registros.forEach((registro) => {
                     $(`#table${index} tbody`).append(`
                         <tr data-id="${registro.Id_Maquina}">
-                            <td>${registro.Txt_Nombre}</td>
-                            <td>${registro.Txt_Serie_Maquina}</td>
-                            <td>${registro.Txt_Tipo_Maquina}</td>
-                            <td>
-                                <button class="btn btn-status btn-sm ${registro.Txt_Estatus === 'Alta' ? 'btn-success' : 'btn-danger'}" 
-                                        onclick="changeStatus(${registro.Id_Maquina}, '${registro.Txt_Estatus}')">
-                                    ${registro.Txt_Estatus}
+                            <td class="align-middle font-weight-bold">${registro.Txt_Nombre}</td>
+                            <td class="align-middle">${registro.Txt_Serie_Maquina}</td>
+                            <td class="align-middle"><span class="badge badge-info">${registro.Txt_Tipo_Maquina}</span></td>
+                            <td class="align-middle">
+                                <button class="btn btn-sm ${registro.Txt_Estatus === 'Alta' ? 'btn-outline-success' : 'btn-outline-danger'} font-weight-bold" 
+                                        onclick="changeStatus(${registro.Id_Maquina}, '${registro.Txt_Estatus}')" style="width: 80px;">
+                                    ${registro.Txt_Estatus === 'Alta' ? '<i class="fas fa-check mr-1"></i> Alta' : '<i class="fas fa-times mr-1"></i> Baja'}
                                 </button>
                             </td>
-                            <td>${registro.Capacidad}</td>
-                            <td>
-                            <a href="config/plano/${registro.Id_Maquina}" class="btn btn-dark btn-sm edit-btn">
-                                    Planograma
+                            <td class="align-middle text-center">${registro.Capacidad}</td>
+                            <td class="align-middle text-center">
+                            <a href="config/plano/${registro.Id_Maquina}" class="btn btn-dark btn-sm shadow-sm">
+                                    <i class="fas fa-th mr-1"></i> Planograma
                             </a>
                             </td>
-                            <td>
-                            <a href="Astock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm edit-btn">
-                                    Rellenar
+                            <td class="align-middle text-center">
+                            <a href="Astock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm shadow-sm">
+                                    <i class="fas fa-fill-drip mr-1"></i> Rellenar
                             </a>
                             </td>
-                            <td>${registro.Fecha_Alta}</td>
-                            <td>
-                                <button class="btn btn-warning btn-sm edit-btn" data-id="${registro.Id_Maquina}" onclick="editVending(${registro.Id_Maquina})" data-target="#editVendingModal">
-                                    Editar
-                                </button>
-                                <button class="btn btn-danger btn-sm delete-btn" data-id="${registro.Id_Maquina}" onclick="deleteVending(${registro.Id_Maquina})">
-                                    Eliminar
-                                </button>
+                            <td class="align-middle">${registro.Fecha_Alta}</td>
+                            <td class="align-middle">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-warning btn-sm shadow-sm" onclick="editVending(${registro.Id_Maquina})" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm shadow-sm" onclick="deleteVending(${registro.Id_Maquina})" title="Eliminar">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    <button class="btn btn-success btn-sm shadow-sm" onclick="window.location.href='/admin/vending/download-missing-items/${registro.Id_Maquina}'" title="Descargar Faltantes">
+                                        <i class="fas fa-file-excel"></i>
+                                    </button>
+                                </div>
                             </td>
                             
                         </tr>

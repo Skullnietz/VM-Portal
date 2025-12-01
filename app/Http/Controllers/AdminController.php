@@ -2807,4 +2807,10 @@ class AdminController extends Controller
         }
     }
 
+    public function downloadMissingItems($id)
+    {
+        if (ob_get_contents())
+            ob_end_clean();
+        return Excel::download(new \App\Exports\MissingItemsExport($id), 'faltantes_vending_' . $id . '.xlsx');
+    }
 }

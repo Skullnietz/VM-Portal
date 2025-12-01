@@ -186,6 +186,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/vending/edit/{id}', [AdminController::class, 'getVendingMachine']);
     Route::post('/vending/update', [AdminController::class, 'updateVendingMachine']);
     Route::post('/vending/create', [AdminController::class, 'storeVM'])->name('vending.store');
+    Route::get('/admin/vending/download-missing-items/{id}', [AdminController::class, 'downloadMissingItems'])->name('admin.vending.download_missing_items');
     // PLANOGRAMA
     Route::post('/admin/config/plano/save', [AdminController::class, 'guardarCambiosPlano']);
     Route::post('/admin/config/plano/remove', [AdminController::class, 'eliminarArticuloPlano']);
