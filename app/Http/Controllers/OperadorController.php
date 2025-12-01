@@ -220,4 +220,21 @@ class OperadorController extends Controller
 
         return response()->json(['message' => 'Stock actualizado correctamente', 'resumen' => $resumen]);
     }
+
+    public function getMissingItems($id)
+    {
+        $missingItems = DB::table('Configuracion_Maquina')
+            ->where('Id_Maquina', $id)
+            ->select(DB::raw('SUM(Cantidad_Max - Stock) as total_missing'))
+            ->first();
+
+        return response()->json(['missing_count' => $missingItems->total_missing ?? 0]);
+    }
+
+    public function downloadMissingItems($id)
+    {
+        if (ob_get_contents())
+            ob_end_clean();
+        return Excel::download(new \App\Exports\MissingItemsExport($id), 'faltantes_vending_' . $id . '.xlsx');
+    }
 }

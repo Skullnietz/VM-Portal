@@ -305,6 +305,8 @@ Route::group(['middleware' => 'checkSession'], function () {
 
     ////////////////////////////////////     OPERADORES    ///////////////////////////////
     Route::get('op/vendings/data', [OperadorController::class, 'getVendingsData'])->name('vendings.data');
+    Route::get('/op/vending/missing-items/{id}', [OperadorController::class, 'getMissingItems'])->name('vending.missing_items');
+    Route::get('/op/vending/download-missing-items/{id}', [OperadorController::class, 'downloadMissingItems'])->name('vending.download_missing_items');
 
 
 
