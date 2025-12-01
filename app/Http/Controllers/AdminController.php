@@ -58,6 +58,7 @@ class AdminController extends Controller
                 'Configuracion_Maquina.Id_Articulo',
                 'Configuracion_Maquina.Cantidad_Max',
                 'Configuracion_Maquina.Cantidad_Min',
+                'Configuracion_Maquina.Talla',
                 'Configuracion_Maquina.Seleccion',
                 'Configuracion_Maquina.Num_Charola',
                 'Cat_Articulos.Txt_Codigo',
@@ -2387,6 +2388,7 @@ class AdminController extends Controller
                     'Id_Articulo' => $item['idArticulo'] ?: null,
                     'Cantidad_Max' => $item['cantidadMax'] ?: 0,
                     'Cantidad_Min' => $item['cantidadMin'] ?: 0,
+                    'Talla' => $item['talla'] ?: null,
                     'Stock' => DB::raw("COALESCE(Stock, 0)") // Si Stock es NULL, lo pone en 0
                 ]);
         }
