@@ -152,6 +152,23 @@
                         </tbody>
                     </table>
                 </div>
+
+                <hr>
+                <h5>Totales por Artículo y Talla</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Talla</th>
+                                <th>Total Rellenado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aggregatedTableBody">
+                            <!-- Aggregated data will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
@@ -384,6 +401,36 @@
                                 <td>${item.Cantidad_Nueva}</td>
                             </tr>`;
                             tbody.innerHTML += row;
+                        });
+                    }
+
+                    // Populate Aggregated Table
+                    const aggregatedTableBody = document.getElementById('aggregatedTableBody');
+                    if (aggregatedTableBody) {
+                        aggregatedTableBody.innerHTML = '';
+                        const aggregatedData = {};
+
+                        summaryData.forEach(item => {
+                            const key = `${item.Articulo}|${item.Talla}`;
+                            if (!aggregatedData[key]) {
+                                aggregatedData[key] = {
+                                    Articulo: item.Articulo,
+                                    Talla: item.Talla,
+                                    Total_Rellenado: 0
+                                };
+                            }
+                            aggregatedData[key].Total_Rellenado += item.Cantidad_Rellenada;
+                        });
+
+                        Object.values(aggregatedData).forEach(item => {
+                            if (item.Total_Rellenado > 0) {
+                                const row = `<tr>
+                                    <td>${item.Articulo}</td>
+                                    <td>${item.Talla}</td>
+                                    <td>${item.Total_Rellenado}</td>
+                                </tr>`;
+                                aggregatedTableBody.innerHTML += row;
+                            }
                         });
                     }
 
