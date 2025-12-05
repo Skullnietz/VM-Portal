@@ -25,7 +25,7 @@
 </div>
 
 
-<div class="container">
+<div class="container-fluid"> <!-- Changed to container-fluid for more width -->
     <div class="row">
         <div class="col">
             <div class="card">
@@ -34,87 +34,66 @@
                 </div>
                 <div class="card-body">
                     @foreach ($planograma as $charola => $selecciones)
-                        <div class="card mb-3">
+                        <div class="card mb-3"
+                            style="{{ $loop->iteration % 2 == 0 ? 'background-color: #f8f9fa;' : 'background-color: #e9ecef;' }}">
                             <div class="card-header">
                                 <h2>Charola {{ $charola }}</h2>
                             </div>
                             <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered text-center">
-                                        <thead class="thead-dark">
-                                            <tr>
-                                                @for ($i = 0; $i <= 9; $i++)
-                                                    <th>Selección {{ $charola }}{{ $i }}</th>
-                                                @endfor
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($selecciones->chunk(10) as $chunk)
-                                                <tr>
-                                                    @foreach ($chunk as $seleccion)
-                                                        <td class="droppable-cell"
-                                                            data-id="{{ $seleccion->Id_Configuracion ?? '' }}"
-                                                            data-charola="{{ $seleccion->Num_Charola ?? 'N/A' }}"
-                                                            data-seleccion="{{ $seleccion->Seleccion ?? 'N/A' }}">
-                                                            <div class="mb-2">
-                                                                @if(empty($seleccion->Id_Articulo))
-                                                                    <!-- Mostrar la leyenda de selección vacía -->
-                                                                    <div class="seleccion-vacia">
-                                                                        <p class="text-muted">Selección vacía</p>
-                                                                    </div>
-                                                                @else
-                                                                    <!-- Contenido visible cuando hay un artículo -->
-                                                                    <div class="contenido-seleccion">
-                                                                        <div class="cantidad-max-container">
-                                                                            <small class="text-muted">Máximo:
-                                                                                {{ $seleccion->Cantidad_Max ?? 0 }}</small>
-                                                                        </div>
+                                <div class="d-flex flex-nowrap overflow-auto">
+                                    @foreach ($selecciones as $seleccion)
+                                        @if(!empty($seleccion->Id_Articulo))
+                                            <div class="droppable-cell m-1 border rounded p-2" style="flex: 0 0 auto;"
+                                                data-id="{{ $seleccion->Id_Configuracion ?? '' }}"
+                                                data-charola="{{ $seleccion->Num_Charola ?? 'N/A' }}"
+                                                data-seleccion="{{ $seleccion->Seleccion ?? 'N/A' }}">
+                                                <div class="mb-2">
+                                                    <!-- Contenido visible cuando hay un artículo -->
+                                                    <div class="contenido-seleccion">
+                                                        <div class="articulo-container">
+                                                            <img src="/Images/Catalogo/{{ $seleccion->Txt_Codigo ?? '' }}.jpg"
+                                                                onerror="this.src='/Images/product.png'" alt="Imagen Artículo"
+                                                                class="img-fluid mb-2 ImgArticulo" style="max-height: 100px;">
+                                                            <p class="mb-1 font-weight-bold">{{ $seleccion->Txt_Codigo ?? '' }}</p>
+                                                            <p class="small text-muted">{{ $seleccion->Txt_Descripcion ?? '' }}</p>
+                                                            @if(!empty($seleccion->Talla))
+                                                                <div class="mt-1">
+                                                                    <span class="badge badge-pill talla-badge"
+                                                                        data-talla="{{ $seleccion->Talla }}">Talla:
+                                                                        {{ $seleccion->Talla }}</span>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
 
-                                                                        <div class="articulo-container">
-                                                                            <img src="/Images/product.png" class="img-fluid mt-2 mb-2"
-                                                                                alt="Artículo"
-                                                                                style="max-height: 100px; min-width: 100px; min-height: 100px; max-width: 100px;">
-                                                                            <p class="text-muted TxtCodigo">
-                                                                                {{ $seleccion->Txt_Codigo ?? '' }}
-                                                                            </p>
-                                                                            <small class="TxtDescripcion"
-                                                                                title="{{ $seleccion->Txt_Descripcion ?? '' }}">{{ \Illuminate\Support\Str::limit($seleccion->Txt_Descripcion ?? '', 40) }}</small>
-                                                                            @if(!empty($seleccion->Talla))
-                                                                                <div class="mt-1">
-                                                                                    <span class="badge badge-pill talla-badge"
-                                                                                        data-talla="{{ $seleccion->Talla }}">{{ $seleccion->Talla }}</span>
-                                                                                </div>
-                                                                            @endif
-                                                                        </div>
-
-                                                                        <div class="stock-container">
-                                                                            <form>
-                                                                                <input type="hidden" class="IdArticulo"
-                                                                                    value="{{ $seleccion->Id_Articulo }}">
-                                                                                <div class="form-group">
-                                                                                    <label for="Stock">Stock</label>
-                                                                                    <input type="number"
-                                                                                        class="form-control form-control-sm Stock"
-                                                                                        value="{{ $seleccion->Stock ?? '' }}"
-                                                                                        placeholder="Stock"
-                                                                                        min="{{ $seleccion->Cantidad_Min ?? 0 }}"
-                                                                                        max="{{ $seleccion->Cantidad_Max ?? 0 }}"
-                                                                                        value="{{ $seleccion->Stock ?? '' }}">
-                                                                                </div>
-                                                                            </form>
-                                                                        </div>
-                                                                    </div>
-                                                                @endif
+                                                    <div class="stock-container">
+                                                        <form>
+                                                            <input type="hidden" class="IdArticulo"
+                                                                value="{{ $seleccion->Id_Articulo }}">
+                                                            <div class="form-group">
+                                                                <div class="text-center mb-2">
+                                                                    <span class="badge badge-warning p-2"
+                                                                        style="font-size: 0.9em;">Max:
+                                                                        {{ $seleccion->Cantidad_Max ?? 0 }}</span>
+                                                                </div>
+                                                                <label class="d-block text-center small text-muted mb-1">Stock
+                                                                    Actual</label>
+                                                                <input type="number" class="form-control form-control-sm Stock"
+                                                                    value="{{ $seleccion->Stock ?? '' }}"
+                                                                    data-initial-stock="{{ $seleccion->Stock ?? 0 }}"
+                                                                    placeholder="Stock Actual"
+                                                                    min="{{ $seleccion->Cantidad_Min ?? 0 }}"
+                                                                    max="{{ $seleccion->Cantidad_Max ?? 0 }}">
                                                             </div>
-                                                        </td>
-                                                    @endforeach
-                                                    @for ($i = $chunk->count(); $i < 10; $i++)
-                                                        <td class="droppable-cell"></td>
-                                                    @endfor
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2 p-1 bg-dark text-white text-center font-weight-bold rounded">
+                                                    {{ $seleccion->Seleccion }}
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
@@ -124,9 +103,6 @@
             </div>
         </div>
     </div>
-</div>
-</div>
-</div>
 </div>
 <!-- Modal de Resumen -->
 <div class="modal fade" id="summaryModal" tabindex="-1" role="dialog" aria-labelledby="summaryModalLabel"
@@ -179,6 +155,7 @@
     </div>
 </div>
 @stop
+
 @section('css')
 <style>
     .cantidad-max-container {
@@ -208,6 +185,12 @@
         margin-bottom: 10px;
     }
 
+    .droppable-cell {
+        min-width: 180px;
+        max-width: 180px;
+        background-color: #fff;
+        /* Ensure background is white */
+    }
 
     floatingActions {
         position: fixed;
@@ -279,7 +262,10 @@
 
         // Escuchar cambios en los inputs de stock
         document.querySelectorAll('.Stock').forEach(input => {
-            input.addEventListener('input', updateStockColors);
+            input.addEventListener('input', function () {
+                if (this.value < 0) this.value = 0;
+                updateStockColors();
+            });
         });
 
         // Colorear badges de talla
@@ -313,198 +299,171 @@
                     alert('Operación cancelada.');
                 }
             });
+        } else {
+            console.error('El botón "Rellenar Máximos" flotante no existe en el DOM.');
         }
 
-        // --- Save Logic ---
+        // --- Save Changes Logic ---
 
-        let pendingStockUpdate = [];
+        document.getElementById('saveChangesBtn').addEventListener('click', function () {
+            const cells = document.querySelectorAll('.droppable-cell');
+            const summaryTableBody = document.getElementById('summaryTableBody');
+            const aggregatedTableBody = document.getElementById('aggregatedTableBody');
+            summaryTableBody.innerHTML = '';
+            aggregatedTableBody.innerHTML = '';
 
-        const saveChangesBtn = document.getElementById('saveChangesBtn');
-        if (saveChangesBtn) {
-            saveChangesBtn.addEventListener('click', function () {
-                const cells = document.querySelectorAll('.droppable-cell');
-                pendingStockUpdate = []; // Reset pending update
+            let hasChanges = false;
+            const aggregatedData = {};
 
-                try {
-                    const summaryData = [];
-                    let hasChanges = false;
+            cells.forEach(cell => {
+                const charola = cell.getAttribute('data-charola');
+                const seleccion = cell.getAttribute('data-seleccion');
+                const stockInput = cell.querySelector('.Stock');
+                const articuloContainer = cell.querySelector('.articulo-container');
+                const codigo = articuloContainer.querySelector('.font-weight-bold').innerText;
+                const tallaBadge = articuloContainer.querySelector('.talla-badge');
+                const talla = tallaBadge ? tallaBadge.innerText.replace('Talla: ', '') : 'N/A';
 
-                    Array.from(cells).forEach(cell => {
-                        const id = cell.getAttribute('data-id');
-                        const charola = cell.getAttribute('data-charola');
-                        const seleccion = cell.getAttribute('data-seleccion');
-                        const stockInput = cell.querySelector('.Stock');
-                        const articuloDesc = cell.querySelector('.TxtDescripcion') ? cell.querySelector('.TxtDescripcion').innerText : 'N/A';
-                        const tallaBadge = cell.querySelector('.talla-badge');
-                        const talla = tallaBadge ? tallaBadge.innerText : '';
+                if (stockInput) {
+                    let currentStock = parseInt(stockInput.value) || 0;
+                    if (currentStock < 0) currentStock = 0; // Ensure no negative stock
+                    const initialStock = parseInt(stockInput.getAttribute('data-initial-stock')) || 0;
+                    const diff = currentStock - initialStock;
 
-                        if (!stockInput) return;
+                    if (diff !== 0) {
+                        hasChanges = true;
 
-                        let stockValue = parseInt(stockInput.value) || 0;
+                        const diffDisplay = diff > 0 ? `+${diff}` : `${diff}`;
+                        const diffClass = diff > 0 ? 'text-success' : 'text-danger';
 
-                        // Get initial value from the attribute rendered by server
-                        const initialStock = parseInt(stockInput.getAttribute('value')) || 0;
-                        const maxStock = parseInt(stockInput.getAttribute('max')) || 0;
+                        // Add to summary table
+                        const row = `<tr>
+                            <td>${charola}</td>
+                            <td>${seleccion}</td>
+                            <td>${codigo}</td>
+                            <td>${talla}</td>
+                            <td>${initialStock}</td>
+                            <td>${currentStock}</td>
+                            <td class="${diffClass}">${diffDisplay}</td>
+                        </tr>`;
+                        summaryTableBody.innerHTML += row;
 
-                        // Validation
-                        if (stockValue < 0) {
-                            throw new Error(`El stock para la charola ${charola}, selección ${seleccion} no puede ser negativo.`);
+                        // Aggregate data
+                        const key = `${codigo}-${talla}`;
+                        if (!aggregatedData[key]) {
+                            aggregatedData[key] = {
+                                codigo: codigo,
+                                talla: talla,
+                                totalRefill: 0
+                            };
                         }
-                        if (stockValue > maxStock) {
-                            stockValue = maxStock;
-                            stockInput.value = maxStock;
-                        }
-
-                        if (stockValue !== initialStock) {
-                            hasChanges = true;
-                            summaryData.push({
-                                Seleccion: seleccion,
-                                Articulo: articuloDesc,
-                                Talla: talla,
-                                Cantidad_Anterior: initialStock,
-                                Cantidad_Rellenada: stockValue - initialStock,
-                                Cantidad_Nueva: stockValue
-                            });
-                        }
-
-                        pendingStockUpdate.push({ id, stock: stockValue });
-                    });
-
-                    if (!hasChanges) {
-                        alert('No hay cambios para guardar.');
-                        return;
+                        aggregatedData[key].totalRefill += diff;
                     }
-
-                    // Populate Modal
-                    const thead = document.querySelector('#summaryContent table thead tr');
-                    if (thead) {
-                        thead.innerHTML = `
-                            <th>Selección</th>
-                            <th>Artículo</th>
-                            <th>Talla</th>
-                            <th>Anterior</th>
-                            <th>Rellenado</th>
-                            <th>Nuevo</th>
-                        `;
-                    }
-
-                    const tbody = document.getElementById('summaryTableBody');
-                    if (tbody) {
-                        tbody.innerHTML = '';
-                        summaryData.forEach(item => {
-                            const row = `<tr>
-                                <td>${item.Seleccion}</td>
-                                <td>${item.Articulo}</td>
-                                <td>${item.Talla}</td>
-                                <td>${item.Cantidad_Anterior}</td>
-                                <td>${item.Cantidad_Rellenada}</td>
-                                <td>${item.Cantidad_Nueva}</td>
-                            </tr>`;
-                            tbody.innerHTML += row;
-                        });
-                    }
-
-                    // Populate Aggregated Table
-                    const aggregatedTableBody = document.getElementById('aggregatedTableBody');
-                    if (aggregatedTableBody) {
-                        aggregatedTableBody.innerHTML = '';
-                        const aggregatedData = {};
-
-                        summaryData.forEach(item => {
-                            const key = `${item.Articulo}|${item.Talla}`;
-                            if (!aggregatedData[key]) {
-                                aggregatedData[key] = {
-                                    Articulo: item.Articulo,
-                                    Talla: item.Talla,
-                                    Total_Rellenado: 0
-                                };
-                            }
-                            aggregatedData[key].Total_Rellenado += item.Cantidad_Rellenada;
-                        });
-
-                        Object.values(aggregatedData).forEach(item => {
-                            if (item.Total_Rellenado > 0) {
-                                const row = `<tr>
-                                    <td>${item.Articulo}</td>
-                                    <td>${item.Talla}</td>
-                                    <td>${item.Total_Rellenado}</td>
-                                </tr>`;
-                                aggregatedTableBody.innerHTML += row;
-                            }
-                        });
-                    }
-
-                    // Re-enable the confirm button in case it was disabled from a previous attempt
-                    const confirmBtn = document.getElementById('confirmSaveBtn');
-                    if (confirmBtn) {
-                        confirmBtn.disabled = false;
-                        confirmBtn.innerText = 'Confirmar Guardado';
-                    }
-
-                    $('#summaryModal').modal('show');
-
-                } catch (error) {
-                    alert(error.message);
-                    console.error(error);
                 }
             });
-        }
 
-        // New Confirm Button Listener
-        const confirmSaveBtn = document.getElementById('confirmSaveBtn');
-        if (confirmSaveBtn) {
-            confirmSaveBtn.addEventListener('click', function () {
-                const locale = '{{ app()->getLocale() }}';
+            // Populate aggregated table
+            for (const key in aggregatedData) {
+                const item = aggregatedData[key];
+                const totalDisplay = item.totalRefill > 0 ? `+${item.totalRefill}` : `${item.totalRefill}`;
+                const totalClass = item.totalRefill > 0 ? 'text-success' : (item.totalRefill < 0 ? 'text-danger' : '');
 
-                // Disable button to prevent double submit
-                this.disabled = true;
-                this.innerText = 'Guardando...';
+                const row = `<tr>
+                    <td>${item.codigo}</td>
+                    <td>${item.talla}</td>
+                    <td class="${totalClass}">${totalDisplay}</td>
+                </tr>`;
+                aggregatedTableBody.innerHTML += row;
+            }
 
-                fetch(`/${locale}/operador/update-stock`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ updatedStock: pendingStockUpdate })
-                }).then(response => response.json())
-                    .then(data => {
-                        if (data.message) {
-                            alert('Cambios guardados exitosamente.');
-                            window.location.reload(); // Reload to update UI and reset state
-                        } else {
-                            alert('Hubo un error al guardar los cambios');
-                            // Re-enable button
-                            this.disabled = false;
-                            this.innerText = 'Confirmar Guardado';
-                        }
-                    }).catch(error => {
-                        console.error('Error:', error);
-                        alert('Error de red o servidor.');
-                        this.disabled = false;
-                        this.innerText = 'Confirmar Guardado';
-                    });
+            if (hasChanges) {
+                // Add headers dynamically if needed or ensure they exist in HTML
+                const summaryHeaderRow = document.querySelector('#summaryModal table thead tr');
+                if (summaryHeaderRow.children.length === 0) {
+                    summaryHeaderRow.innerHTML = `
+                        <th>Charola</th>
+                        <th>Selección</th>
+                        <th>Artículo</th>
+                        <th>Talla</th>
+                        <th>Stock Inicial</th>
+                        <th>Stock Final</th>
+                        <th>Rellenado</th>
+                    `;
+                }
+                $('#summaryModal').modal('show');
+            } else {
+                alert('No hay cambios para guardar (no se ha rellenado nada).');
+            }
+        });
+
+        document.getElementById('confirmSaveBtn').addEventListener('click', function () {
+            const cells = document.querySelectorAll('.droppable-cell');
+            const updatedStock = [];
+
+            cells.forEach(cell => {
+                const id = cell.getAttribute('data-id');
+                const stockInput = cell.querySelector('.Stock');
+
+                if (stockInput) {
+                    const stockValue = parseInt(stockInput.value) || 0;
+                    const initialStock = parseInt(stockInput.getAttribute('data-initial-stock')) || 0;
+
+                    // Only add to updatedStock if the value has changed
+                    if (stockValue !== initialStock) {
+                        updatedStock.push({ id: id, stock: stockValue });
+                    }
+                }
             });
-        }
+
+            if (updatedStock.length === 0) {
+                alert('No hay cambios para guardar.');
+                $('#summaryModal').modal('hide');
+                return;
+            }
+
+            fetch('/update-stock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ updatedStock })
+            }).then(response => {
+                if (response.ok) {
+                    $('#summaryModal').modal('hide');
+                    alert('Cambios guardados exitosamente');
+                    // Update initial stock to current stock to prevent double counting if saved again without reload
+                    cells.forEach(cell => {
+                        const stockInput = cell.querySelector('.Stock');
+                        if (stockInput) {
+                            stockInput.setAttribute('data-initial-stock', stockInput.value);
+                        }
+                    });
+                } else {
+                    alert('Hubo un error al guardar los cambios');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Hubo un error al guardar los cambios');
+            });
+        });
     });
-
-    function printSummary() {
-        const printContent = document.getElementById('summaryContent').innerHTML;
-        const originalContent = document.body.innerHTML;
-
-        document.body.innerHTML = `
-            <h1>Resumen de Relleno</h1>
-            ${printContent}
-        `;
-
-        window.print();
-
-        document.body.innerHTML = originalContent;
-        window.location.reload();
-    }
 
     function goBack() {
         window.history.back();
+    }
+
+    function printSummary() {
+        var printContents = document.getElementById('summaryContent').innerHTML;
+        var originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printContents;
+
+        window.print();
+
+        document.body.innerHTML = originalContents;
+        // Re-attach event listeners or reload page to restore functionality
+        location.reload();
     }
 </script>
 @stop

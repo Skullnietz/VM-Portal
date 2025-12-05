@@ -240,6 +240,11 @@
                         }
                     });
 
+                    // Ajustar columnas al mostrar el acordeón
+                    $(`#collapse${index}`).on('shown.bs.collapse', function () {
+                        $(this).find('table').DataTable().columns.adjust().draw();
+                    });
+
                     // Evento para alternar el icono del header al colapsar
                     $('.card-header').on('click', function () {
                         const icon = $(this).find('i.fas.fa-chevron-down, i.fas.fa-chevron-up');

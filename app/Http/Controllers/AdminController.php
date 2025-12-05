@@ -1819,6 +1819,7 @@ class AdminController extends Controller
                 DB::raw('ca.Id_Articulo as Id_Articulo'),
                 DB::raw('ca.Txt_Descripcion as Txt_Descripcion'),
                 DB::raw('ca.Txt_Codigo as Txt_Codigo'),
+                DB::raw('ca.Nombre_Etiqueta as Nombre_Etiqueta'),
                 DB::raw('ca.Txt_Codigo_Cliente as Txt_Codigo_Cliente'),
                 DB::raw('ca.Txt_Estatus as Txt_Estatus'),
                 DB::raw('ca.Tamano_Espiral as Tamano_Espiral'),
@@ -1971,6 +1972,8 @@ class AdminController extends Controller
             'Txt_Codigo' => 'required|string|max:50',
             'Tamano_Espiral' => 'nullable|string|in:Chico,Grande',
             'Capacidad_Espiral' => 'nullable|integer|min:5|max:24',
+            'Nombre_Etiqueta' => 'nullable|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         // Verificar si ya existe un artículo con el mismo Txt_Codigo
@@ -1994,6 +1997,7 @@ class AdminController extends Controller
             'Txt_Codigo' => $request->Txt_Codigo,
             'Tamano_Espiral' => $request->Tamano_Espiral,
             'Capacidad_Espiral' => $request->Capacidad_Espiral,
+            'Nombre_Etiqueta' => $request->Nombre_Etiqueta,
             'Txt_Estatus' => 'Alta',  // El estatus es 'Alta' por defecto
             'Fecha_Alta' => $fechaActual, // Fecha actual
             'Fecha_Modificacion' => null,
@@ -2002,6 +2006,13 @@ class AdminController extends Controller
             'Id_Usuario_Modificacion' => null,
             'Id_Usuario_Baja' => null,
         ]);
+
+        // Manejo de la imagen
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = $request->Txt_Codigo . '.jpg';
+            $image->move(public_path('Images/Catalogo'), $imageName);
+        }
 
         // Retornar respuesta en formato JSON
         return response()->json(['success' => true, 'message' => 'Artículo agregado con éxito']);
@@ -2042,6 +2053,7 @@ class AdminController extends Controller
             'Txt_Codigo' => 'required|string|max:50',
             'Tamano_Espiral' => 'nullable|string|in:Chico,Grande',
             'Capacidad_Espiral' => 'nullable|integer|min:5|max:24',
+            'Nombre_Etiqueta' => 'nullable|string|max:255',
 
         ]);
 
@@ -2051,19 +2063,23 @@ class AdminController extends Controller
             'Txt_Codigo' => $validated['Txt_Codigo'],
             'Tamano_Espiral' => $validated['Tamano_Espiral'],
             'Capacidad_Espiral' => $validated['Capacidad_Espiral'],
+            'Nombre_Etiqueta' => $validated['Nombre_Etiqueta'],
             'Fecha_Modificacion' => now(),
             'Id_Usuario_Modificacion' => 1
         ]);
+
+        // Manejo de la imagen
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = $validated['Txt_Codigo'] . '.jpg';
+            $image->move(public_path('Images/Catalogo'), $imageName);
+        }
 
         return response()->json(['message' => 'Artículo actualizado con éxito']);
     }
 
     public function getVendingsData()
     {
-        // Comprobamos si la sesión está activa
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
 
         // Obtenemos el Id_Usuario_Admon desde la sesión
         $userId = $_SESSION['usuario']->Id_Usuario_Admon;
@@ -2106,25 +2122,7 @@ class AdminController extends Controller
 
 
 
-    public function changeStatusvm(Request $request)
-    {
-        // Utilizamos el Facade DB para hacer la actualización directamente
-        $maquina = DB::table('Ctrl_Mquinas') // Reemplaza 'Maquinas' con el nombre de la tabla correspondiente
-            ->where('Id_Maquina', $request->id_maquina)
-            ->first();
 
-        if ($maquina) {
-            // Cambiamos el estatus entre "Alta" y "Baja"
-            $newStatus = $maquina->Txt_Estatus == 'Alta' ? 'Baja' : 'Alta';
-
-            // Actualizamos el estatus usando DB Facade
-            DB::table('Ctrl_Mquinas')
-                ->where('Id_Maquina', $request->id_maquina)
-                ->update(['Txt_Estatus' => $newStatus]);
-        }
-
-        return response()->json(['status' => 'success', 'new_status' => $newStatus]);
-    }
 
     public function deletevm(Request $request)
     {
@@ -2244,6 +2242,36 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Ocurrió un error al actualizar los datos: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function changeStatusvm(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        try {
+            $id = $request->id_maquina;
+            $newStatus = $request->status;
+            $usuarioModificador = $_SESSION['usuario']->Id_Usuario_Admon;
+
+            // Validar que el estatus sea válido
+            if (!in_array($newStatus, ['Alta', 'Baja'])) {
+                return response()->json(['success' => false, 'message' => 'Estatus inválido.'], 400);
+            }
+
+            // Actualizar el estatus en la base de datos
+            DB::table('Ctrl_Mquinas')
+                ->where('Id_Maquina', $id)
+                ->update([
+                    'Txt_Estatus' => $newStatus,
+                    'Fecha_Modificacion' => now(),
+                    'Id_Usuario_Admon_Modificacion' => $usuarioModificador,
+                ]);
+
+            return response()->json(['success' => true, 'message' => 'Estatus actualizado correctamente.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al actualizar el estatus: ' . $e->getMessage()], 500);
         }
     }
 
@@ -2471,39 +2499,46 @@ class AdminController extends Controller
             }
         }
 
-        foreach ($updatedStock as $stock) {
-            $config = DB::table('Configuracion_Maquina')
-                ->where('Id_Configuracion', $stock['id'])
-                ->first();
-
-            if ($config) {
-                $cantidadAnterior = $config->Stock;
-                $cantidadNueva = $stock['stock'];
-                $cantidadRellenada = $cantidadNueva - $cantidadAnterior;
-
-                if ($cantidadRellenada > 0) {
-                    DB::table('Historial_Relleno')->insert([
-                        'Id_Configuracion' => $config->Id_Configuracion,
-                        'Id_Maquina' => $config->Id_Maquina,
-                        'Id_Articulo' => $config->Id_Articulo,
-                        'Cantidad_Anterior' => $cantidadAnterior,
-                        'Cantidad_Rellenada' => $cantidadRellenada,
-                        'Cantidad_Nueva' => $cantidadNueva,
-                        'Fecha_Relleno' => now(),
-                        'Id_Usuario' => $userId,
-                        'Tipo_Usuario' => $userType,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-
-                DB::table('Configuracion_Maquina')
+        DB::beginTransaction();
+        try {
+            foreach ($updatedStock as $stock) {
+                $config = DB::table('Configuracion_Maquina')
                     ->where('Id_Configuracion', $stock['id'])
-                    ->update(['Stock' => $stock['stock']]);
-            }
-        }
+                    ->first();
 
-        return response()->json(['message' => 'Stock actualizado correctamente']);
+                if ($config) {
+                    $cantidadAnterior = $config->Stock;
+                    $cantidadNueva = $stock['stock'];
+                    $cantidadRellenada = $cantidadNueva - $cantidadAnterior;
+
+                    if ($cantidadRellenada > 0) {
+                        DB::table('Historial_Relleno')->insert([
+                            'Id_Configuracion' => $config->Id_Configuracion,
+                            'Id_Maquina' => $config->Id_Maquina,
+                            'Id_Articulo' => $config->Id_Articulo,
+                            'Cantidad_Anterior' => $cantidadAnterior,
+                            'Cantidad_Rellenada' => $cantidadRellenada,
+                            'Cantidad_Nueva' => $cantidadNueva,
+                            'Fecha_Relleno' => now(),
+                            'Id_Usuario' => $userId,
+                            'Tipo_Usuario' => $userType,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    DB::table('Configuracion_Maquina')
+                        ->where('Id_Configuracion', $stock['id'])
+                        ->update(['Stock' => $stock['stock']]);
+                }
+            }
+            DB::commit();
+            return response()->json(['message' => 'Stock actualizado correctamente']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating stock: ' . $e->getMessage());
+            return response()->json(['message' => 'Error al actualizar el stock', 'error' => $e->getMessage()], 500);
+        }
     }
 
 
