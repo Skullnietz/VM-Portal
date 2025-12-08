@@ -15,7 +15,7 @@ class NotificationController extends Controller
 
         if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
             $plantaId = $_SESSION['usuario']->Id_Planta;
-            
+
             $notifications = DB::table('vending_notifications')
                 ->where('Id_Planta', $plantaId)
                 ->whereNull('read_at')
@@ -36,7 +36,7 @@ class NotificationController extends Controller
 
         if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
             $plantaId = $_SESSION['usuario']->Id_Planta;
-            
+
             $unreadNotifications = DB::table('vending_notifications')
                 ->where('Id_Planta', $plantaId)
                 ->whereNull('read_at')
@@ -67,5 +67,46 @@ class NotificationController extends Controller
         } else {
             return response()->json(['error' => 'Sesión de administrador.'], 403);
         }
+    }
+
+    public function renderList()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+            $plantaId = $_SESSION['usuario']->Id_Planta;
+
+            $unreadNotifications = DB::table('vending_notifications')
+                ->where('Id_Planta', $plantaId)
+                ->whereNull('read_at')
+                ->orderBy('Fecha', 'desc')
+                ->get();
+
+            return view('cliente.partials.notificaciones_list', compact('unreadNotifications'));
+        }
+
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    public function markAllAsRead()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+            $plantaId = $_SESSION['usuario']->Id_Planta;
+
+            DB::table('vending_notifications')
+                ->where('Id_Planta', $plantaId)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['error' => 'Unauthorized'], 401);
     }
 }

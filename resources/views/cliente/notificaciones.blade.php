@@ -6,105 +6,172 @@
 @section('title', __('Notificaciones'))
 
 @section('content_header')
-    <div class="container">
-        <div class="row">
-            <div class=" col-md-9 col-9">
-                <h4><a href="#" onclick="goBack()" class="border rounded">&nbsp;<i
-                            class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Notificaciones') }}</h4>
-            </div>
-            <div class="col-md-3 col-3 ml-auto">
-            </div>
-
-
+<div class="container-fluid">
+    <div class="row mb-2">
+        <div class="col-sm-6">
+            <h1>
+                <a href="#" onclick="goBack()" class="btn btn-outline-secondary btn-sm rounded-circle mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                {{ __('Mis Notificaciones') }}
+            </h1>
+        </div>
+        <div class="col-sm-6 text-right">
+            <button id="mark-all-read" class="btn btn-success btn-sm shadow-sm">
+                <i class="fas fa-check-double mr-1"></i> Marcar todo como leído
+            </button>
         </div>
     </div>
+</div>
 @stop
 
 @section('content')
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                <div class="card">
-
-                    <div class="card-header">
-                        <h5 class="card-title">
-                        Todas las Notificaciones
-                        </h5>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-tool dropdown-toggle" data-toggle="dropdown">
-                                    <i class="fas fa-wrench"></i>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right" role="menu">
-                                    <a href="#" class="dropdown-item">Action</a>
-                                    <a href="#" class="dropdown-item">Another action</a>
-                                    <a href="#" class="dropdown-item">Something else here</a>
-                                    <a class="dropdown-divider"></a>
-                                    <a href="#" class="dropdown-item">Separated link</a>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow card-primary card-outline">
+                <div class="card-header border-0">
+                    <h3 class="card-title">
+                        <i class="fas fa-bell mr-1"></i>
+                        Últimas Notificaciones
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-warning" id="notification-count">Actualizando...</span>
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
                     </div>
-                    
-                    <div class="card-body">
-                    <div class="container">
-        @foreach($unreadNotifications as $notification)
-            <div class="alert alert-info">
-                <p>{{ $notification->Txt_Nombre }} error.</p>
-                <p><small>Dia: {{ \Carbon\Carbon::parse($notification->Fecha)->format('d-m-Y') }} | Hora: {{ \Carbon\Carbon::parse($notification->Fecha)->format('H:i') }}</small></p>
-                <p><small>Mensaje: {{$notification->description}}</small></p>
-                <button class="btn btn-primary mark-as-read" data-id="{{ $notification->id }}">Marcar como leída</button>
-            </div>
-        @endforeach
-    </div>
-                    </div>
+                </div>
+
+                <div class="card-body p-0" id="notifications-container">
+                    @include('cliente.partials.notificaciones_list')
+                </div>
+
+                <div class="card-footer text-center text-muted">
+                    <small>Las notificaciones se actualizan automáticamente.</small>
                 </div>
             </div>
         </div>
     </div>
-@stop
-
-@section('right-sidebar')
+</div>
 @stop
 
 @section('css')
+<style>
+    .notification-item {
+        transition: background-color 0.2s;
+        border-left: 4px solid transparent;
+    }
+
+    .notification-item:hover {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+    }
+</style>
 @stop
 
 @section('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function () {
-        $(".mark-as-read").click(function () {
-            let notificationId = $(this).data("id");
+        // Function to reload the notification list
+        function loadNotifications() {
+            $.ajax({
+                url: "{{ route('notifications.renderList') }}",
+                type: "GET",
+                success: function (data) {
+                    $('#notifications-container').html(data);
+                    updateCount();
+                },
+                error: function () {
+                    console.log("Error actualizando notificaciones.");
+                }
+            });
+        }
+
+        function updateCount() {
+            // Simple count update based on list items, or could be passed from backend
+            let count = $('#notifications-container .list-group-item').length;
+            if (count > 0) {
+                $('#notification-count').text(count).removeClass('badge-secondary').addClass('badge-warning').show();
+                $('#mark-all-read').show();
+            } else {
+                $('#notification-count').hide();
+                $('#mark-all-read').hide();
+            }
+        }
+
+        // Auto-refresh every 10 seconds
+        setInterval(loadNotifications, 10000);
+        updateCount(); // Initial check
+
+        // Mark single as read
+        $(document).on('click', '.mark-as-read', function () {
+            let notification Id = $(this).data("id");
             let button = $(this);
+            let item = button.closest(".list-group-item");
+
+            // Optimistic UI update
+            item.fadeOut("fast", function () {
+                $(this).rem ove();
+                updateCount();
+            });
 
             $.ajax({
                 url: "{{ route('markNotificationAsRead', '') }}/" + notificationId,
                 type: "GET",
-                success: function () {
-                    button.closest(".alert").fadeOut("slow", function() {
-                        $(this).remove();
-                    });
-                },
                 error: function () {
-                    alert("Hubo un error al marcar la notificación como leída.");
+                    // Revert if error (simplified, usually reload)
+                    alert("No se pudo marcar como leída.");
+                    loadNotifications();
                 }
             });
         });
+
+        // Mark ALL as read
+        $('#mark-all-read').click(function () {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esto marcará todas tus notificaciones como leídas.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, marcar todo',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ route('notifications.markAllRead') }}",
+                        type: "POST", // Changed to POST as per good practice
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire(
+                                    '¡Listo!',
+                                    'Todas las notificaciones han sido marcadas como leídas.',
+                                    'success'
+                                );
+                                loadNotifications(); // Refresh to show empty state
+                            }
+                        },
+                        error: function () {
+                            Swal.fire(
+                                'Error',
+                                'Hubo un problema al procesar la solicitud.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            })
+        });
     });
-</script>
-<script>
+
     function goBack() {
-      window.history.back();
+        window.history.back();
     }
 </script>
 @stop
-
-

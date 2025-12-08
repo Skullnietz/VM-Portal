@@ -304,6 +304,8 @@ Route::group(['middleware' => 'checkSession'], function () {
 
     Route::get('/notifications/unread', [NotificationController::class, 'showNotifications'])->name('getUnreadNotifications');
     Route::get('/mark-notification-as-read/{id}', [NotificationController::class, 'markAsRead'])->name('markNotificationAsRead');
+    Route::get('/notifications/render-list', [NotificationController::class, 'renderList'])->name('notifications.renderList');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
 
     ////////////////////////////////////     OPERADORES    ///////////////////////////////
     Route::get('op/vendings/data', [OperadorController::class, 'getVendingsData'])->name('vendings.data');
