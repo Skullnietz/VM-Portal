@@ -2848,4 +2848,21 @@ class AdminController extends Controller
             ob_end_clean();
         return Excel::download(new \App\Exports\MissingItemsExport($id), 'faltantes_vending_' . $id . '.xlsx');
     }
+
+    public function getMaquinasList(Request $request)
+    {
+        $search = $request->input('search');
+
+        $query = DB::table('Ctrl_Mquinas')
+            ->select('Id_Maquina', 'Txt_Nombre');
+
+        if ($search) {
+            $query->where('Txt_Nombre', 'LIKE', "%{$search}%")
+                ->orWhere('Txt_Serie_Maquina', 'LIKE', "%{$search}%");
+        }
+
+        $maquinas = $query->limit(20)->get();
+
+        return response()->json($maquinas);
+    }
 }

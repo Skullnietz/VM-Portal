@@ -78,12 +78,24 @@
                                                                 </div>
                                                                 <label class="d-block text-center small text-muted mb-1">Stock
                                                                     Actual</label>
-                                                                <input type="number" class="form-control form-control-sm Stock"
-                                                                    value="{{ $seleccion->Stock ?? '' }}"
-                                                                    data-initial-stock="{{ $seleccion->Stock ?? 0 }}"
-                                                                    placeholder="Stock Actual"
-                                                                    min="{{ $seleccion->Cantidad_Min ?? 0 }}"
-                                                                    max="{{ $seleccion->Cantidad_Max ?? 0 }}">
+                                                                <div class="input-group input-group-sm">
+                                                                    <div class="input-group-prepend">
+                                                                        <button class="btn btn-outline-danger btn-decrement" type="button">
+                                                                            <i class="fas fa-minus"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                    <input type="number" class="form-control text-center Stock"
+                                                                        value="{{ $seleccion->Stock ?? 0 }}"
+                                                                        data-initial-stock="{{ $seleccion->Stock ?? 0 }}"
+                                                                        placeholder="0"
+                                                                        min="0"
+                                                                        max="{{ $seleccion->Cantidad_Max ?? 0 }}">
+                                                                    <div class="input-group-append">
+                                                                        <button class="btn btn-outline-success btn-increment" type="button">
+                                                                            <i class="fas fa-plus"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </form>
                                                     </div>
@@ -261,11 +273,54 @@
         updateStockColors();
 
         // Escuchar cambios en los inputs de stock
+        // Escuchar cambios en los inputs de stock
         document.querySelectorAll('.Stock').forEach(input => {
-            input.addEventListener('input', function () {
-                if (this.value < 0) this.value = 0;
+            input.addEventListener('input', function() {
+                let val = parseInt(this.value);
+                const max = parseInt(this.getAttribute('max')) || 9999;
+                
+                if (isNaN(val) || val < 0) {
+                    this.value = 0;
+                } else if (val > max) {
+                    this.value = max;
+                }
                 updateStockColors();
             });
+            input.addEventListener('blur', function() {
+                if (this.value === '') {
+                    this.value = 0;
+                    updateStockColors();
+                }
+            });
+        });
+
+        // Event delegation for +/- buttons
+        document.addEventListener('click', function(e) {
+            const btnDecrement = e.target.closest('.btn-decrement');
+            const btnIncrement = e.target.closest('.btn-increment');
+
+            if (btnDecrement) {
+                const input = btnDecrement.closest('.input-group').querySelector('.Stock');
+                if (input) {
+                    let value = parseInt(input.value) || 0;
+                    if (value > 0) {
+                        input.value = value - 1;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
+
+            if (btnIncrement) {
+                const input = btnIncrement.closest('.input-group').querySelector('.Stock');
+                if (input) {
+                    let value = parseInt(input.value) || 0;
+                    const max = parseInt(input.getAttribute('max')) || 9999;
+                    if (value < max) {
+                        input.value = value + 1;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
         });
 
         // Colorear badges de talla

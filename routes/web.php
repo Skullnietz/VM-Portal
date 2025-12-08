@@ -196,6 +196,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::post('/dispositivos/get', [AdminController::class, 'getDispositivos'])->name('dispositivos.get');
     Route::post('/dispositivos/store', [AdminController::class, 'storeDispositivo'])->name('dispositivos.store');
     Route::get('/dispositivos/{id}', [AdminController::class, 'showDispositivo'])->name('dispositivos.show'); // Para obtener datos del dispositivo
+    Route::post('/maquinas/list', [AdminController::class, 'getMaquinasList'])->name('maquinas.list');
 
     // ALERTAS
     Route::post('/allalertas', [AdminController::class, 'getConfiguracionesReportes'])->name('alertas.get');

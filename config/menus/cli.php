@@ -36,12 +36,6 @@ return[
             'icon_color' => 'cyan',
             'url' => '/cli/permisos-cli',
         ],
-        [
-            'text' => ' Alertas',
-            'icon' => 'fas fa-exclamation-triangle',
-            'icon_color' => 'cyan',
-            'url' => '/cli/reportes/configurar',
-        ],
         ['header' => 'REPORTES'],
         [
             'text' => 'Consumos',
@@ -65,19 +59,6 @@ return[
                     'url' => '/cli/reporte/consumoxvending',
                 ],
                 
-            ]
-        ],
-        [
-            'text' => 'Vendings',
-            'url' => 'admin/settings',
-            'icon_color' => 'green',
-            'icon' => 'fas fa-fw fa-building',
-            'submenu' => [
-                [
-                    'text' => 'Inventario Vendings',
-                    'icon_color' => 'green',
-                    'url' => '/cli/reporte/inventariovm',
-                ],
             ]
         ],
         [

@@ -40,63 +40,76 @@
                                     <h2>Charola {{ $charola }}</h2>
                                 </div>
                                 <div class="card-body">
-                                <div class="d-flex flex-nowrap overflow-auto">
-                                    @foreach ($selecciones as $seleccion)
-                                        @if(!empty($seleccion->Id_Articulo))
-                                            <div class="droppable-cell m-1 border rounded p-2" style="flex: 0 0 auto;"
-                                                data-id="{{ $seleccion->Id_Configuracion ?? '' }}"
-                                                data-charola="{{ $seleccion->Num_Charola ?? 'N/A' }}"
-                                                data-seleccion="{{ $seleccion->Seleccion ?? 'N/A' }}">
-                                                <div class="mb-2">
-                                                    <!-- Contenido visible cuando hay un artículo -->
-                                                    <div class="contenido-seleccion">
-                                                        <div class="articulo-container">
-                                                            <img src="/Images/Catalogo/{{ $seleccion->Txt_Codigo ?? '' }}.jpg"
-                                                                onerror="this.src='/Images/product.png'" alt="Imagen Artículo"
-                                                                class="img-fluid mb-2 ImgArticulo" style="max-height: 100px;">
-                                                            <p class="mb-1 font-weight-bold">{{ $seleccion->Txt_Codigo ?? '' }}</p>
-                                                            <p class="small text-muted">{{ $seleccion->Txt_Descripcion ?? '' }}</p>
-                                                            @if(!empty($seleccion->Talla))
-                                                                <div class="mt-1">
-                                                                    <span class="badge badge-pill talla-badge"
-                                                                        data-talla="{{ $seleccion->Talla }}">Talla:
-                                                                        {{ $seleccion->Talla }}</span>
+                                    <div class="d-flex flex-nowrap overflow-auto">
+                                        @foreach ($selecciones as $seleccion)
+                                            @if(!empty($seleccion->Id_Articulo))
+                                                <div class="droppable-cell m-1 border rounded p-2" style="flex: 0 0 auto;"
+                                                    data-id="{{ $seleccion->Id_Configuracion ?? '' }}"
+                                                    data-charola="{{ $seleccion->Num_Charola ?? 'N/A' }}"
+                                                    data-seleccion="{{ $seleccion->Seleccion ?? 'N/A' }}">
+                                                    <div class="mb-2">
+                                                        <!-- Contenido visible cuando hay un artículo -->
+                                                        <div class="contenido-seleccion">
+                                                            <div class="articulo-container">
+                                                                <img src="/Images/Catalogo/{{ $seleccion->Txt_Codigo ?? '' }}.jpg"
+                                                                    onerror="this.src='/Images/product.png'" alt="Imagen Artículo"
+                                                                    class="img-fluid mb-2 ImgArticulo" style="max-height: 100px;">
+                                                                <p class="mb-1 font-weight-bold">{{ $seleccion->Txt_Codigo ?? '' }}</p>
+                                                                <p class="small text-muted">{{ $seleccion->Txt_Descripcion ?? '' }}</p>
+                                                                @if(!empty($seleccion->Talla))
+                                                                    <div class="mt-1">
+                                                                        <span class="badge badge-pill talla-badge"
+                                                                            data-talla="{{ $seleccion->Talla }}">Talla:
+                                                                            {{ $seleccion->Talla }}</span>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="stock-container">
+                                                            <form>
+                                                                <input type="hidden" class="IdArticulo"
+                                                                    value="{{ $seleccion->Id_Articulo }}">
+                                                                <div class="form-group">
+                                                                    <div class="text-center mb-2">
+                                                                        <span class="badge badge-warning p-2"
+                                                                            style="font-size: 0.9em;">Max:
+                                                                            {{ $seleccion->Cantidad_Max ?? 0 }}</span>
+                                                                    </div>
+                                                                    <label class="d-block text-center small text-muted mb-1">Stock
+                                                                        Actual</label>
+                                                                    <div class="input-group input-group-sm">
+                                                                        <div class="input-group-prepend">
+                                                                            <button class="btn btn-outline-danger btn-decrement"
+                                                                                type="button">
+                                                                                <i class="fas fa-minus"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                        <input type="number" class="form-control text-center Stock"
+                                                                            value="{{ $seleccion->Stock ?? 0 }}"
+                                                                            data-initial-stock="{{ $seleccion->Stock ?? 0 }}"
+                                                                            placeholder="0" min="0"
+                                                                            max="{{ $seleccion->Cantidad_Max ?? 0 }}">
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn btn-outline-success btn-increment"
+                                                                                type="button">
+                                                                                <i class="fas fa-plus"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            @endif
+                                                            </form>
                                                         </div>
                                                     </div>
-
-                                                    <div class="stock-container">
-                                                        <form>
-                                                            <input type="hidden" class="IdArticulo"
-                                                                value="{{ $seleccion->Id_Articulo }}">
-                                                            <div class="form-group">
-                                                                <div class="text-center mb-2">
-                                                                    <span class="badge badge-warning p-2"
-                                                                        style="font-size: 0.9em;">Max:
-                                                                        {{ $seleccion->Cantidad_Max ?? 0 }}</span>
-                                                                </div>
-                                                                <label class="d-block text-center small text-muted mb-1">Stock
-                                                                    Actual</label>
-                                                                <input type="number" class="form-control form-control-sm Stock"
-                                                                    value="{{ $seleccion->Stock ?? '' }}"
-                                                                    data-initial-stock="{{ $seleccion->Stock ?? 0 }}"
-                                                                    placeholder="Stock Actual"
-                                                                    min="{{ $seleccion->Cantidad_Min ?? 0 }}"
-                                                                    max="{{ $seleccion->Cantidad_Max ?? 0 }}">
-                                                            </div>
-                                                        </form>
+                                                    <div class="mt-2 p-1 bg-dark text-white text-center font-weight-bold rounded">
+                                                        {{ $seleccion->Seleccion }}
                                                     </div>
                                                 </div>
-                                                <div class="mt-2 p-1 bg-dark text-white text-center font-weight-bold rounded">
-                                                    {{ $seleccion->Seleccion }}
-                                                </div>
-                                            </div>
-                                        @endif
-                                    @endforeach
+                                            @endif
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         </div>
                     @endforeach
 
@@ -263,11 +276,54 @@
         updateStockColors();
 
         // Escuchar cambios en los inputs de stock
+        // Escuchar cambios en los inputs de stock
         document.querySelectorAll('.Stock').forEach(input => {
-            input.addEventListener('input', function() {
-                if (this.value < 0) this.value = 0;
+            input.addEventListener('input', function () {
+                let val = parseInt(this.value);
+                const max = parseInt(this.getAttribute('max')) || 9999;
+
+                if (isNaN(val) || val < 0) {
+                    this.value = 0;
+                } else if (val > max) {
+                    this.value = max;
+                }
                 updateStockColors();
             });
+            input.addEventListener('blur', function () {
+                if (this.value === '') {
+                    this.value = 0;
+                    updateStockColors();
+                }
+            });
+        });
+
+        // Event delegation for +/- buttons
+        document.addEventListener('click', function (e) {
+            const btnDecrement = e.target.closest('.btn-decrement');
+            const btnIncrement = e.target.closest('.btn-increment');
+
+            if (btnDecrement) {
+                const input = btnDecrement.closest('.input-group').querySelector('.Stock');
+                if (input) {
+                    let value = parseInt(input.value) || 0;
+                    if (value > 0) {
+                        input.value = value - 1;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
+
+            if (btnIncrement) {
+                const input = btnIncrement.closest('.input-group').querySelector('.Stock');
+                if (input) {
+                    let value = parseInt(input.value) || 0;
+                    const max = parseInt(input.getAttribute('max')) || 9999;
+                    if (value < max) {
+                        input.value = value + 1;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
         });
 
         // Colorear badges de talla
