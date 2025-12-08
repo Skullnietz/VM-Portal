@@ -22,7 +22,8 @@
                     Descarga .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-download"></i>
                 </a>
                 <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#uploadCsvModal">
-                    Subida .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i class="fas fa-cloud-upload-alt"></i>
+                    Subida .CSV &nbsp;&nbsp;&nbsp;<i class="fas fa-file-csv"></i> <i
+                        class="fas fa-cloud-upload-alt"></i>
                 </button>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addEmployeeModal">
                     Agregar Empleado &nbsp;&nbsp;&nbsp;<i class="fas fa-user-plus"></i>
@@ -37,251 +38,256 @@
 @stop
 
 @section('content')
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Administrador de Empleados</h5>
-                        <div class="card-tools">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Administrador de Empleados</h5>
+                    <div class="card-tools">
                         <div class="btn-group">
-                        <label for="estatusFilter" class="mr-2 mb-0">Filtrar por estatus:</label>
-                        <span id="estatusIndicator" class="estatus-light bg-success"></span>
-                        <select id="estatusFilter" class="form-control mr-2" style="width: 200px; margin-left: 5px;">
-                            <option value="Alta" selected>Altas</option>
-                            <option value="Baja">Bajas</option>
-                            <option value="">Todos</option>
-                        </select>
-                        
-                            </div>
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            
-                            <button type="button" class="btn btn-tool" data-card-widget="remove">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <table id="empleados-table" class="table table-striped table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>No. empleado</th>
-                                    <th>NIP</th>
-                                    <th>Tarjeta</th>
-                                    <th>Nombre</th>
-                                    <th>Apellido Paterno</th>
-                                    <th>Apellido Materno</th>
-                                    <th>Área</th>
-                                    <th>Permisos producto</th>
-                                    <th>Editar</th>
-                                    <th>Borrar</th>
-                                    <th>Estatus</th>
-                                    <th>Última modificación</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Editar Empleado</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Campo oculto para el ID -->
-                    <input type="hidden" id="editId" name="id">
-                    <form id="editForm">
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-key"></i>&nbsp;&nbsp;| NIP
-                                    </span>
-                                </div>
-                                <input type="number" class="form-control" id="nip" name="nip" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta
-                                    </span>
-                                </div>
-                                <input type="number" class="form-control" id="notarjeta" name="notarjeta">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre
-                                    </span>
-                                </div>
-                                <input type="text" class="form-control" id="nombre" name="nombre" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno
-                                    </span>
-                                </div>
-                                <input type="text" class="form-control" id="apaterno" name="apaterno" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno
-                                    </span>
-                                </div>
-                                <input type="text" class="form-control" id="amaterno" name="amaterno">
-                            </div>
-                        </div>
-                        <div class="form-group"> 
-                            <label for="area">
-                                <i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de Producto
-                            </label>
-                            <select class="form-control" id="area" name="area" required>
-                                <!-- Opciones se llenarán con JavaScript -->
+                            <label for="estatusFilter" class="mr-2 mb-0">Filtrar por estatus:</label>
+                            <span id="estatusIndicator" class="estatus-light bg-success"></span>
+                            <select id="estatusFilter" class="form-control mr-2"
+                                style="width: 200px; margin-left: 5px;">
+                                <option value="Alta" selected>Altas</option>
+                                <option value="Baja">Bajas</option>
+                                <option value="">Todos</option>
                             </select>
+
                         </div>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Guardar cambios</button>
-                        </div>
-                    </form>
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table id="empleados-table" class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>No. empleado</th>
+                                <th>NIP</th>
+                                <th>Tarjeta</th>
+                                <th>Nombre</th>
+                                <th>Apellido Paterno</th>
+                                <th>Apellido Materno</th>
+                                <th>Área</th>
+                                <th>Permisos producto</th>
+                                <th>Editar</th>
+                                <th>Borrar</th>
+                                <th>Estatus</th>
+                                <th>Última modificación</th>
+                            </tr>
+                        </thead>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Upload CSV Modal -->
-    <div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="uploadCsvModalLabel">Subir archivo CSV</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <form action="{{ url('import-csv-employees') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="csvFile">Selecciona el archivo CSV</label>
-                            <input type="file" class="form-control" id="csvFile" name="csv_file" required>
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Editar Empleado</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Campo oculto para el ID -->
+                <input type="hidden" id="editId" name="id">
+                <form id="editForm">
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-key"></i>&nbsp;&nbsp;| NIP
+                                </span>
+                            </div>
+                            <input type="number" class="form-control" id="nip" name="nip" required>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Subir</button>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta
+                                </span>
+                            </div>
+                            <input type="number" class="form-control" id="notarjeta" name="notarjeta">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre
+                                </span>
+                            </div>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno
+                                </span>
+                            </div>
+                            <input type="text" class="form-control" id="apaterno" name="apaterno" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno
+                                </span>
+                            </div>
+                            <input type="text" class="form-control" id="amaterno" name="amaterno">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="area">
+                            <i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de
+                            Producto
+                        </label>
+                        <select class="form-control" id="area" name="area" required>
+                            <!-- Opciones se llenarán con JavaScript -->
+                        </select>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal para agregar empleado -->
-    <div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addEmployeeModalLabel">Agregar Empleado</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
+<!-- Upload CSV Modal -->
+<div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadCsvModalLabel">Subir archivo CSV</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ url('import-csv-employees') }}" method="POST" enctype="multipart/form-data">
+                @csrf
                 <div class="modal-body">
-                    <form id="addEmployeeForm">
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-id-card-alt"></i>&nbsp;&nbsp;| N° Empleado
-                                    </span>
-                                </div>
-                                <input type="number" class="form-control" id="no_empleado" name="no_empleado" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-key"></i>&nbsp;&nbsp;| NIP
-                                    </span>
-                                </div>
-                                <input type="number" class="form-control" id="nip" name="nip">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta
-                                    </span>
-                                </div>
-                                <input type="number" class="form-control" id="no_tarjeta" name="no_tarjeta">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre
-                                    </span>
-                                </div>
-                                <input type="text" class="form-control" id="nombre" name="nombre" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno
-                                    </span>
-                                </div>
-                                <input type="text" class="form-control" id="apaterno" name="apaterno" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text input-group-text-fixed">
-                                        <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno
-                                    </span>
-                                </div>
-                                <input type="text" class="form-control" id="amaterno" name="amaterno">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="area">
-                                <i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de Producto
-                            </label>
-                            <select id="addArea" name="area" required></select>
-                        </div>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Agregar</button>
-                        </div>
-                    </form>
+                    <div class="form-group">
+                        <label for="csvFile">Selecciona el archivo CSV</label>
+                        <input type="file" class="form-control" id="csvFile" name="csv_file" required>
+                    </div>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Subir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar empleado -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEmployeeModalLabel">Agregar Empleado</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addEmployeeForm">
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-id-card-alt"></i>&nbsp;&nbsp;| N° Empleado
+                                </span>
+                            </div>
+                            <input type="number" class="form-control" id="no_empleado" name="no_empleado" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-key"></i>&nbsp;&nbsp;| NIP
+                                </span>
+                            </div>
+                            <input type="number" class="form-control" id="nip" name="nip">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-address-card"></i>&nbsp;&nbsp;| ID Tarjeta
+                                </span>
+                            </div>
+                            <input type="number" class="form-control" id="no_tarjeta" name="no_tarjeta">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-user"></i>&nbsp;&nbsp;| Nombre
+                                </span>
+                            </div>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Paterno
+                                </span>
+                            </div>
+                            <input type="text" class="form-control" id="apaterno" name="apaterno" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text input-group-text-fixed">
+                                    <i class="fas fa-user"></i>&nbsp;&nbsp;| Apellido Materno
+                                </span>
+                            </div>
+                            <input type="text" class="form-control" id="amaterno" name="amaterno">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="area">
+                            <i class="fas fa-warehouse"></i>&nbsp;&nbsp;&nbsp;Área &nbsp;| &nbsp;&nbsp;Permisos de
+                            Producto
+                        </label>
+                        <select id="addArea" name="area" required></select>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Agregar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 @stop
 
 @section('right-sidebar')
@@ -320,27 +326,46 @@
     }
 
     @keyframes blink-success {
-        0%, 100% { background-color: #28a745; }
-        50% { background-color: #1e7e34; }
+
+        0%,
+        100% {
+            background-color: #28a745;
+        }
+
+        50% {
+            background-color: #1e7e34;
+        }
     }
 
     @keyframes blink-danger {
-        0%, 100% { background-color: #dc3545; }
-        50% { background-color: #a71d2a; }
+
+        0%,
+        100% {
+            background-color: #dc3545;
+        }
+
+        50% {
+            background-color: #a71d2a;
+        }
     }
+
     .input-group-text-fixed {
         min-width: 160px;
         text-align: center;
     }
+
     /* Ajustes para dispositivos móviles */
     @media (max-width: 576px) {
         .input-group-text-fixed {
             min-width: 120px;
             font-size: 0.9rem;
         }
-        .btn-group a, .btn-group button {
+
+        .btn-group a,
+        .btn-group button {
             margin-bottom: 5px;
         }
+
         /* Asegura que los inputs de DataTables se adapten al ancho */
         .dataTables_wrapper .dataTables_filter input,
         .dataTables_wrapper .dataTables_length select {
@@ -400,18 +425,18 @@
 </script>
 <script>
     $.ajaxSetup({
-    headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-    }
-});
-    $(document).ready(function() {
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+    $(document).ready(function () {
         var table = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
             ajax: {
                 url: '{{ url("empleados/data") }}',
                 type: 'POST',
-                data: function(d) {
+                data: function (d) {
                     d.estatus = $('#estatusFilter').val(); // envía el filtro
                     d._token = '{{ csrf_token() }}'; // muy importante
                 }
@@ -427,28 +452,29 @@
                 {
                     data: null,
                     name: 'Permisos',
-                    render: function(data, type, row) {
-                        return `<a href="/cli/areas/permissions/${row.Id_Area}" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>`;
+                    render: function (data, type, row) {
+                        return `<a href="/cli/areas/permissions/${row.Id_Area}" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>
+                                <a href="{{ route('consultasconsumo.index', ['language' => app()->getLocale()]) }}?employee_id=${row.No_Empleado}" class="btn btn-xs btn-primary ml-1">Consumos <i class="fas fa-chart-bar"></i></a>`;
                     }
                 },
                 {
                     data: null,
                     name: 'Editar',
-                    render: function(data, type, row) {
+                    render: function (data, type, row) {
                         return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${row.Nombre}" data-apaterno="${row.APaterno}" data-amaterno="${row.AMaterno}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
                     }
                 },
                 {
                     data: null,
                     name: 'Eliminar',
-                    render: function(data, type, row) {
+                    render: function (data, type, row) {
                         return `<button class="btn btn-xs btn-danger" onclick="confirmDelete(${row.Id_Empleado}, '${row.Nombre} ${row.APaterno} ${row.AMaterno}')">Eliminar <i class="fas fa-trash"></i></button>`;
                     }
                 },
                 {
-                    data: 'Txt_Estatus', 
+                    data: 'Txt_Estatus',
                     name: 'Txt_Estatus',
-                    render: function(data, type, row) {
+                    render: function (data, type, row) {
                         var btnClass = row.Txt_Estatus === 'Alta' ? 'btn-danger' : 'btn-success';
                         var btnText = row.Txt_Estatus === 'Alta' ? 'Desactivar <i class="fas fa-lock"></i>' : '&nbsp;&nbsp;Activar&nbsp;&nbsp; <i class="fas fa-lock-open"></i>';
                         return `<button class="btn btn-xs ${btnClass}" onclick="toggleStatus(${row.Id_Empleado})">${btnText}</button>`;
@@ -481,23 +507,23 @@
             }
         });
 
-        window.toggleStatus = function(employeeId) {
+        window.toggleStatus = function (employeeId) {
             $.ajax({
                 url: `/empleado/toggle-status/${employeeId}`,
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}'
                 },
-                success: function(response) {
+                success: function (response) {
                     table.ajax.reload(null, false);
                 },
-                error: function() {
+                error: function () {
                     alert('Error al cambiar el estado del empleado.');
                 }
             });
         };
 
-        window.confirmDelete = function(employeeId, employeeName) {
+        window.confirmDelete = function (employeeId, employeeName) {
             Swal.fire({
                 title: '¿Estás seguro?',
                 text: `Se eliminará al empleado : [${employeeName}] `,
@@ -512,11 +538,11 @@
                     $.ajax({
                         url: `/empleado/delete/${employeeId}`,
                         method: 'GET',
-                        success: function(response) {
+                        success: function (response) {
                             table.ajax.reload(null, false);
                             Swal.fire('Eliminado!', `El empleado ${employeeName} ha sido eliminado.`, 'success');
                         },
-                        error: function() {
+                        error: function () {
                             Swal.fire('Error!', 'Hubo un problema al eliminar el empleado.', 'error');
                         }
                     });
@@ -524,15 +550,15 @@
             });
         };
 
-        
 
-        $('#addEmployeeForm').on('submit', function(e) {
+
+        $('#addEmployeeForm').on('submit', function (e) {
             e.preventDefault();
             $.ajax({
                 url: '/empleado/add',
                 method: 'POST',
                 data: $(this).serialize(),
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         $('#addEmployeeModal').modal('hide');
                         table.ajax.reload();
@@ -549,7 +575,7 @@
                         });
                     }
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     var errors = xhr.responseJSON.errors;
                     var errorMessage = '';
                     for (var key in errors) {
@@ -564,7 +590,7 @@
             });
         });
 
-        $('#editForm').on('submit', function(e) {
+        $('#editForm').on('submit', function (e) {
             e.preventDefault();
             var id = $('#editId').val();
             var nip = $('#nip').val();
@@ -578,7 +604,7 @@
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    id:id,
+                    id: id,
                     nip: nip,
                     notarjeta: notarjeta,
                     nombre: nombre,
@@ -586,19 +612,19 @@
                     amaterno: amaterno,
                     area: area
                 },
-                success: function(result) {
+                success: function (result) {
                     table.ajax.reload();
                     $('#editModal').modal('hide');
                     Swal.fire('Éxito', 'Empleado actualizado con éxito.', 'success');
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     console.log(xhr.responseJSON);
                     Swal.fire('Error', 'Hubo un error al actualizar el empleado.', 'error');
                 }
             });
         });
 
-        $('#empleados-table').on('click', '.edit-btn', function() {
+        $('#empleados-table').on('click', '.edit-btn', function () {
             var id = $(this).data('id');
             var nip = $(this).data('nip');
             var notarjeta = $(this).data('notarjeta');
@@ -649,7 +675,7 @@
         $.ajax({
             url: '{!! route('areas.data') !!}',
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
                 var idAreaStr = idArea.toString();
                 var options = [];
                 var currentArea = data.find(area => area.Id_Area === idAreaStr);
@@ -670,7 +696,7 @@
                 choices.setChoices(options, 'value', 'label', true);
                 areaSelect.choicesInstance = choices;
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 console.error('Error al cargar las áreas:', xhr.responseText);
             }
         });
@@ -678,10 +704,10 @@
 
     }
 
-    
+
 </script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         @if (session('status'))
             let status = "{{ session('status') }}";
             let message = "{{ session('message') }}";

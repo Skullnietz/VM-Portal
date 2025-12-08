@@ -337,6 +337,15 @@
       function syncEmpleado() { $('#NoEmpleado').val($sel.val() || ''); }
       syncEmpleado(); $sel.on('change', syncEmpleado);
 
+      // ===== Auto-select from URL =====
+      const urlParams = new URLSearchParams(window.location.search);
+      const empId = urlParams.get('employee_id');
+      if (empId) {
+        empChoices.setChoiceByValue(empId);
+        // Trigger change to update hidden input and reload table if needed (though table init will pick it up if we set it before)
+        $sel.val(empId).trigger('change');
+      }
+
       // ===== Choices (buscar Artículo) =====
       const $selArt = $('#ArticuloSelect');
       const artChoices = new Choices($selArt[0], {
