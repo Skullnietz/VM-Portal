@@ -1505,8 +1505,27 @@ class AdminController extends Controller
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        $data = array();
-        $Empleados = DB::table('Cat_Empleados')->select('Id_Empleado', 'Nombre', 'APaterno', 'AMaterno', 'No_Empleado', 'Nip', 'No_Tarjeta', 'Id_Area', 'Tipo_Acceso', 'Fecha_alta', 'Fecha_Modificacion', 'Txt_Estatus')->where('Id_Planta', $idPlanta)->get();
+
+        $Empleados = DB::table('Cat_Empleados')
+            ->select(
+                'Cat_Empleados.Id_Empleado',
+                'Cat_Empleados.Nombre',
+                'Cat_Empleados.APaterno',
+                'Cat_Empleados.AMaterno',
+                'Cat_Empleados.No_Empleado',
+                'Cat_Empleados.Nip',
+                'Cat_Empleados.No_Tarjeta',
+                'Cat_Empleados.Id_Area',
+                'Cat_Empleados.Tipo_Acceso',
+                'Cat_Empleados.Fecha_alta',
+                'Cat_Empleados.Fecha_Modificacion',
+                'Cat_Empleados.Txt_Estatus',
+                'Cat_Area.Txt_Nombre as NArea'
+            )
+            ->leftJoin('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->where('Cat_Empleados.Id_Planta', $idPlanta)
+            ->get();
+
         foreach ($Empleados as $empleado) {
             $ModFecha = Date::parse($empleado->Fecha_alta);
             $AltaFecha = Date::parse($empleado->Fecha_Modificacion);
@@ -1514,11 +1533,10 @@ class AdminController extends Controller
             $MFecha = $ModFecha->format('l, j F Y H:i:s');
             $empleado->AFecha = $AFecha;
             $empleado->MFecha = $MFecha;
-            $QArea = DB::table('Cat_Area')->select('Txt_Nombre')->where('Id_Area', $empleado->Id_Area)->get();
-            $empleado->NArea = $QArea[0]->Txt_Nombre;
-            array_push($data, $empleado);
+            // NArea ya viene en el objeto desde el join
         }
-        return DataTables::of($data)->make(true);
+
+        return DataTables::of($Empleados)->make(true);
     }
 
     public function storeemployee(Request $request)

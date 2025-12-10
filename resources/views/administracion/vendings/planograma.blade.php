@@ -53,70 +53,71 @@
                                 <h2>Charola {{ $charola }}</h2>
                             </div>
                             <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered text-center">
-                                        <thead class="thead-dark">
-                                            <tr>
-                                                @for ($i = 0; $i <= 9; $i++)
-                                                    <th>Selección {{ $charola }}{{ $i }}</th>
-                                                @endfor
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($selecciones->chunk(10) as $chunk)
-                                                <tr>
-                                                    @foreach ($chunk as $seleccion)
-                                                        <td class="droppable-cell" data-id="{{ $seleccion->Id_Configuracion }}">
-                                                            <div class="mb-2">
-                                                                <!-- Mensaje para selección vacía, por defecto oculto -->
-                                                                <div class="seleccion-vacia"
-                                                                    style="display: {{ isset($seleccion->Id_Articulo) ? 'none' : 'block' }};">
-                                                                    <p class="text-muted">Selección vacía</p>
-                                                                </div>
-                                                                <!-- Contenido visible cuando hay una selección -->
-                                                                <div class="contenido-seleccion"
-                                                                    style="display: {{ isset($seleccion->Id_Articulo) ? 'block' : 'none' }};">
-                                                                    <div class="contenido-header">
-                                                                        @endif
-                                                                    </div>
-                                                                    <form class="setminmax bg-dark">
-                                                                        <input type="hidden" class="IdArticulo"
-                                                                            value="{{ $seleccion->Id_Articulo ?? '' }}">
-                                                                        <div class="form-group d-flex align-items-center">
-                                                                            <small class="mr-1">Max:</small>
-                                                                            <input type="number"
-                                                                                class="form-control form-control-sm CantidadMax"
-                                                                                value="{{ $seleccion->Cantidad_Max ?? '' }}"
-                                                                                placeholder="Máx." {{ isset($seleccion->Id_Articulo) ? '' : 'disabled' }}>
-                                                                        </div>
-                                                                        <div class="form-group d-flex align-items-center">
-                                                                            <small class="mr-1">Min:</small>
-                                                                            <input type="number"
-                                                                                class="form-control form-control-sm CantidadMin"
-                                                                                value="{{ $seleccion->Cantidad_Min ?? '' }}"
-                                                                                placeholder="Mín." {{ isset($seleccion->Id_Articulo) ? '' : 'disabled' }}>
-                                                                        </div>
-                                                                        <div class="form-group d-flex align-items-center">
-                                                                            <small class="mr-1">Talla:</small>
-                                                                            <input type="text"
-                                                                                class="form-control form-control-sm Talla"
-                                                                                value="{{ $seleccion->Talla ?? '' }}"
-                                                                                placeholder="Talla" {{ isset($seleccion->Id_Articulo) ? '' : 'disabled' }}>
-                                                                        </div>
-                                                                        <button type="button"
-                                                                            class="btn btn-danger btn-sm remove-article-btn">Vaciar</button>
-                                                                    </form>
+                                <div class="d-flex flex-nowrap overflow-auto">
+                                    @foreach ($selecciones as $seleccion)
+                                        <div class="droppable-cell m-1 border rounded p-2" style="flex: 0 0 auto;"
+                                            data-id="{{ $seleccion->Id_Configuracion }}">
+                                            @if ($seleccion->Tamano_Espiral)
+                                                <div class="tamano-espiral">{{ $seleccion->Tamano_Espiral }}</div>
+                                            @endif
+                                            <div class="text-center font-weight-bold bg-dark text-white mb-2 p-1 rounded">
+                                                 {{ $seleccion->Seleccion }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <!-- Mensaje para selección vacía, por defecto oculto -->
+                                                <div class="seleccion-vacia"
+                                                    style="display: {{ isset($seleccion->Id_Articulo) ? 'none' : 'block' }};">
+                                                    <p class="text-muted">Selección vacía</p>
+                                                </div>
+                                                <!-- Contenido visible cuando hay una selección -->
+                                                <div class="contenido-seleccion"
+                                                    style="display: {{ isset($seleccion->Id_Articulo) ? 'block' : 'none' }};">
+                                                    <div class="contenido-header">
+                                                        <div class="articulo-container text-center">
+                                                            <img src="/Images/Catalogo/{{ $seleccion->Txt_Codigo ?? '' }}.jpg"
+                                                                onerror="this.src='/Images/product.png'" alt="Imagen Artículo"
+                                                                class="img-fluid mb-1 ImgArticulo" style="max-height: 80px;">
+                                                            <p class="mb-0 font-weight-bold TxtCodigo small">{{ $seleccion->Txt_Codigo ?? '' }}</p>
+                                                            <p class="small text-muted TxtDescripcion mb-1" style="font-size: 0.75rem; line-height: 1.1; overflow: hidden; height: 35px;">{{ $seleccion->Txt_Descripcion ?? '' }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <form class="setminmax bg-light p-1 rounded border">
+                                                        <input type="hidden" class="IdArticulo"
+                                                            value="{{ $seleccion->Id_Articulo ?? '' }}">
+                                                        <div class="form-row mb-1">
+                                                            <div class="col-6 pr-1">
+                                                                <div class="input-group input-group-sm">
+                                                                    <div class="input-group-prepend"><span class="input-group-text px-1" style="font-size: 0.7rem;">Max</span></div>
+                                                                    <input type="number"
+                                                                        class="form-control px-1 text-center CantidadMax" style="font-size: 0.8rem;"
+                                                                        value="{{ $seleccion->Cantidad_Max ?? '' }}"
+                                                                        placeholder="0" {{ isset($seleccion->Id_Articulo) ? '' : 'disabled' }}>
                                                                 </div>
                                                             </div>
-                                                        </td>
-                                                    @endforeach
-                                                    @for ($i = $chunk->count(); $i < 10; $i++)
-                                                        <td class="droppable-cell"></td>
-                                                    @endfor
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                                            <div class="col-6 pl-1">
+                                                                <div class="input-group input-group-sm">
+                                                                    <div class="input-group-prepend"><span class="input-group-text px-1" style="font-size: 0.7rem;">Min</span></div>
+                                                                    <input type="number"
+                                                                        class="form-control px-1 text-center CantidadMin" style="font-size: 0.8rem;"
+                                                                        value="{{ $seleccion->Cantidad_Min ?? '' }}"
+                                                                        placeholder="0" {{ isset($seleccion->Id_Articulo) ? '' : 'disabled' }}>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="input-group input-group-sm mb-1">
+                                                             <div class="input-group-prepend"><span class="input-group-text px-1" style="font-size: 0.7rem;">Talla</span></div>
+                                                            <input type="text"
+                                                                class="form-control form-control-sm Talla"
+                                                                value="{{ $seleccion->Talla ?? '' }}"
+                                                                placeholder="Talla" {{ isset($seleccion->Id_Articulo) ? '' : 'disabled' }}>
+                                                        </div>
+                                                        <button type="button"
+                                                            class="btn btn-danger btn-sm btn-block remove-article-btn p-0" style="font-size: 0.8rem;">Vaciar</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
@@ -146,7 +147,7 @@
     .contenido-header {
         display: flex;
         flex-direction: column;
-        height: 270px;
+        height: 200px;
         /* Ajusta según sea necesario */
         align-items: center;
         justify-content: center;
@@ -157,14 +158,17 @@
     }
 
     .droppable-cell {
+        min-width: 180px;
+        max-width: 180px;
         flex-direction: column;
         align-items: center;
         justify-content: space-between;
-        height: 300px;
-        /* Ajusta según sea necesario */
+        height: 380px;
+        /* Aumentamos altura para acomodar formulario */
         padding: 10px;
         vertical-align: top;
         text-align: center;
+        background-color: #fff;
     }
 
     .droppable-cell.drag-over {
@@ -219,6 +223,7 @@
                 const idArticuloElement = cell.querySelector('.IdArticulo');
                 const codigoElement = cell.querySelector('.TxtCodigo');
                 const descripcionElement = cell.querySelector('.TxtDescripcion');
+                const imgElement = cell.querySelector('.ImgArticulo');
                 const cantidadMaxElement = cell.querySelector('.CantidadMax');
                 const cantidadMinElement = cell.querySelector('.CantidadMin');
                 const tallaElement = cell.querySelector('.Talla');
@@ -230,6 +235,7 @@
                     if (idArticuloElement) idArticuloElement.value = '';
                     if (codigoElement) codigoElement.textContent = '';
                     if (descripcionElement) descripcionElement.textContent = '';
+                    if (imgElement) imgElement.src = '/Images/product.png';
                     if (cantidadMaxElement) cantidadMaxElement.value = '';
                     if (cantidadMinElement) cantidadMinElement.value = '';
                     if (seleccionVaciaElement) {
@@ -249,6 +255,7 @@
                     if (idArticuloElement) idArticuloElement.value = data.id;
                     if (codigoElement) codigoElement.textContent = data.codigo;
                     if (descripcionElement) descripcionElement.textContent = data.descripcion;
+                    if (imgElement) imgElement.src = `/Images/Catalogo/${data.codigo}.jpg`;
                     // Solo se asigna Capacidad_Espiral si no hay valor registrado previamente
                     if (cantidadMaxElement && (!cantidadMaxElement.value || cantidadMaxElement.value === "0")) {
                         cantidadMaxElement.value = data.capacidadEspiral;
@@ -282,6 +289,7 @@
                 const idArticuloElement = cell.querySelector('.IdArticulo');
                 const codigoElement = cell.querySelector('.TxtCodigo');
                 const descripcionElement = cell.querySelector('.TxtDescripcion');
+                const imgElement = cell.querySelector('.ImgArticulo');
                 const cantidadMaxElement = cell.querySelector('.CantidadMax');
                 const cantidadMinElement = cell.querySelector('.CantidadMin');
                 const tallaElement = cell.querySelector('.Talla');
@@ -290,9 +298,12 @@
                 if (idArticuloElement) idArticuloElement.value = '';
                 if (codigoElement) codigoElement.textContent = '';
                 if (descripcionElement) descripcionElement.textContent = '';
+                if (imgElement) imgElement.src = '/Images/product.png';
                 if (cantidadMaxElement) cantidadMaxElement.value = '';
                 if (cantidadMinElement) cantidadMinElement.value = '';
                 if (tallaElement) tallaElement.value = '';
+                const tamanoElement = cell.querySelector('.tamano-espiral');
+                if (tamanoElement) tamanoElement.textContent = '';
                 if (seleccionVaciaElement) {
                     seleccionVaciaElement.style.display = 'block';
                 }
@@ -347,16 +358,16 @@
             resultsContainer.innerHTML = '';
             @foreach ($articulos as $articulo)
                 resultsContainer.innerHTML += `
-                            <div class="list-group-item draggable-item"
-                                 draggable="true"
-                                 data-id="{{ $articulo->Id_Articulo }}"
-                                 data-codigo="{{ $articulo->Txt_Codigo }}"
-                                 data-descripcion="{{ $articulo->Txt_Descripcion }}"
-                                 data-capacidad-espiral="{{ $articulo->Capacidad_Espiral }}"
-                                 data-tamano-espiral="{{ $articulo->Tamano_Espiral }}">
-                                {{ $articulo->Txt_Descripcion }} ({{ $articulo->Txt_Codigo }})
-                            </div>
-                        `;
+                                <div class="list-group-item draggable-item"
+                                     draggable="true"
+                                     data-id="{{ $articulo->Id_Articulo }}"
+                                     data-codigo="{{ $articulo->Txt_Codigo }}"
+                                     data-descripcion="{{ $articulo->Txt_Descripcion }}"
+                                     data-capacidad-espiral="{{ $articulo->Capacidad_Espiral }}"
+                                     data-tamano-espiral="{{ $articulo->Tamano_Espiral }}">
+                                    {{ $articulo->Txt_Descripcion }} ({{ $articulo->Txt_Codigo }})
+                                </div>
+                            `;
             @endforeach
             setupDragAndDrop();
             return;
