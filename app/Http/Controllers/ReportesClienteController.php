@@ -606,7 +606,7 @@ class ReportesClienteController extends Controller
             ->groupBy(
                 'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
                 'Ctrl_Consumos.Id_Articulo',
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'')"),
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
                 DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
                 'Cat_Area.Txt_Nombre'
@@ -615,7 +615,7 @@ class ReportesClienteController extends Controller
                 'Ctrl_Mquinas.Txt_Nombre as Maquina', // Se selecciona el nombre de la máquina
                 DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'), // Total de consumos del producto en la vending
                 DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado) as No_Empleados'), // Número de empleados distintos consumiendo el producto
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
                 DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
                 'Cat_Area.Txt_Nombre as Area', // Nombre del área
