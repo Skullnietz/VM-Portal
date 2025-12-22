@@ -9,6 +9,7 @@ use App\Exports\ConsumoxEmpleadoExport;
 use App\Exports\ConsumoxAreaExport;
 use App\Exports\ConsumoxVendingExport;
 use App\Exports\InventarioVM;
+use App\Exports\ConsultaConsumosExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportesClienteController extends Controller
@@ -362,14 +363,21 @@ class ReportesClienteController extends Controller
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin(DB::raw('(
+                select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
+                from Ctrl_Consumos as a
+                inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
+                right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
+                inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
+            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
             ->where('Cat_Empleados.Id_Planta', $idPlanta)
             ->select(
                 DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
                 'Cat_Empleados.No_Empleado as Numero_de_empleado',
                 'Cat_Area.Txt_Nombre as Area',
-                'Cat_Articulos.Txt_Descripcion as Producto',
-                'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
-                'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
                 'Ctrl_Consumos.Fecha_Real as Fecha',
                 'Ctrl_Consumos.Cantidad'
             )
@@ -394,7 +402,7 @@ class ReportesClienteController extends Controller
                 });
             } else {
                 $data->where(function ($query) use ($request) {
-                    $query->where('Cat_Articulos.Txt_Descripcion', '=', $products[0]);
+                    $query->where('Cat_Articulos.Txt_Descripcion', '=', $request->product);
                 });
             }
         }
@@ -445,18 +453,33 @@ class ReportesClienteController extends Controller
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin(DB::raw('(
+                select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
+                from Ctrl_Consumos as a
+                inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
+                right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
+                inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
+            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
             ->where('Cat_Empleados.Id_Planta', $idPlanta)
             ->select(
                 'Cat_Area.Txt_Nombre as Area',
                 DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
                 DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
                 DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
-                'Cat_Articulos.Txt_Descripcion as Producto',
-                'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
-                'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
                 DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo')
             )
-            ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno')
+            ->groupBy(
+                'Cat_Area.Txt_Nombre',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'')"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
+                'Cat_Empleados.Nombre',
+                'Cat_Empleados.APaterno',
+                'Cat_Empleados.AMaterno'
+            )
             ->orderByDesc('Ultimo_Consumo'); // Ordena por la fecha del último consumo
 
         // Aplicar filtros de área si están presentes
@@ -555,22 +578,29 @@ class ReportesClienteController extends Controller
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina') // Se une la tabla de máquinas
+            ->leftJoin(DB::raw('(
+                select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
+                from Ctrl_Consumos as a
+                inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
+                right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
+                inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
+            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
             ->where('Cat_Empleados.Id_Planta', $idPlanta)
             ->groupBy(
                 'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
                 'Ctrl_Consumos.Id_Articulo',
-                'Cat_Articulos.Txt_Descripcion',
-                'Cat_Articulos.Txt_Codigo_Cliente',
-                'Cat_Articulos.Txt_Codigo',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'')"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
                 'Cat_Area.Txt_Nombre'
             )
             ->select(
                 'Ctrl_Mquinas.Txt_Nombre as Maquina', // Se selecciona el nombre de la máquina
                 DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'), // Total de consumos del producto en la vending
                 DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado) as No_Empleados'), // Número de empleados distintos consumiendo el producto
-                'Cat_Articulos.Txt_Descripcion as Producto',
-                'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
-                'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
                 'Cat_Area.Txt_Nombre as Area', // Nombre del área
                 DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo') // Fecha del último consumo
             );
@@ -686,6 +716,19 @@ class ReportesClienteController extends Controller
         );
 
         return redirect()->back()->with('success', 'Configuración guardada exitosamente.');
+    }
+
+    public function exportConsultaConsumos(Request $request)
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (!isset($_SESSION['usuario']->Id_Planta)) {
+            abort(403, 'Sesión inválida: falta Id_Planta.');
+        }
+
+        $idPlanta = (int) $_SESSION['usuario']->Id_Planta;
+        return Excel::download(new ConsultaConsumosExport($request, $idPlanta), 'ConsultaConsumos.xlsx');
     }
 
 }

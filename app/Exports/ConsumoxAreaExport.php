@@ -126,8 +126,8 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
             'Empleado',
             'Nombre Empleado',
             'Producto',
-            'Código Cliente',
             'Código Urvina',
+            'Código Cliente',
             'Ultimo Consumo',
         ];
     }

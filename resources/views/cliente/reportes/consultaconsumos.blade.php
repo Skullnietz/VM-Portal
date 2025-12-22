@@ -192,7 +192,7 @@
         <input type="hidden" name="NoEmpleado" id="NoEmpleado" value="">
       </div>
 
-      <div class="col-md-5">
+      <div class="col-md-4">
         <label class="form-label">Artículo</label>
         <select id="ArticuloSelect" class="form-select">
           <option value="">— Todos —</option>
@@ -204,10 +204,12 @@
         <input type="hidden" name="Articulo" id="Articulo" value="">
       </div>
 
-      <div class="col-md-2 d-flex align-items-end gap-2">
-        <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+      <div class="col-md-3 d-flex align-items-end gap-2">
+        <button class="btn btn-primary flex-grow-1" type="submit">Filtrar</button>
         <button class="btn btn-outline-secondary" type="button" id="btnTodos" title="Limpiar filtros"><i
             class="fas fa-sync-alt"></i></button>
+        <button class="btn btn-success" type="button" id="btnExport" title="Exportar Excel"><i
+            class="fas fa-file-excel"></i></button>
       </div>
 
       <div class="col-12 d-flex gap-3">
@@ -498,6 +500,21 @@
         $('#NoEmpleado').val('');
         $('#Articulo').val('');
         table.ajax.reload();
+      });
+
+      // Exportar Excel
+      $('#btnExport').on('click', function () {
+        const noEmp = $('#NoEmpleado').val() || '';
+        const art = $('#Articulo').val() || '';
+
+        // Construir URL basándonos en el path actual para mantener el idioma dinámico
+        // Actual: /{lang}/reporte/consultaconsumos
+        // Destino: /{lang}/export/consultaconsumos
+        const currentPath = window.location.pathname;
+        const newPath = currentPath.replace('/reporte/consultaconsumos', '/export/consultaconsumos');
+        const url = window.location.origin + newPath + "?NoEmpleado=" + encodeURIComponent(noEmp) + "&Articulo=" + encodeURIComponent(art);
+
+        window.location.href = url;
       });
     });
   </script>

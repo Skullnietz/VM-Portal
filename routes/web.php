@@ -107,6 +107,8 @@ Route::group(['middleware' => 'checkSession'], function () {
             ->name('consultasconsumo.index');
         Route::post('/reporte/consultaconsumos/data', [ReportesClienteController::class, 'dataConsultaConsumos'])
             ->name('consultasconsumo.data'); // <- endpoint de datos (POST)
+        Route::get('/export/consultaconsumos', [ReportesClienteController::class, 'exportConsultaConsumos'])
+            ->name('export.consultaconsumos');
 
         ///////////////////////////////////// REPORTE DE HISTORIAL DE RELLENO //////////////////
         Route::get('/reporte/historialrelleno', [ReportesAdministradorController::class, 'ReporteHistorialRelleno'])->name('historialrelleno.index');
