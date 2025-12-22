@@ -113,6 +113,7 @@ class ReportesClienteController extends Controller
                 'Cantidad_Permitida' => (int) ($r['Cantidad_Permitida'] ?? $r['cantidad_permitida'] ?? 0),
                 'Cantidad_Consumida' => (int) ($r['Cantidad_Consumida'] ?? $r['cantidad_consumida'] ?? 0),
                 'Disponible' => (int) ($r['Disponible'] ?? $r['disponible'] ?? 0),
+                'Codigo_Urvina' => $r['Codigo_Urvina'] ?? $r['codigo_urvina'] ?? $r['Txt_Codigo'] ?? $r['txt_codigo'] ?? '',
             ];
         }, $rows);
 

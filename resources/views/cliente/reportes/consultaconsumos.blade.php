@@ -233,6 +233,7 @@
         <tr>
           <th>No_Empleado</th>
           <th>Nombre</th>
+          <th>Imagen</th>
           <th>Artículo</th>
           <th class="text-end">Frecuencia (dias)</th>
           <th class="text-end">Permitida</th>
@@ -408,6 +409,11 @@
         return `<span class="chip ${s.cls}" data-status="${s.t}">${s.t}</span>`;
       }
 
+      function renderImagen(data, type, row) {
+        if (!data) return '<span class="text-muted" style="font-size:10px;">Sin imagen</span>';
+        return `<img src="/Images/Catalogo/${data}.jpg" alt="${data}" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.onerror=null;this.src='/img/placeholder.png';">`;
+      }
+
       // ===== DataTable =====
       const table = $('#tblConsumos').DataTable({
         processing: true, serverSide: false, paging: true, searching: true, lengthChange: true, pageLength: 10,
@@ -427,6 +433,7 @@
         columns: [
           { data: 'No_Empleado' },
           { data: 'Nombre' },
+          { data: 'Codigo_Urvina', render: renderImagen, orderable: false, searchable: false },
           { data: 'Articulo' },
           { data: 'Frecuencia', className: 'text-right' },
           { data: 'Cantidad_Permitida', className: 'text-right' },
@@ -442,7 +449,7 @@
       });
 
       // ===== Filtros rápidos por estado =====
-      const estadoColIdx = 7; // índice de la columna "Estado" según "columns" arriba
+      const estadoColIdx = 8; // índice de la columna "Estado" según "columns" arriba
       $('[data-filter]').on('click', function () {
         const m = $(this).data('filter');
         if (m === 'todos') {
