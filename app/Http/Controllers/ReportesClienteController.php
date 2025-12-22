@@ -92,6 +92,18 @@ class ReportesClienteController extends Controller
             [$idPlanta, $noEmpleado]
         );
 
+        // Obtener mapa de Artículos (Descripción -> Código) para fallback
+        // Usamos strtolower y trim para mejorar el matching
+        $articulosData = \DB::table('Cat_Articulos')
+            ->select('Txt_Descripcion', 'Txt_Codigo')
+            ->get();
+
+        $articulosMap = [];
+        foreach ($articulosData as $art) {
+            $key = trim(mb_strtolower($art->Txt_Descripcion));
+            $articulosMap[$key] = $art->Txt_Codigo;
+        }
+
         // Filtrado en PHP (ya que el SP no recibe Articulo)
         if ($articuloFiltro) {
             $rows = array_filter($rows, function ($r) use ($articuloFiltro) {
@@ -103,17 +115,21 @@ class ReportesClienteController extends Controller
             $rows = array_values($rows);
         }
 
-        $data = array_map(function ($r) {
+        $data = array_map(function ($r) use ($articulosMap) {
             $r = (array) $r;
+            $nombreArticulo = $r['Articulo'] ?? $r['articulo'] ?? '';
+            $lookupKey = trim(mb_strtolower($nombreArticulo));
+            $codigoFallback = $articulosMap[$lookupKey] ?? '';
+
             return [
                 'No_Empleado' => $r['No_Empleado'] ?? $r['no_empleado'] ?? '',
                 'Nombre' => $r['Nombre'] ?? $r['nombre'] ?? '',
-                'Articulo' => $r['Articulo'] ?? $r['articulo'] ?? '',
+                'Articulo' => $nombreArticulo,
                 'Frecuencia' => (int) ($r['Frecuencia'] ?? $r['frecuencia'] ?? 0),
                 'Cantidad_Permitida' => (int) ($r['Cantidad_Permitida'] ?? $r['cantidad_permitida'] ?? 0),
                 'Cantidad_Consumida' => (int) ($r['Cantidad_Consumida'] ?? $r['cantidad_consumida'] ?? 0),
                 'Disponible' => (int) ($r['Disponible'] ?? $r['disponible'] ?? 0),
-                'Codigo_Urvina' => $r['Codigo_Urvina'] ?? $r['codigo_urvina'] ?? $r['Txt_Codigo'] ?? $r['txt_codigo'] ?? '',
+                'Codigo_Urvina' => $r['Codigo_Urvina'] ?? $r['codigo_urvina'] ?? $r['Txt_Codigo'] ?? $r['txt_codigo'] ?? $codigoFallback,
             ];
         }, $rows);
 

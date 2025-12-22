@@ -411,7 +411,7 @@
 
       function renderImagen(data, type, row) {
         if (!data) return '<span class="text-muted" style="font-size:10px;">Sin imagen</span>';
-        return `<img src="/Images/Catalogo/${data}.jpg" alt="${data}" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.onerror=null;this.src='/img/placeholder.png';">`;
+        return `<img src="/Images/Catalogo/${data}.jpg" alt="${data}" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.onerror=null;this.src='/Images/product.png';">`;
       }
 
       // ===== DataTable =====

@@ -95,7 +95,8 @@
                                 <option value="">Seleccione empleados</option>
                                 @foreach($empleados as $empleado)
                                     <option value="{{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}">
-                                        {{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}</option>
+                                        {{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -117,6 +118,7 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
+                                    <th>Imagen</th>
                                     <th>Número de empleado</th>
                                     <th>Área</th>
                                     <th>Producto</th>
@@ -208,6 +210,11 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+    function renderImagen(data, type, row) {
+        if (!data) return '<span class="text-muted" style="font-size:10px;">Sin imagen</span>';
+        return `<img src="/Images/Catalogo/${data}.jpg" alt="${data}" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.onerror=null;this.src='/Images/product.png';">`;
+    }
+
     $(document).ready(function () {
         $('.select2').select2({
             width: '100%'
@@ -244,6 +251,7 @@
                 pageLength: 100,
                 columns: [
                     { data: 'Nombre' },
+                    { data: 'Codigo_Urvina', render: renderImagen, orderable: false, searchable: false },
                     { data: 'Numero_de_empleado' },
                     { data: 'Area' },
                     { data: 'Producto' },
