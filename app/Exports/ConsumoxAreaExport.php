@@ -24,98 +24,113 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
     }
 
     public function collection()
-{
-    ob_end_clean();
-    ob_start();
+    {
+        ob_end_clean();
+        ob_start();
 
-    $data = DB::table('Ctrl_Consumos')
-        ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
-        ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-        ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-        ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
-        ->select(
-            'Cat_Area.Txt_Nombre as Area',
-            DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
-            DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
-            DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
-            'Cat_Articulos.Txt_Descripcion as Producto',
-            'Cat_Articulos.Txt_Codigo as Codigo_Urvina',
-            'Cat_Articulos.Txt_Codigo_Cliente as Codigo_Cliente',
-            DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo')
-        )
-        ->groupBy('Cat_Area.Txt_Nombre', 'Cat_Articulos.Txt_Descripcion', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente', 'Cat_Empleados.Nombre', 'Cat_Empleados.APaterno', 'Cat_Empleados.AMaterno');
+        $data = DB::table('Ctrl_Consumos')
+            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+            ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin(DB::raw('(
+            select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
+            from Ctrl_Consumos as a
+            inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
+            right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
+            inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
+        ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
+            ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
+            ->select(
+                'Cat_Area.Txt_Nombre as Area',
+                DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
+                DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
+                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+                DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo')
+            )
+            ->groupBy(
+                'Cat_Area.Txt_Nombre',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'')"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
+                'Cat_Empleados.Nombre',
+                'Cat_Empleados.APaterno',
+                'Cat_Empleados.AMaterno'
+            );
 
-    // Aplicar filtros si están presentes
-    if ($this->request->filled('area')) {
-        $areas = $this->request->input('area');
-        if (!empty($areas)) {
-            // Aquí tratamos el caso cuando se recibe una cadena concatenada
-            if (is_string($areas)) {
-                $areaArray = explode(',', $areas); // Separa la cadena en un array
-                $areas = array_map('trim', $areaArray); // Limpia espacios en blanco
-            }
-            
-            if (count($areas) > 1) {
-                // Si hay múltiples áreas, usar whereIn
-                $data->whereIn('Cat_Area.Txt_Nombre', $areas);
-            } else {
-                // Si solo hay un área, usar where
-                $data->where('Cat_Area.Txt_Nombre', 'like', "%{$areas[0]}%");
-            }
-        }
-    }
+        // Aplicar filtros si están presentes
+        if ($this->request->filled('area')) {
+            $areas = $this->request->input('area');
+            if (!empty($areas)) {
+                // Aquí tratamos el caso cuando se recibe una cadena concatenada
+                if (is_string($areas)) {
+                    $areaArray = explode(',', $areas); // Separa la cadena en un array
+                    $areas = array_map('trim', $areaArray); // Limpia espacios en blanco
+                }
 
-    if ($this->request->filled('product')) {
-        $products = $this->request->input('product');
-        if (!empty($products)) {
-            // Aquí tratamos el caso cuando se recibe una cadena concatenada
-            if (is_string($products)) {
-                $productArray = explode(',', $products); // Separa la cadena en un array
-                $products = array_map('trim', $productArray); // Limpia espacios en blanco
-            }
-            
-            if (count($products) > 1) {
-                // Si hay múltiples productos, usar whereIn
-                $data->whereIn('Cat_Articulos.Txt_Descripcion', $products);
-            } else {
-                // Si solo hay un producto, usar where
-                $data->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$products[0]}%");
-            }
-        }
-    }
-
-    if ($this->request->filled('dateRange')) {
-        $dates = explode(' - ', $this->request->input('dateRange'));
-
-        // Verificar si se han proporcionado exactamente dos fechas
-        if (count($dates) === 2) {
-            $startDate = trim($dates[0]);
-            $endDate = trim($dates[1]);
-
-            // Verificar que las fechas no estén vacías
-            if (!empty($startDate) && !empty($endDate)) {
-                $startDate = date('Y-m-d', strtotime($startDate));
-                $endDate = date('Y-m-d', strtotime($endDate));
-
-                // Asegurarse de que las fechas sean válidas
-                if ($startDate && $endDate && $startDate <= $endDate) {
-                    $data->whereBetween('Ctrl_Consumos.Fecha_Consumo', [$startDate, $endDate]);
+                if (count($areas) > 1) {
+                    // Si hay múltiples áreas, usar whereIn
+                    $data->whereIn('Cat_Area.Txt_Nombre', $areas);
                 } else {
-                    // Si las fechas no son válidas, mostrar un mensaje de error y no aplicar el filtro de fechas
+                    // Si solo hay un área, usar where
+                    $data->where('Cat_Area.Txt_Nombre', 'like', "%{$areas[0]}%");
+                }
+            }
+        }
+
+        if ($this->request->filled('product')) {
+            $products = $this->request->input('product');
+            if (!empty($products)) {
+                // Aquí tratamos el caso cuando se recibe una cadena concatenada
+                if (is_string($products)) {
+                    $productArray = explode(',', $products); // Separa la cadena en un array
+                    $products = array_map('trim', $productArray); // Limpia espacios en blanco
+                }
+
+                if (count($products) > 1) {
+                    // Si hay múltiples productos, usar whereIn
+                    $data->whereIn('Cat_Articulos.Txt_Descripcion', $products);
+                } else {
+                    // Si solo hay un producto, usar where
+                    $data->where('Cat_Articulos.Txt_Descripcion', 'like', "%{$products[0]}%");
+                }
+            }
+        }
+
+        if ($this->request->filled('dateRange')) {
+            $dates = explode(' - ', $this->request->input('dateRange'));
+
+            // Verificar si se han proporcionado exactamente dos fechas
+            if (count($dates) === 2) {
+                $startDate = trim($dates[0]);
+                $endDate = trim($dates[1]);
+
+                // Verificar que las fechas no estén vacías
+                if (!empty($startDate) && !empty($endDate)) {
+                    $startDate = date('Y-m-d', strtotime($startDate));
+                    $endDate = date('Y-m-d', strtotime($endDate));
+
+                    // Asegurarse de que las fechas sean válidas
+                    if ($startDate && $endDate && $startDate <= $endDate) {
+                        $data->whereBetween('Ctrl_Consumos.Fecha_Consumo', [$startDate, $endDate]);
+                    } else {
+                        // Si las fechas no son válidas, mostrar un mensaje de error y no aplicar el filtro de fechas
+                        // Puedes usar logs o manejar el error de la forma que necesites
+                    }
+                } else {
+                    // Si alguna de las fechas está vacía, mostrar un mensaje de error y no aplicar el filtro de fechas
                     // Puedes usar logs o manejar el error de la forma que necesites
                 }
             } else {
-                // Si alguna de las fechas está vacía, mostrar un mensaje de error y no aplicar el filtro de fechas
+                // Si el formato de dateRange no es válido, mostrar un mensaje de error y no aplicar el filtro de fechas
                 // Puedes usar logs o manejar el error de la forma que necesites
             }
-        } else {
-            // Si el formato de dateRange no es válido, mostrar un mensaje de error y no aplicar el filtro de fechas
-            // Puedes usar logs o manejar el error de la forma que necesites
         }
+
+        return $data->get();
     }
-    
-    return $data->get();
-}
 
 
     public function headings(): array
@@ -135,7 +150,7 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
                 // Ajustar altura de la celda A1 para el logo
@@ -159,7 +174,7 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
                 // Mover encabezado a la fila 2
                 $sheet->insertNewRowBefore(2, 1); // Insertar una fila en la fila 2
                 $sheet->fromArray($this->headings(), NULL, 'A2'); // Agregar encabezados en la fila 2
-
+    
                 // Encabezado en negritas
                 $sheet->getStyle('B2:H2')->getFont()->setBold(true);
 
