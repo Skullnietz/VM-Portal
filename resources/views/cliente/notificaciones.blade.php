@@ -107,22 +107,31 @@
 
         // Mark single as read
         $(document).on('click', '.mark-as-read', function () {
-            let notification Id = $(this).data("id");
+            let notificationId = $(this).data("id");
             let button = $(this);
             let item = button.closest(".list-group-item");
+            
+            console.log("Marking notification " + notificationId + " as read.");
+
+            // Construct URL safely
+            // generated route: /mark-notification-as-read/PLACEHOLDER
+            // We replace PLACEHOLDER with the actual ID
+            let url = "{{ route('markNotificationAsRead', 'PLACEHOLDER') }}";
+            url = url.replace('PLACEHOLDER', notificationId);
 
             // Optimistic UI update
             item.fadeOut("fast", function () {
-                $(this).rem ove();
+                $(this).remove();
                 updateCount();
             });
 
             $.ajax({
-                url: "{{ route('markNotificationAsRead', '') }}/" + notificationId,
+                url: url,
                 type: "GET",
                 error: function () {
-                    // Revert if error (simplified, usually reload)
-                    alert("No se pudo marcar como leída.");
+                    console.error("Failed to mark notification as read");
+                    // Optionally revert or alert
+                    // alert("No se pudo marcar como leída.");
                     loadNotifications();
                 }
             });
@@ -130,6 +139,14 @@
 
         // Mark ALL as read
         $('#mark-all-read').click(function () {
+            console.log("Mark all as read clicked.");
+            if (typeof Swal === 'undefined') {
+                 if(confirm("¿Estás seguro de marcar todas como leídas?")) {
+                     markAllReadRequest();
+                 }
+                 return;
+            }
+
             Swal.fire({
                 title: '¿Estás seguro?',
                 text: "Esto marcará todas tus notificaciones como leídas.",
@@ -141,33 +158,45 @@
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $.ajax({
-                        url: "{{ route('notifications.markAllRead') }}",
-                        type: "POST", // Changed to POST as per good practice
-                        data: {
-                            _token: "{{ csrf_token() }}"
-                        },
-                        success: function (response) {
-                            if (response.success) {
-                                Swal.fire(
-                                    '¡Listo!',
-                                    'Todas las notificaciones han sido marcadas como leídas.',
-                                    'success'
-                                );
-                                loadNotifications(); // Refresh to show empty state
-                            }
-                        },
-                        error: function () {
-                            Swal.fire(
-                                'Error',
-                                'Hubo un problema al procesar la solicitud.',
-                                'error'
-                            );
-                        }
-                    });
+                    markAllReadRequest();
                 }
             })
         });
+
+        function markAllReadRequest() {
+            $.ajax({
+                url: "{{ route('notifications.markAllRead') }}",
+                type: "POST", 
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function (response) {
+                    if (response.success) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire(
+                                '¡Listo!',
+                           'Todas las notificaciones han sido marcadas como leídas.',
+                                'success'
+                            );
+                        } else {
+                            alert('Todas las notificaciones han sido marcadas como leídas.');
+                        }
+                        loadNotifications(); // Refresh to show empty state
+                    }
+                },
+                error: function () {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire(
+                            'Error',
+                            'Hubo un problema al procesar la solicitud.',
+                            'error'
+                        );
+                    } else {
+                        alert('Hubo un problema al procesar la solicitud.');
+                    }
+                }
+            });
+        }
     });
 
     function goBack() {
