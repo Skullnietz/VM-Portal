@@ -334,7 +334,7 @@
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: '{{ route("consumosxvending.data") }}',
+                    url: '{{ route("consumosxvending.data", ["language" => app()->getLocale()]) }}',
                     data: function (d) {
                         d.startDate = $('#startDate').val();
                         d.endDate = $('#endDate').val();
