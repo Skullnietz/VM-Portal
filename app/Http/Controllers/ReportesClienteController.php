@@ -744,7 +744,16 @@ class ReportesClienteController extends Controller
 
             $data = $data->offset($request->start)
                 ->limit($request->length)
-                ->get();
+                ->get()
+                ->map(function ($row) {
+                    // Force UTF-8 on string fields to prevent json_encode failure
+                    foreach ($row as $key => $value) {
+                        if (is_string($value)) {
+                            $row->$key = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                        }
+                    }
+                    return $row;
+                });
 
             return response()->json([
                 'draw' => intval($request->draw),
