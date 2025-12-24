@@ -291,16 +291,16 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::post('/areas/delete', [ClientController::class, 'deleteArea']);
     Route::get('export-excel-areas', [ClientController::class, 'exportExcelAreas']);
     /////////////////////////////////////////// REPORTES DE CONSUMO ///////////////////////////////////////////
-    Route::get('/getconsumoxempleado/data', [ReportesClienteController::class, 'getConsumoxEmpleado'])->name('consumosxempleado.data');
-    Route::get('/export/consumoxempleado', [ReportesClienteController::class, 'exportConsumoxEmpleado'])->name('export.consumoxempleado');
-    Route::get('/getconsumoxarea/data', [ReportesClienteController::class, 'getConsumoxArea'])->name('consumosxarea.data');
-    Route::get('/export/consumoxarea', [ReportesClienteController::class, 'exportConsumoxArea'])->name('export.consumoxarea');
-    Route::get('/getconsumoxvending/data', [ReportesClienteController::class, 'getConsumoxVending'])->name('consumosxvending.data');
-    Route::get('/export/consumoxvending', [ReportesClienteController::class, 'exportConsumoxVending'])->name('export.consumoxvending');
+    Route::get('{language}/getconsumoxempleado/data', [ReportesClienteController::class, 'getConsumoxEmpleado'])->name('consumosxempleado.data');
+    Route::get('{language}/export/consumoxempleado', [ReportesClienteController::class, 'exportConsumoxEmpleado'])->name('export.consumoxempleado');
+    Route::get('{language}/getconsumoxarea/data', [ReportesClienteController::class, 'getConsumoxArea'])->name('consumosxarea.data');
+    Route::get('{language}/export/consumoxarea', [ReportesClienteController::class, 'exportConsumoxArea'])->name('export.consumoxarea');
+    Route::get('{language}/getconsumoxvending/data', [ReportesClienteController::class, 'getConsumoxVending'])->name('consumosxvending.data');
+    Route::get('{language}/export/consumoxvending', [ReportesClienteController::class, 'exportConsumoxVending'])->name('export.consumoxvending');
     /////////////////////////////////////////// REPORTES DE VENDINGS ///////////////////////////////////////////
-    Route::get('/getinventariovm/data', [ReportesClienteController::class, 'getInventarioVM'])->name('inventariovm.data');
-    Route::get('/getstockvm/data/{idMaquina}', [ReportesClienteController::class, 'getInvStock'])->name('stockvm.data');
-    Route::get('/export-inventariovm', [ReportesClienteController::class, 'exportInventarioVM'])->name('export.inventariovm');
+    Route::get('{language}/getinventariovm/data', [ReportesClienteController::class, 'getInventarioVM'])->name('inventariovm.data');
+    Route::get('{language}/getstockvm/data/{idMaquina}', [ReportesClienteController::class, 'getInvStock'])->name('stockvm.data');
+    Route::get('{language}/export-inventariovm', [ReportesClienteController::class, 'exportInventarioVM'])->name('export.inventariovm');
 
     ///////////////////////////////////////// NOTIFICACIONES ///////////////////////////////////////////////////
 

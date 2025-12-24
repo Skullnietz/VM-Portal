@@ -12,7 +12,9 @@
             </h4>
         </div>
         <div class="col text-right">
-            <form id="export-form" action="{{ route('export.consumoxvending') }}" method="GET">
+            <form id="export-form"
+                action="{{ route('export.consumoxvending', ['language' => request()->route('language') ?? 'es']) }}"
+                method="GET">
                 <!-- Campos ocultos que se actualizarán -->
                 <input type="hidden" name="vending[]" id="filter-vending" value="{{ request()->input('vending') }}">
                 <input type="hidden" name="area[]" id="filter-area" value="{{ request()->input('area') }}">
