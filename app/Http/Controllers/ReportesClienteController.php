@@ -673,6 +673,27 @@ class ReportesClienteController extends Controller
             $filteredData = clone $data;
             $filteredRecords = $filteredData->count(); // Total después de aplicar filtros
 
+            // Definición de columnas para el ordenamiento
+            $columns = [
+                0 => 'Ctrl_Mquinas.Txt_Nombre', // Maquina
+                1 => DB::raw('COUNT(Ctrl_Consumos.Id_Articulo)'), // Total_Consumos
+                2 => DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado)'), // No_Empleados
+                3 => 'Cat_Area.Txt_Nombre', // Area
+                4 => DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"), // Imagen (Codigo Urvina)
+                5 => DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"), // Producto
+                6 => DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"), // Codigo_Urvina
+                7 => DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"), // Codigo_Cliente
+                8 => DB::raw('MAX(Ctrl_Consumos.Fecha_Real)'), // Ultimo_Consumo
+            ];
+
+            if ($request->has('order') && isset($columns[$request->input('order.0.column')])) {
+                $column = $columns[$request->input('order.0.column')];
+                $dir = $request->input('order.0.dir');
+                $data->orderBy($column, $dir);
+            } else {
+                $data->orderBy('Ctrl_Mquinas.Txt_Nombre', 'asc');
+            }
+
             $data = $data->offset($request->start)
                 ->limit($request->length)
                 ->get();
