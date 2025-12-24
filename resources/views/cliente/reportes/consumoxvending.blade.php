@@ -334,7 +334,7 @@
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: '{{ url("/getconsumoxvending/data") }}',
+                    url: '{{ route("consumosxvending.data") }}',
                     data: function (d) {
                         d.startDate = $('#startDate').val();
                         d.endDate = $('#endDate').val();

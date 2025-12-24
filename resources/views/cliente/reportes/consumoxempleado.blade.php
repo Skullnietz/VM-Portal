@@ -81,7 +81,8 @@
                             <option value="">Seleccione empleados</option>
                             @foreach($empleados as $empleado)
                                 <option value="{{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}">
-                                    {{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}</option>
+                                    {{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -308,7 +309,7 @@
         processing: true,
         serverSide: true,
         ajax: {
-            url: '{{ url("/getconsumoxempleado/data") }}', // Reemplaza con la ruta a tu controlador
+            url: '{{ route("consumosxempleado.data") }}', // Reemplaza con la ruta a tu controlador
             data: function (d) {
                 d.startDate = $('#startDate').val();
                 d.endDate = $('#endDate').val();
