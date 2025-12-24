@@ -717,10 +717,6 @@ class ReportesClienteController extends Controller
 
 
 
-            $totalRecords = $data->count(); // Total sin filtrar
-            $filteredData = clone $data;
-            $filteredRecords = $filteredData->count(); // Total después de aplicar filtros
-
             // Definición de columnas para el ordenamiento
             $columns = [
                 0 => 'Ctrl_Mquinas.Txt_Nombre', // Maquina
@@ -742,24 +738,33 @@ class ReportesClienteController extends Controller
                 $data->orderBy('Ctrl_Mquinas.Txt_Nombre', 'asc');
             }
 
-            $data = $data->offset($request->start)
-                ->limit($request->length)
-                ->get()
-                ->map(function ($row) {
-                    // Force UTF-8 on string fields to prevent json_encode failure
-                    foreach ($row as $key => $value) {
-                        if (is_string($value)) {
-                            $row->$key = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
-                        }
+            // --- REFACTOR: Fetch All logic (Matching Area Logic) ---
+            // Execute Query to get ALL records
+            $results = $data->get();
+
+            $totalRecords = $results->count();
+            $filteredRecords = $totalRecords; // Assuming filters applied in SQL
+
+            // Pagination in PHP (Slice)
+            // This bypasses SQL OFFSET/FETCH issues while still respecting DataTables "page" size
+            $pagedData = $results->slice($request->start, $request->length)->values();
+
+            // Formatting and Analysis (UTF-8 Fix)
+            $finalData = $pagedData->map(function ($row) {
+                // Force UTF-8 on string fields
+                foreach ($row as $key => $value) {
+                    if (is_string($value)) {
+                        $row->$key = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
                     }
-                    return $row;
-                });
+                }
+                return $row;
+            });
 
             return response()->json([
                 'draw' => intval($request->draw),
                 'recordsTotal' => $totalRecords,
                 'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'data' => $finalData
             ]);
 
         } catch (\Exception $e) {
