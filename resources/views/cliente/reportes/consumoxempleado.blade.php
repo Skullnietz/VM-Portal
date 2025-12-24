@@ -309,7 +309,7 @@
         processing: true,
         serverSide: true,
         ajax: {
-            url: '{{ route("consumosxempleado.data", ["language" => request()->language]) }}', // Reemplaza con la ruta a tu controlador
+            url: '{{ route("consumosxempleado.data", ["language" => request()->route("language") ?? "es"]) }}', // Reemplaza con la ruta a tu controlador
             data: function (d) {
                 d.startDate = $('#startDate').val();
                 d.endDate = $('#endDate').val();
