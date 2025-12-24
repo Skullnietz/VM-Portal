@@ -14,53 +14,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportesClienteController extends Controller
 {
-    public function debugConsumo(Request $request)
-    {
-        try {
-            if (session_status() == PHP_SESSION_NONE) {
-                session_start();
-            }
 
-            echo "<h1>Deep Diagnostics: Testing getConsumoxVending Logic</h1>";
-
-            // Invoke the ACTUAL method that is failing
-            echo "<h2>Calling getConsumoxVending...</h2>";
-
-            // Mocking parameters if they are missing for a basic test
-            $request->merge([
-                'start' => 0,
-                'length' => 10,
-                'draw' => 1,
-                // Add a default sort to test the new order logic
-                'order' => [['column' => 0, 'dir' => 'asc']]
-            ]);
-
-            $response = $this->getConsumoxVending($request);
-
-            echo "<h2>Response Received:</h2>";
-
-            // Handle different response types
-            if ($response instanceof \Illuminate\Http\JsonResponse) {
-                $data = $response->getData(true);
-                echo "<pre>" . htmlspecialchars(print_r($data, true)) . "</pre>";
-
-                if (isset($data['error'])) {
-                    echo "<h2 style='color:red'>LOGIC ERROR DETECTED</h2>";
-                } else {
-                    echo "<h2 style='color:green'>LOGIC SUCCESS</h2>";
-                }
-            } else {
-                echo "Response is not JSON. Dumping:<br>";
-                var_dump($response);
-            }
-
-        } catch (\Exception $e) {
-            echo "<h2 style='color:red'>CRITICAL EXCEPTION: " . $e->getMessage() . "</h2>";
-            echo "<h3>File: " . $e->getFile() . " Line: " . $e->getLine() . "</h3>";
-            echo "<h3>Stack Trace:</h3><pre>" . $e->getTraceAsString() . "</pre>";
-        }
-        die();
-    }
 
     public function indexInventarioVM()
     {

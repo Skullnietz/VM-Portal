@@ -103,7 +103,7 @@ Route::group(['middleware' => 'checkSession'], function () {
         ///////////////////////////////////// REPORTE DE VENDINGS /////////////////////////////
         Route::get('/reporte/inventariovm', [ReportesClienteController::class, 'indexInventarioVM'])->name('inventariovm.index');
         ///////////////////////////////////// REPORTE DE PERMISOS /////////////////////////////
-        Route::get('/debug-consumo', [ReportesClienteController::class, 'debugConsumo']);
+
         Route::get('/reporte/consultaconsumos', [ReportesClienteController::class, 'indexConsultaConsumos'])
             ->name('consultasconsumo.index');
         Route::post('/reporte/consultaconsumos/data', [ReportesClienteController::class, 'dataConsultaConsumos'])
