@@ -36,6 +36,12 @@ class Handler extends ExceptionHandler
      */
     public function report(Throwable $exception)
     {
+        if ($exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            \Illuminate\Support\Facades\Log::warning('Urvina 404 Error: Page not found at ' . request()->url());
+        } elseif ($exception instanceof \Error || $exception instanceof \ErrorException) {
+            \Illuminate\Support\Facades\Log::error('Urvina 500 Error: ' . $exception->getMessage());
+        }
+
         parent::report($exception);
     }
 
