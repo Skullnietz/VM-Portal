@@ -392,7 +392,7 @@ class ReportesClienteController extends Controller
                 DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
                 'Cat_Empleados.No_Empleado as Numero_de_empleado',
                 'Cat_Area.Txt_Nombre as Area',
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
                 DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
                 'Ctrl_Consumos.Fecha_Real as Fecha',
@@ -483,14 +483,14 @@ class ReportesClienteController extends Controller
                 DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
                 DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
                 DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
                 DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
                 DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo')
             )
             ->groupBy(
                 'Cat_Area.Txt_Nombre',
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'')"),
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
                 DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
                 'Cat_Empleados.Nombre',
@@ -584,105 +584,109 @@ class ReportesClienteController extends Controller
 
     public function getConsumoxVending(Request $request)
     {
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        $idPlanta = $_SESSION['usuario']->Id_Planta;
-
-        // Consulta para obtener la información agrupada por máquina (nombre), producto, área y fecha del último consumo
-        $data = DB::table('Ctrl_Consumos')
-            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
-            ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-            ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina') // Se une la tabla de máquinas
-            ->leftJoin(DB::raw('(
-                select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
-                from Ctrl_Consumos as a
-                inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
-                right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
-                inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
-            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-            ->where('Cat_Empleados.Id_Planta', $idPlanta)
-            ->groupBy(
-                'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
-                'Ctrl_Consumos.Id_Articulo',
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
-                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
-                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
-                'Cat_Area.Txt_Nombre'
-            )
-            ->select(
-                'Ctrl_Mquinas.Txt_Nombre as Maquina', // Se selecciona el nombre de la máquina
-                DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'), // Total de consumos del producto en la vending
-                DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado) as No_Empleados'), // Número de empleados distintos consumiendo el producto
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
-                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
-                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
-                'Cat_Area.Txt_Nombre as Area', // Nombre del área
-                DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo') // Fecha del último consumo
-            );
-
-
-
-        // Aplicar filtros de área si están presentes
-        if ($request->filled('area')) {
-            // Si es un array, usar whereIn
-            if (is_array($request->area)) {
-                $data->whereIn('Cat_Area.Txt_Nombre', $request->area);
-            } else {
-                $data->where('Cat_Area.Txt_Nombre', '=', "$request->area");
+        try {
+            if (session_status() == PHP_SESSION_NONE) {
+                session_start();
             }
-        }
+            $idPlanta = $_SESSION['usuario']->Id_Planta;
 
-        // Aplicar filtros de producto si están presentes
-        if ($request->filled('product')) {
-            // Si es un array, usar whereIn para múltiples productos
-            if (is_array($request->product)) {
-                $data->where(function ($query) use ($request) {
-                    $query->whereIn('Cat_Articulos.Txt_Descripcion', $request->product);
-                });
-            } else {
-                $data->where(function ($query) use ($request) {
-                    $query->where('Cat_Articulos.Txt_Descripcion', '=', $request->product);
-                });
+            // Consulta para obtener la información agrupada por máquina (nombre), producto, área y fecha del último consumo
+            $data = DB::table('Ctrl_Consumos')
+                ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+                ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+                ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+                ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina') // Se une la tabla de máquinas
+                ->leftJoin(DB::raw('(
+                    select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
+                    from Ctrl_Consumos as a
+                    inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
+                    right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
+                    inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
+                ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
+                ->where('Cat_Empleados.Id_Planta', $idPlanta)
+                ->groupBy(
+                    'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
+                    'Ctrl_Consumos.Id_Articulo',
+                    DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
+                    DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
+                    DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
+                    'Cat_Area.Txt_Nombre'
+                )
+                ->select(
+                    'Ctrl_Mquinas.Txt_Nombre as Maquina', // Se selecciona el nombre de la máquina
+                    DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'), // Total de consumos del producto en la vending
+                    DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado) as No_Empleados'), // Número de empleados distintos consumiendo el producto
+                    DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
+                    DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+                    DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+                    'Cat_Area.Txt_Nombre as Area', // Nombre del área
+                    DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo') // Fecha del último consumo
+                );
+
+
+
+            // Aplicar filtros de área si están presentes
+            if ($request->filled('area')) {
+                // Si es un array, usar whereIn
+                if (is_array($request->area)) {
+                    $data->whereIn('Cat_Area.Txt_Nombre', $request->area);
+                } else {
+                    $data->where('Cat_Area.Txt_Nombre', '=', "$request->area");
+                }
             }
-        }
 
-        // Aplicar filtros de vending si están presentes
-        if ($request->filled('vending')) {
-            // Si es un array, usar whereIn para múltiples máquinas vending
-            if (is_array($request->vending)) {
-                $data->whereIn('Ctrl_Consumos.Id_Maquina', $request->vending);
-            } else {
-                $data->where('Ctrl_Consumos.Id_Maquina', '=', "{$request->vending}");
+            // Aplicar filtros de producto si están presentes
+            if ($request->filled('product')) {
+                // Si es un array, usar whereIn para múltiples productos
+                if (is_array($request->product)) {
+                    $data->where(function ($query) use ($request) {
+                        $query->whereIn('Cat_Articulos.Txt_Descripcion', $request->product);
+                    });
+                } else {
+                    $data->where(function ($query) use ($request) {
+                        $query->where('Cat_Articulos.Txt_Descripcion', '=', $request->product);
+                    });
+                }
             }
+
+            // Aplicar filtros de vending si están presentes
+            if ($request->filled('vending')) {
+                // Si es un array, usar whereIn para múltiples máquinas vending
+                if (is_array($request->vending)) {
+                    $data->whereIn('Ctrl_Consumos.Id_Maquina', $request->vending);
+                } else {
+                    $data->where('Ctrl_Consumos.Id_Maquina', '=', "{$request->vending}");
+                }
+            }
+
+            // Filtros de fecha
+            if ($request->filled('startDate') && $request->filled('endDate')) {
+                $startDate = $request->startDate . ' 00:00:00';
+                $endDate = $request->endDate . ' 23:59:59';
+
+                $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
+            }
+
+
+
+            $totalRecords = $data->count(); // Total sin filtrar
+            $filteredData = clone $data;
+            $filteredRecords = $filteredData->count(); // Total después de aplicar filtros
+
+            $data = $data->offset($request->start)
+                ->limit($request->length)
+                ->get();
+
+            return response()->json([
+                'draw' => intval($request->draw),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()], 500);
         }
-
-        // Filtros de fecha
-        if ($request->filled('startDate') && $request->filled('endDate')) {
-            $startDate = $request->startDate . ' 00:00:00';
-            $endDate = $request->endDate . ' 23:59:59';
-
-            $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
-        }
-
-
-
-        $totalRecords = $data->count(); // Total sin filtrar
-        $filteredData = clone $data;
-        $filteredRecords = $filteredData->count(); // Total después de aplicar filtros
-
-        $data = $data->offset($request->start)
-            ->limit($request->length)
-            ->get();
-
-        return response()->json([
-            'draw' => intval($request->draw),
-            'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $filteredRecords,
-            'data' => $data
-        ]);
-
     }
     public function exportConsumoxVending(Request $request)
     {
