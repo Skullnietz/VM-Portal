@@ -14,76 +14,52 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportesClienteController extends Controller
 {
-    public function debugConsumo()
+    public function debugConsumo(Request $request)
     {
         try {
             if (session_status() == PHP_SESSION_NONE) {
                 session_start();
             }
 
-            echo "<h1>System Diagnostics</h1>";
+            echo "<h1>Deep Diagnostics: Testing getConsumoxVending Logic</h1>";
 
-            // 1. Check Session
-            echo "<h2>1. Session Check</h2>";
-            if (!isset($_SESSION['usuario'])) {
-                throw new \Exception("Session 'usuario' is not set. Please log in again.");
+            // Invoke the ACTUAL method that is failing
+            echo "<h2>Calling getConsumoxVending...</h2>";
+
+            // Mocking parameters if they are missing for a basic test
+            $request->merge([
+                'start' => 0,
+                'length' => 10,
+                'draw' => 1,
+                // Add a default sort to test the new order logic
+                'order' => [['column' => 0, 'dir' => 'asc']]
+            ]);
+
+            $response = $this->getConsumoxVending($request);
+
+            echo "<h2>Response Received:</h2>";
+
+            // Handle different response types
+            if ($response instanceof \Illuminate\Http\JsonResponse) {
+                $data = $response->getData(true);
+                echo "<pre>" . htmlspecialchars(print_r($data, true)) . "</pre>";
+
+                if (isset($data['error'])) {
+                    echo "<h2 style='color:red'>LOGIC ERROR DETECTED</h2>";
+                } else {
+                    echo "<h2 style='color:green'>LOGIC SUCCESS</h2>";
+                }
+            } else {
+                echo "Response is not JSON. Dumping:<br>";
+                var_dump($response);
             }
-            echo "Session User ID: " . htmlspecialchars(print_r($_SESSION['usuario']->Id_Usuario ?? 'N/A', true)) . "<br>";
-            echo "Session Planta ID: " . htmlspecialchars(print_r($_SESSION['usuario']->Id_Planta ?? 'N/A', true)) . "<br>";
-            $idPlanta = $_SESSION['usuario']->Id_Planta;
-
-            // 2. Build Query
-            echo "<h2>2. Query Construction</h2>";
-
-            $query = DB::table('Ctrl_Consumos')
-                ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
-                ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-                ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-                ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-                ->leftJoin(DB::raw('(
-                    select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
-                    from Ctrl_Consumos as a
-                    inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
-                    right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
-                    inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
-                ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-                ->where('Cat_Empleados.Id_Planta', $idPlanta)
-                ->groupBy(
-                    'Ctrl_Mquinas.Txt_Nombre',
-                    'Ctrl_Consumos.Id_Articulo',
-                    DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
-                    DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
-                    DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
-                    'Cat_Area.Txt_Nombre'
-                )
-                ->select(
-                    'Ctrl_Mquinas.Txt_Nombre as Maquina',
-                    DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'),
-                    DB::raw('COUNT(DISTINCT Ctrl_Consumos.Id_Empleado) as No_Empleados'),
-                    DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
-                    'Cat_Area.Txt_Nombre as Area'
-                );
-
-            echo "Query Built Successfully.<br>";
-
-            // 3. Execute Count
-            echo "<h2>3. Execute Count()</h2>";
-            $count = $query->count();
-            echo "Total Records: " . $count . "<br>";
-
-            // 4. Execute Selection (Limit 5)
-            echo "<h2>4. Execute Get() (Limit 5)</h2>";
-            $results = $query->limit(5)->get();
-            echo "Retrieved " . count($results) . " rows.<br>";
-            echo "<pre>" . htmlspecialchars(print_r($results, true)) . "</pre>";
-
-            echo "<h2 style='color:green'>SUCCESS: Diagnostics Passed.</h2>";
 
         } catch (\Exception $e) {
-            echo "<h2 style='color:red'>ERROR: " . $e->getMessage() . "</h2>";
+            echo "<h2 style='color:red'>CRITICAL EXCEPTION: " . $e->getMessage() . "</h2>";
+            echo "<h3>File: " . $e->getFile() . " Line: " . $e->getLine() . "</h3>";
             echo "<h3>Stack Trace:</h3><pre>" . $e->getTraceAsString() . "</pre>";
         }
-        die(); // Stop further execution
+        die();
     }
 
     public function indexInventarioVM()
