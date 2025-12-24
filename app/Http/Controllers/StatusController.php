@@ -234,12 +234,19 @@ class StatusController extends Controller
             ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
             ->select(
                 DB::raw('Cat_Articulos.Id_Articulo as id'),
-                DB::raw('Cat_Articulos.Txt_Codigo as nombre'),
+                DB::raw("ISNULL(NULLIF(Cat_Articulos.Txt_Codigo_Cliente, ''), ISNULL(NULLIF(
+                    STUFF((
+                        SELECT '/' + c.Codigo_Clientte 
+                        FROM Codigos_Clientes c 
+                        WHERE c.Id_Articulo = Cat_Articulos.Id_Articulo 
+                        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
+                    , 1, 1, '')
+                , ''), Cat_Articulos.Txt_Codigo)) as nombre"),
                 DB::raw('SUM(Ctrl_Consumos.Cantidad) as total_cantidad')
             )
             ->whereMonth('Ctrl_Consumos.Fecha_Consumo', $currentMonth)
             ->whereYear('Ctrl_Consumos.Fecha_Consumo', $currentYear)
-            ->groupBy('Cat_Articulos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
+            ->groupBy('Cat_Articulos.Id_Articulo', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente')
             ->orderBy('total_cantidad', 'DESC')
             ->take(5)
             ->get();
@@ -280,12 +287,19 @@ class StatusController extends Controller
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
             ->select(
-                'Cat_Articulos.Txt_Codigo as nombre',
+                DB::raw("ISNULL(NULLIF(Cat_Articulos.Txt_Codigo_Cliente, ''), ISNULL(NULLIF(
+                    STUFF((
+                        SELECT '/' + c.Codigo_Clientte 
+                        FROM Codigos_Clientes c 
+                        WHERE c.Id_Articulo = Cat_Articulos.Id_Articulo 
+                        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
+                    , 1, 1, '')
+                , ''), Cat_Articulos.Txt_Codigo)) as nombre"),
                 DB::raw('SUM(Ctrl_Consumos.Cantidad) as total_cantidad')
             )
             ->whereMonth('Ctrl_Consumos.Fecha_Consumo', $currentMonth)
             ->whereYear('Ctrl_Consumos.Fecha_Consumo', $currentYear)
-            ->groupBy('Cat_Articulos.Txt_Codigo')
+            ->groupBy('Cat_Articulos.Id_Articulo', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente')
             ->orderBy('total_cantidad', 'ASC')
             ->take(5)
             ->get();
@@ -313,14 +327,21 @@ class StatusController extends Controller
         $productoMasConsumido = DB::table('Ctrl_Consumos')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-            ->select('Cat_Articulos.Txt_Codigo')
+            ->select(DB::raw("ISNULL(NULLIF(Cat_Articulos.Txt_Codigo_Cliente, ''), ISNULL(NULLIF(
+                STUFF((
+                    SELECT '/' + c.Codigo_Clientte 
+                    FROM Codigos_Clientes c 
+                    WHERE c.Id_Articulo = Cat_Articulos.Id_Articulo 
+                    FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
+                , 1, 1, '')
+            , ''), Cat_Articulos.Txt_Codigo)) as Codigo"))
             ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
             ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
             ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
-            ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Txt_Codigo')
+            ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Id_Articulo', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente')
             ->orderByRaw('COUNT(Ctrl_Consumos.Id_Articulo) DESC')
             ->limit(1)
-            ->pluck('Cat_Articulos.Txt_Codigo')
+            ->pluck('Codigo')
             ->first();
 
         // Área de alto consumo (ya está bien)

@@ -19,26 +19,28 @@ use Illuminate\Support\Facades\Storage;
 class ClientController extends Controller
 {
     // Dashboard del Cliente (Estado de Vendings, Indicadores, Cosnumos Recientes, Graficas)
-    public function Home(){
-        
+    public function Home()
+    {
+
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         $userId = $_SESSION['usuario']->Id_Usuario;
 
         $unreadNotifications = DB::table('vending_notifications')
             ->where('User_Id', $userId)
             ->whereNull('read_at')
             ->get();
-        
-        $Codigocliente = DB::table('Cat_Plantas')->select('Txt_Nombre_Planta','Txt_Sitio','Txt_Codigo_Cliente')->where('Id_Planta',$_SESSION['usuario']->Id_Planta)->get();
-        return view('cliente.home', compact('unreadNotifications'))->with('Codigocliente',$Codigocliente);
-    } 
+
+        $Codigocliente = DB::table('Cat_Plantas')->select('Txt_Nombre_Planta', 'Txt_Sitio', 'Txt_Codigo_Cliente')->where('Id_Planta', $_SESSION['usuario']->Id_Planta)->get();
+        return view('cliente.home', compact('unreadNotifications'))->with('Codigocliente', $Codigocliente);
+    }
     // Tabla de Empleados con Opciones de Creación y Modificacion
-    public function Empleados(){
+    public function Empleados()
+    {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         $areas = DB::table('Cat_Area')->select('Id_Area', 'Txt_Nombre')->get();
         return view('cliente.empleados', compact('areas'));
     }
@@ -46,23 +48,23 @@ class ClientController extends Controller
     public function checkPermission(Request $request)
     {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         $idPlanta = $_SESSION['usuario']->Id_Planta;
         try {
             $existingPermission = DB::table('Ctrl_Permisos_x_Area')
-            ->where('Id_Area', $request->input('Id_Area'))
-            ->where('Id_Articulo', $request->input('Id_Articulo'))
-            ->where('Id_Planta', $idPlanta)
-            ->exists();
+                ->where('Id_Area', $request->input('Id_Area'))
+                ->where('Id_Articulo', $request->input('Id_Articulo'))
+                ->where('Id_Planta', $idPlanta)
+                ->exists();
 
-        return response()->json(['exists' => $existingPermission]);
+            return response()->json(['exists' => $existingPermission]);
         } catch (\Exception $e) {
             Log::error('Error en la función store: ' . $e->getMessage());
             return response()->json(['error' => 'Error en el proceso.'], 500);
         }
 
-        
+
     }
 
     public function enviarCSVporCorreo(Request $request)
@@ -91,12 +93,12 @@ class ClientController extends Controller
         // Generar y descargar el archivo Excel
         return Excel::download(new PermisosExport, $fileName);
     }
-    
+
     public function addPermission(Request $request)
     {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         $idPlanta = $_SESSION['usuario']->Id_Planta;
         try {
             DB::table('Ctrl_Permisos_x_Area')->insert([
@@ -107,102 +109,121 @@ class ClientController extends Controller
                 'Id_Planta' => $idPlanta,
                 'Status' => 'Alta',
             ]);
-    
+
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             Log::error('Error en la función store: ' . $e->getMessage());
             return response()->json(['error' => 'Error en el proceso.'], 500);
         }
 
-        
+
     }
 
-    
 
-    public function PermisosArticulos(){
+
+    public function PermisosArticulos()
+    {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         $idPlanta = $_SESSION['usuario']->Id_Planta;
-    
-    $areas = DB::table('Cat_Area')
-                ->where('Id_Planta', $idPlanta)
-                ->get();
 
-    $articulos = DB::table('Cat_Articulos')
-                ->get();
-                //dd($articulos);
+        $areas = DB::table('Cat_Area')
+            ->where('Id_Planta', $idPlanta)
+            ->get();
+
+        // 🔹 Obtener las máquinas de la planta
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $idPlanta)
+            ->pluck('Id_Maquina')
+            ->toArray();
+
+        // 🔹 Obtener los artículos configurados en esas máquinas
+        $articulosIds = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $maquinas)
+            ->whereNotNull('Id_Articulo')
+            ->distinct()
+            ->pluck('Id_Articulo')
+            ->toArray();
+
+        // 🔹 Obtener los detalles de esos artículos
+        $articulos = DB::table('Cat_Articulos')
+            ->whereIn('Id_Articulo', $articulosIds)
+            ->select('Id_Articulo', 'Txt_Descripcion')
+            ->get();
+
         return view('cliente.permisos', compact('areas', 'articulos'));
 
     }
 
-    public function PermisosArticulosFilter($lang, $areaId) {
-    if (session_status() == PHP_SESSION_NONE) {
-        session_start();
-    }
+    public function PermisosArticulosFilter($lang, $areaId)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
 
-    $idPlanta = $_SESSION['usuario']->Id_Planta;
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
 
-    // Nombre del área
-    $QAreaName = DB::table('Cat_Area')
-        ->where('Id_Planta', $idPlanta)
-        ->where('Id_Area', $areaId)
-        ->first();
-    $areaName = $QAreaName->Txt_Nombre ?? '';
+        // Nombre del área
+        $QAreaName = DB::table('Cat_Area')
+            ->where('Id_Planta', $idPlanta)
+            ->where('Id_Area', $areaId)
+            ->first();
+        $areaName = $QAreaName->Txt_Nombre ?? '';
 
-    // Todas las áreas de la planta
-    $areas = DB::table('Cat_Area')
-        ->where('Id_Planta', $idPlanta)
-        ->get();
+        // Todas las áreas de la planta
+        $areas = DB::table('Cat_Area')
+            ->where('Id_Planta', $idPlanta)
+            ->get();
 
-    // 🔹 Obtener las máquinas de la planta
-    $maquinas = DB::table('Ctrl_Mquinas')
-        ->where('Id_Planta', $idPlanta)
-        ->pluck('Id_Maquina')
-        ->toArray();
+        // 🔹 Obtener las máquinas de la planta
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $idPlanta)
+            ->pluck('Id_Maquina')
+            ->toArray();
 
-    // 🔹 Obtener los artículos configurados en esas máquinas
-    $articulosIds = DB::table('Configuracion_Maquina')
-        ->whereIn('Id_Maquina', $maquinas)
-        ->whereNotNull('Id_Articulo')
-        ->distinct()
-        ->pluck('Id_Articulo')
-        ->toArray();
+        // 🔹 Obtener los artículos configurados en esas máquinas
+        $articulosIds = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $maquinas)
+            ->whereNotNull('Id_Articulo')
+            ->distinct()
+            ->pluck('Id_Articulo')
+            ->toArray();
 
-    // 🔹 Obtener los detalles de esos artículos
-    $articulos = DB::table('Cat_Articulos')
-        ->whereIn('Id_Articulo', $articulosIds)
-        ->select('Id_Articulo', 'Txt_Descripcion')
-        ->get();
+        // 🔹 Obtener los detalles de esos artículos
+        $articulos = DB::table('Cat_Articulos')
+            ->whereIn('Id_Articulo', $articulosIds)
+            ->select('Id_Articulo', 'Txt_Descripcion')
+            ->get();
 
-    return view('cliente.perarea', compact('areas', 'articulos', 'areaId', 'areaName'));
+        return view('cliente.perarea', compact('areas', 'articulos', 'areaId', 'areaName'));
     }
 
     public function getPermisosArticulos(Request $request)
     {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         try {
-            
-                if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
-                    $idPlanta = $_SESSION['usuario']->Id_Planta;
-                    $data = DB::table('Ctrl_Permisos_x_Area')
-                        ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
-                        ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-                        ->select(
-                            'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
-                            'Cat_Area.Txt_Nombre as Nombre',
-                            DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
-                            'Ctrl_Permisos_x_Area.Status as Estatus',
-                            'Ctrl_Permisos_x_Area.Cantidad',
-                            'Ctrl_Permisos_x_Area.Frecuencia'
-                        )
-                        ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
-                        ->get();
 
-                    return DataTables::of($data)->make(true);
-               
+            if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+                $idPlanta = $_SESSION['usuario']->Id_Planta;
+                $data = DB::table('Ctrl_Permisos_x_Area')
+                    ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
+                    ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+                    ->select(
+                        'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
+                        'Cat_Area.Txt_Nombre as Nombre',
+                        DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
+                        'Ctrl_Permisos_x_Area.Status as Estatus',
+                        'Ctrl_Permisos_x_Area.Cantidad',
+                        'Ctrl_Permisos_x_Area.Frecuencia'
+                    )
+                    ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
+                    ->get();
+
+                return DataTables::of($data)->make(true);
+
             }
         } catch (\Exception $e) {
             Log::error('Error obteniendo los permisos de artículos: ' . $e->getMessage());
@@ -213,29 +234,29 @@ class ClientController extends Controller
     public function getPermisosPorArea($areaId)
     {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         try {
-            
-                if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
-                    $idPlanta = $_SESSION['usuario']->Id_Planta;
-                    $data = DB::table('Ctrl_Permisos_x_Area')
-                        ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
-                        ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
-                        ->select(
-                            'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
-                            'Cat_Area.Txt_Nombre as Nombre',
-                            DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
-                            'Ctrl_Permisos_x_Area.Status as Estatus',
-                            'Ctrl_Permisos_x_Area.Cantidad',
-                            'Ctrl_Permisos_x_Area.Frecuencia'
-                        )
-                        ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
-                        ->where('Ctrl_Permisos_x_Area.Id_Area', $areaId)
-                        ->get();
 
-                    return DataTables::of($data)->make(true);
-               
+            if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Planta)) {
+                $idPlanta = $_SESSION['usuario']->Id_Planta;
+                $data = DB::table('Ctrl_Permisos_x_Area')
+                    ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
+                    ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+                    ->select(
+                        'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
+                        'Cat_Area.Txt_Nombre as Nombre',
+                        DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
+                        'Ctrl_Permisos_x_Area.Status as Estatus',
+                        'Ctrl_Permisos_x_Area.Cantidad',
+                        'Ctrl_Permisos_x_Area.Frecuencia'
+                    )
+                    ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
+                    ->where('Ctrl_Permisos_x_Area.Id_Area', $areaId)
+                    ->get();
+
+                return DataTables::of($data)->make(true);
+
             }
         } catch (\Exception $e) {
             Log::error('Error obteniendo los permisos de artículos: ' . $e->getMessage());
@@ -268,149 +289,151 @@ class ClientController extends Controller
     }
 
     public function toggleStatusPermiso(Request $request, $id)
-{
-    try {
-        // Obtener el Id_Area asociado al permiso
-        $idArea = DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->value('Id_Area');
+    {
+        try {
+            // Obtener el Id_Area asociado al permiso
+            $idArea = DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->value('Id_Area');
 
-        // Verificar si el estado del área es "Baja"
-        $areaStatus = DB::table('Cat_Area')->where('Id_Area', $idArea)->value('Txt_Estatus');
-        if ($areaStatus == 'Baja') {
-            return response()->json(['error' => 'No se puede cambiar el estado del permiso porque el área está dada de baja. Cambie el estado del área antes de continuar.'], 400);
+            // Verificar si el estado del área es "Baja"
+            $areaStatus = DB::table('Cat_Area')->where('Id_Area', $idArea)->value('Txt_Estatus');
+            if ($areaStatus == 'Baja') {
+                return response()->json(['error' => 'No se puede cambiar el estado del permiso porque el área está dada de baja. Cambie el estado del área antes de continuar.'], 400);
+            }
+
+            // Obtener el estado actual del permiso
+            $currentStatus = DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->value('Status');
+
+            // Determinar el nuevo estado
+            $newStatus = $currentStatus == 'Alta' ? 'Baja' : 'Alta';
+
+            // Actualizar el estado del permiso
+            DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->update(['Status' => $newStatus]);
+
+            return response()->json(['success' => 'El estado del permiso se ha actualizado con éxito.']);
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar el estado del permiso de artículo: ' . $e->getMessage());
+            return response()->json(['error' => 'Hubo un error al intentar actualizar el estado del permiso de artículo. Por favor, intente nuevamente más tarde.'], 500);
+        }
+    }
+
+    public function getDataEmpleados(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
         }
 
-        // Obtener el estado actual del permiso
-        $currentStatus = DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->value('Status');
-        
-        // Determinar el nuevo estado
-        $newStatus = $currentStatus == 'Alta' ? 'Baja' : 'Alta';
-        
-        // Actualizar el estado del permiso
-        DB::table('Ctrl_Permisos_x_Area')->where('Id_Permiso', $id)->update(['Status' => $newStatus]);
+        $estatus = $request->input('estatus');
 
-        return response()->json(['success' => 'El estado del permiso se ha actualizado con éxito.']);
-    } catch (\Exception $e) {
-        Log::error('Error al actualizar el estado del permiso de artículo: ' . $e->getMessage());
-        return response()->json(['error' => 'Hubo un error al intentar actualizar el estado del permiso de artículo. Por favor, intente nuevamente más tarde.'], 500);
+        $data = DB::table('Cat_Empleados')
+            ->select(
+                'Cat_Empleados.Id_Empleado',
+                'Cat_Empleados.Nombre',
+                'Cat_Empleados.APaterno',
+                'Cat_Empleados.AMaterno',
+                'Cat_Empleados.No_Empleado',
+                'Cat_Empleados.Nip',
+                'Cat_Empleados.No_Tarjeta',
+                'Cat_Empleados.Id_Area',
+                'Cat_Empleados.Tipo_Acceso',
+                'Cat_Empleados.Fecha_alta',
+                'Cat_Empleados.Fecha_Modificacion',
+                'Cat_Empleados.Txt_Estatus',
+                'Cat_Area.Txt_Nombre as NArea'
+            )
+            ->leftJoin('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->where('Cat_Empleados.Id_Planta', $_SESSION['usuario']->Id_Planta)
+            ->when($estatus !== null && $estatus !== '', function ($query) use ($estatus) {
+                return $query->where('Cat_Empleados.Txt_Estatus', $estatus);
+            })
+            ->get();
+
+        foreach ($data as $empleado) {
+            $empleado->AFecha = \Carbon\Carbon::parse($empleado->Fecha_alta)->format('l, j F Y H:i:s');
+            $empleado->MFecha = \Carbon\Carbon::parse($empleado->Fecha_Modificacion)->format('l, j F Y H:i:s');
+        }
+
+        return DataTables::of($data)->make(true);
     }
-}
-    
-public function getDataEmpleados(Request $request)
-{
-    if (session_status() == PHP_SESSION_NONE) {
-        session_start();
-    }
-
-    $estatus = $request->input('estatus');
-
-    $data = DB::table('Cat_Empleados')
-        ->select(
-            'Cat_Empleados.Id_Empleado',
-            'Cat_Empleados.Nombre',
-            'Cat_Empleados.APaterno',
-            'Cat_Empleados.AMaterno',
-            'Cat_Empleados.No_Empleado',
-            'Cat_Empleados.Nip',
-            'Cat_Empleados.No_Tarjeta',
-            'Cat_Empleados.Id_Area',
-            'Cat_Empleados.Tipo_Acceso',
-            'Cat_Empleados.Fecha_alta',
-            'Cat_Empleados.Fecha_Modificacion',
-            'Cat_Empleados.Txt_Estatus',
-            'Cat_Area.Txt_Nombre as NArea'
-        )
-        ->leftJoin('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-        ->where('Cat_Empleados.Id_Planta', $_SESSION['usuario']->Id_Planta)
-        ->when($estatus !== null && $estatus !== '', function ($query) use ($estatus) {
-            return $query->where('Cat_Empleados.Txt_Estatus', $estatus);
-        })
-        ->get();
-
-    foreach ($data as $empleado) {
-        $empleado->AFecha = \Carbon\Carbon::parse($empleado->Fecha_alta)->format('l, j F Y H:i:s');
-        $empleado->MFecha = \Carbon\Carbon::parse($empleado->Fecha_Modificacion)->format('l, j F Y H:i:s');
-    }
-
-    return DataTables::of($data)->make(true);
-}
-    public function exportExcel() {
+    public function exportExcel()
+    {
         return Excel::download(new EmpleadosExport, 'empleados.xlsx');
     }
 
     public function generarCSV($idPlanta)
-{
-    $filename = "empleados_" . date('Ymd_His') . ".csv";
-    $path = storage_path("app/{$filename}");
+    {
+        $filename = "empleados_" . date('Ymd_His') . ".csv";
+        $path = storage_path("app/{$filename}");
 
-    $empleados = DB::table('Cat_Empleados')
-        ->select('No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'Id_Area', 'Txt_Estatus', 'Tipo_Acceso')
-        ->where('Id_Planta', $idPlanta)
-        ->get();
+        $empleados = DB::table('Cat_Empleados')
+            ->select('No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'Id_Area', 'Txt_Estatus', 'Tipo_Acceso')
+            ->where('Id_Planta', $idPlanta)
+            ->get();
 
-    $columns = ['No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus'];
+        $columns = ['No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus'];
 
-    $file = fopen($path, 'w');
-    fputcsv($file, $columns);
+        $file = fopen($path, 'w');
+        fputcsv($file, $columns);
 
-    foreach ($empleados as $empleado) {
-        $area = DB::table('Cat_Area')->where('Id_Area', $empleado->Id_Area)->value('Txt_Nombre');
-        $data = [
-            (string)$empleado->No_Empleado,
-            (string)$empleado->Nip,
-            (string)$empleado->No_Tarjeta,
-            $empleado->Nombre,
-            $empleado->APaterno,
-            $empleado->AMaterno,
-            $area,
-            $empleado->Txt_Estatus,
-        ];
-        fputcsv($file, $data);
+        foreach ($empleados as $empleado) {
+            $area = DB::table('Cat_Area')->where('Id_Area', $empleado->Id_Area)->value('Txt_Nombre');
+            $data = [
+                (string) $empleado->No_Empleado,
+                (string) $empleado->Nip,
+                (string) $empleado->No_Tarjeta,
+                $empleado->Nombre,
+                $empleado->APaterno,
+                $empleado->AMaterno,
+                $area,
+                $empleado->Txt_Estatus,
+            ];
+            fputcsv($file, $data);
+        }
+
+        fclose($file);
+        return $filename;
     }
 
-    fclose($file);
-    return $filename;
-}
-
-    public function exportCSV() {
+    public function exportCSV()
+    {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         $filename = "empleados_" . date('Ymd') . ".csv";
         $empleados = DB::table('Cat_Empleados')
-            ->select('No_Empleado', 'Nip','No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'Id_Area', 'Txt_Estatus', 'Tipo_Acceso')
+            ->select('No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'Id_Area', 'Txt_Estatus', 'Tipo_Acceso')
             ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
             ->get();
-    
+
         $headers = array(
-            "Content-type"        => "text/csv",
+            "Content-type" => "text/csv",
             "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
         );
-    
-        $columns = array('No_Empleado', 'Nip','No_Tarjeta','Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus');
-    
-        $callback = function() use($empleados, $columns) {
+
+        $columns = array('No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus');
+
+        $callback = function () use ($empleados, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
-    
+
             foreach ($empleados as $empleado) {
                 $area = DB::table('Cat_Area')->where('Id_Area', $empleado->Id_Area)->value('Txt_Nombre');
                 fputcsv($file, array(
-                    (string)$empleado->No_Empleado, 
-                    (string)$empleado->Nip, 
-                    (string)$empleado->No_Tarjeta, 
-                    $empleado->Nombre, 
-                    $empleado->APaterno, 
-                    $empleado->AMaterno, 
+                    (string) $empleado->No_Empleado,
+                    (string) $empleado->Nip,
+                    (string) $empleado->No_Tarjeta,
+                    $empleado->Nombre,
+                    $empleado->APaterno,
+                    $empleado->AMaterno,
                     $area,
                     $empleado->Txt_Estatus,
                 ));
             }
             fclose($file);
         };
-    
+
         return response()->stream($callback, 200, $headers);
     }
 
@@ -435,22 +458,23 @@ public function getDataEmpleados(Request $request)
                 // Guardar en una ubicación temporal controlada dentro de storage
                 // Esto asegura que funcione tanto en local como en producción
                 $filename = 'import_' . uniqid() . '.csv';
-                $path = $file->storeAs('temp_imports', $filename); 
-                
+                $path = $file->storeAs('temp_imports', $filename);
+
                 // Obtener la ruta absoluta del archivo
                 $fullPath = Storage::path($path);
 
                 if (($handle = fopen($fullPath, "r")) !== FALSE) {
                     // Leer la primera fila (encabezados)
                     $header = fgetcsv($handle, 1000, ",");
-                    
+
                     // Aquí podrías validar los encabezados si es estricto
                     // $expectedHeaders = ['No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus'];
                     // if ($header !== $expectedHeaders) { ... }
 
                     while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
                         // Saltar filas vacías
-                        if (array_filter($row) == []) continue;
+                        if (array_filter($row) == [])
+                            continue;
 
                         $no_empleado = !empty($row[0]) ? $row[0] : null;
                         $nip = !empty($row[1]) ? $row[1] : '1234';
@@ -587,25 +611,25 @@ public function getDataEmpleados(Request $request)
         return redirect()->back()->with(['status' => $status, 'message' => $message]);
     }
 
-    
 
-/**
- * Función para limpiar y convertir la codificación de caracteres a UTF-8
- */
-private function sanitizeString($string)
-{
-    // Detectar y convertir a UTF-8 si es necesario
-    if (!mb_detect_encoding($string, 'UTF-8', true)) {
-        $string = mb_convert_encoding($string, 'UTF-8', 'ISO-8859-1');
+
+    /**
+     * Función para limpiar y convertir la codificación de caracteres a UTF-8
+     */
+    private function sanitizeString($string)
+    {
+        // Detectar y convertir a UTF-8 si es necesario
+        if (!mb_detect_encoding($string, 'UTF-8', true)) {
+            $string = mb_convert_encoding($string, 'UTF-8', 'ISO-8859-1');
+        }
+
+        // Eliminar caracteres invisibles o especiales raros
+        $string = preg_replace('/[\x00-\x1F\x7F]/u', '', $string);
+
+        return trim($string);
     }
 
-    // Eliminar caracteres invisibles o especiales raros
-    $string = preg_replace('/[\x00-\x1F\x7F]/u', '', $string);
 
-    return trim($string);
-}
-
-    
     public function toggleStatus($id)
     {
         $empleado = DB::table('Cat_Empleados')->where('Id_Empleado', $id)->first();
@@ -622,7 +646,8 @@ private function sanitizeString($string)
         return response()->json(['success' => true]);
     }
 
-    public function updateemployee(Request $request, $id){
+    public function updateemployee(Request $request, $id)
+    {
         // Valida los datos de entrada
         $validated = $request->validate([
             'id' => 'required|exists:Cat_Empleados,Id_Empleado',
@@ -635,16 +660,16 @@ private function sanitizeString($string)
         ]);
 
         // Verificar si No_Tarjeta ya existe en otro empleado
-    if (!empty($validated['notarjeta'])) {
-        $tarjetaExistente = DB::table('Cat_Empleados')
-            ->where('No_Tarjeta', $validated['notarjeta'])
-            ->where('Id_Empleado', '!=', $id)
-            ->exists();
+        if (!empty($validated['notarjeta'])) {
+            $tarjetaExistente = DB::table('Cat_Empleados')
+                ->where('No_Tarjeta', $validated['notarjeta'])
+                ->where('Id_Empleado', '!=', $id)
+                ->exists();
 
-        if ($tarjetaExistente) {
-            return response()->json(['success' => false, 'message' => 'El número de tarjeta ya está registrado para otro empleado.'], 400);
+            if ($tarjetaExistente) {
+                return response()->json(['success' => false, 'message' => 'El número de tarjeta ya está registrado para otro empleado.'], 400);
+            }
         }
-    }
 
         // Actualiza el empleado en la base de datos usando DB facade
         DB::table('Cat_Empleados')->where('Id_Empleado', $id)->update([
@@ -657,65 +682,66 @@ private function sanitizeString($string)
         ]);
 
         return response()->json(['success' => true], 200);
-        
+
     }
 
     public function getAreas(Request $request)
-{
-    // Verifica si el usuario es administrador a través de un parámetro en la URL
-    $esAdministrador = $request->query('admin', false); // Se espera ?admin=1 en la URL para indicar que es admin
+    {
+        // Verifica si el usuario es administrador a través de un parámetro en la URL
+        $esAdministrador = $request->query('admin', false); // Se espera ?admin=1 en la URL para indicar que es admin
 
-    if ($esAdministrador) {
-        // Obtiene Id_Planta desde la URL (debe pasarse como ?id_planta=X)
-        $id_planta = $request->query('id_planta', null);
-    } else {
-        // Obtiene Id_Planta desde la sesión
-        $id_planta = $_SESSION['usuario']->Id_Planta ?? null;
+        if ($esAdministrador) {
+            // Obtiene Id_Planta desde la URL (debe pasarse como ?id_planta=X)
+            $id_planta = $request->query('id_planta', null);
+        } else {
+            // Obtiene Id_Planta desde la sesión
+            $id_planta = $_SESSION['usuario']->Id_Planta ?? null;
+        }
+
+        // Construye la consulta base
+        $query = DB::table('Cat_Area')
+            ->select('Id_Area', 'Txt_Nombre')
+            ->where('Txt_Estatus', 'Alta');
+
+        // Aplica el filtro de Id_Planta si está presente
+        if (!is_null($id_planta)) {
+            $query->where('Id_Planta', $id_planta);
+        }
+
+        $areas = $query->get();
+
+        return response()->json($areas);
     }
-
-    // Construye la consulta base
-    $query = DB::table('Cat_Area')
-        ->select('Id_Area', 'Txt_Nombre')
-        ->where('Txt_Estatus', 'Alta');
-
-    // Aplica el filtro de Id_Planta si está presente
-    if (!is_null($id_planta)) {
-        $query->where('Id_Planta', $id_planta);
-    }
-
-    $areas = $query->get();
-
-    return response()->json($areas);
-}
 
     public function destroyEmployee($Id_Empleado)
-{
-    try {
-        // Elimina consumos relacionados primero
-        DB::table('Ctrl_Consumos')->where('Id_Empleado', $Id_Empleado)->delete();
+    {
+        try {
+            // Elimina consumos relacionados primero
+            DB::table('Ctrl_Consumos')->where('Id_Empleado', $Id_Empleado)->delete();
 
-        // Ahora elimina al empleado
-        DB::table('Cat_Empleados')->where('Id_Empleado', $Id_Empleado)->delete();
+            // Ahora elimina al empleado
+            DB::table('Cat_Empleados')->where('Id_Empleado', $Id_Empleado)->delete();
 
-        return response()->json(['message' => 'Empleado eliminado con éxito.'], 200);
-    } catch (\Exception $e) {
-        Log::error('Error al eliminar el empleado', [
-            'Id_Empleado' => $Id_Empleado,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
+            return response()->json(['message' => 'Empleado eliminado con éxito.'], 200);
+        } catch (\Exception $e) {
+            Log::error('Error al eliminar el empleado', [
+                'Id_Empleado' => $Id_Empleado,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-        return response()->json([
-            'message' => 'No se pudo eliminar el empleado.',
-            'error' => $e->getMessage(),
-        ], 500);
+            return response()->json([
+                'message' => 'No se pudo eliminar el empleado.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 
-    public function storeemployee(Request $request) {
+    public function storeemployee(Request $request)
+    {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         $id_planta = $_SESSION['usuario']->Id_Planta;
         $usuario = $_SESSION['usuario']->Id_Usuario;
 
@@ -729,17 +755,17 @@ private function sanitizeString($string)
             'area' => 'required|exists:Cat_Area,Id_Area'
 
         ]);
-        
+
 
         // Aplicar valores por defecto si no se proporcionan
         $nip = $validated['nip'] ?? '1234';
         $no_tarjeta = $validated['no_tarjeta'] ?? '';
         $amaterno = $validated['amaterno'] ?? '';
-    
+
         DB::table('Cat_Empleados')->insert([
             'No_Empleado' => $validated['no_empleado'],
             'Id_Planta' => $id_planta,
-            'Nip' => $nip ,
+            'Nip' => $nip,
             'No_Tarjeta' => $no_tarjeta,
             'Nombre' => $validated['nombre'],
             'APaterno' => $validated['apaterno'],
@@ -754,24 +780,25 @@ private function sanitizeString($string)
             'Fecha_Modificacion' => now(),
             'Fecha_Baja' => NULL
         ]);
-    
+
         return response()->json(['success' => true], 200);
     }
 
-    public function Areas(){
+    public function Areas()
+    {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+            session_start();
+        }
         return view('cliente.areas');
     }
 
     public function getDataAreas()
     {
         if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-        $data=array();
-        $Areas = DB::table('Cat_Area')->select('Id_Area','Id_Planta','Txt_Nombre','Txt_Estatus','Fecha_Alta','Fecha_Modificacion','Fecha_Baja')->where('Id_Planta',$_SESSION['usuario']->Id_Planta)->get();
+            session_start();
+        }
+        $data = array();
+        $Areas = DB::table('Cat_Area')->select('Id_Area', 'Id_Planta', 'Txt_Nombre', 'Txt_Estatus', 'Fecha_Alta', 'Fecha_Modificacion', 'Fecha_Baja')->where('Id_Planta', $_SESSION['usuario']->Id_Planta)->get();
         foreach ($Areas as $area) {
             $ModFecha = Date::parse($area->Fecha_Alta);
             $AltaFecha = Date::parse($area->Fecha_Modificacion);
@@ -783,258 +810,259 @@ private function sanitizeString($string)
         }
         return DataTables::of($data)->make(true);
     }
-    
+
 
     public function updateNameArea(Request $request)
-{
-    $idArea = $request->input('id_area');
-    $newName = $request->input('new_name');
+    {
+        $idArea = $request->input('id_area');
+        $newName = $request->input('new_name');
 
-    $area = DB::table('Cat_Area')->where('Id_Area', $idArea)->update(['Txt_Nombre' => $newName]);
+        $area = DB::table('Cat_Area')->where('Id_Area', $idArea)->update(['Txt_Nombre' => $newName]);
 
-    if ($area) {
-        return response()->json(['success' => true]);
-    } else {
-        return response()->json(['success' => false]);
+        if ($area) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false]);
+        }
     }
-}
 
-public function updateStatusArea(Request $request)
-{
-    if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-    // Obtén los datos del request
-    $idArea = $request->input('id_area');
-    $newStatus = $request->input('new_status');
-    $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
+    public function updateStatusArea(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        // Obtén los datos del request
+        $idArea = $request->input('id_area');
+        $newStatus = $request->input('new_status');
+        $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
 
-    try {
-        // Inicia la transacción
-        DB::beginTransaction();
+        try {
+            // Inicia la transacción
+            DB::beginTransaction();
 
-        // Actualiza el estado del área en la base de datos
-        $updated = DB::table('Cat_Area')
-            ->where('Id_Area', $idArea)
-            ->where('Id_Planta', $plantaId)
-            ->update(['Txt_Estatus' => $newStatus]);
-
-        // Verifica si se actualizó algún registro en Cat_Area
-        if ($updated) {
-            // Verifica si existen registros en Ctrl_Permisos_x_Area para el Id_Area
-            $hasPermissions = DB::table('Ctrl_Permisos_x_Area')
+            // Actualiza el estado del área en la base de datos
+            $updated = DB::table('Cat_Area')
                 ->where('Id_Area', $idArea)
                 ->where('Id_Planta', $plantaId)
-                ->exists();
+                ->update(['Txt_Estatus' => $newStatus]);
 
-            // Si hay permisos asociados, actualiza su estado
-            if ($hasPermissions) {
-                DB::table('Ctrl_Permisos_x_Area')
+            // Verifica si se actualizó algún registro en Cat_Area
+            if ($updated) {
+                // Verifica si existen registros en Ctrl_Permisos_x_Area para el Id_Area
+                $hasPermissions = DB::table('Ctrl_Permisos_x_Area')
                     ->where('Id_Area', $idArea)
                     ->where('Id_Planta', $plantaId)
-                    ->update(['Status' => $newStatus]);
+                    ->exists();
+
+                // Si hay permisos asociados, actualiza su estado
+                if ($hasPermissions) {
+                    DB::table('Ctrl_Permisos_x_Area')
+                        ->where('Id_Area', $idArea)
+                        ->where('Id_Planta', $plantaId)
+                        ->update(['Status' => $newStatus]);
+                }
+
+                // Confirma la transacción
+                DB::commit();
+
+                return response()->json(['success' => true, 'new_status' => $newStatus]);
+            } else {
+                // Si no se actualizó, revierte la transacción
+                DB::rollBack();
+
+                return response()->json(['success' => false, 'message' => 'No se encontró el área o no se actualizó.']);
             }
-
-            // Confirma la transacción
-            DB::commit();
-
-            return response()->json(['success' => true, 'new_status' => $newStatus]);
-        } else {
-            // Si no se actualizó, revierte la transacción
+        } catch (\Exception $e) {
+            // En caso de error, revierte la transacción y captura la excepción
             DB::rollBack();
-
-            return response()->json(['success' => false, 'message' => 'No se encontró el área o no se actualizó.']);
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
-    } catch (\Exception $e) {
-        // En caso de error, revierte la transacción y captura la excepción
-        DB::rollBack();
-        return response()->json(['success' => false, 'error' => $e->getMessage()]);
     }
-}
 
 
-public function addArea(Request $request)
-{
-    if (session_status() == PHP_SESSION_NONE) {
-        session_start();
-    }
- 
-    $newName = $request->input('new_name');
-    $currentDate = now();
-    $userId = $_SESSION['usuario']->Id_Usuario;
-    $plantaId = $_SESSION['usuario']->Id_Planta;
+    public function addArea(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $newName = $request->input('new_name');
+        $currentDate = now();
+        $userId = $_SESSION['usuario']->Id_Usuario;
+        $plantaId = $_SESSION['usuario']->Id_Planta;
 
 
         // Verificar si el área ya existe
         $existingArea = DB::table('Cat_Area')
-        ->where('Id_Planta', $plantaId)
-        ->where('Txt_Nombre', $newName)
-        ->first();
-
-    if ($existingArea) {
-        return response()->json(['success' => false, 'message' => 'El área ya existe.']);
-    }
-
-    try {
-        // Insertamos sin obtener el ID
-        DB::table('Cat_Area')->insert([
-            'Id_Planta' => $plantaId,
-            'Txt_Nombre' => $newName,
-            'Fecha_Alta' => $currentDate,
-            'Txt_Estatus' => 'Alta',
-            'Fecha_Modificacion' => null,
-            'Fecha_Baja' => null,
-            'Id_Usuario_Alta' => $userId,
-            'Id_Usuario_Modificacion' => null,
-            'Id_Usuario_Baja' => null
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Error al insertar área: ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Error al agregar el área.']);
-    }
-
-    // 🔁 Esperar hasta que esté disponible
-    $idArea = null;
-    $maxRetries = 5;
-    $retries = 0;
-
-    while ($retries < $maxRetries) {
-        $area = DB::table('Cat_Area')
-            ->where('Txt_Nombre', $newName)
             ->where('Id_Planta', $plantaId)
-            ->where('Fecha_Alta', $currentDate)
+            ->where('Txt_Nombre', $newName)
             ->first();
 
-        if ($area) {
-            $idArea = $area->Id_Area;
-            break;
+        if ($existingArea) {
+            return response()->json(['success' => false, 'message' => 'El área ya existe.']);
         }
 
-        usleep(200000); // 200ms
-        $retries++;
-    }
+        try {
+            // Insertamos sin obtener el ID
+            DB::table('Cat_Area')->insert([
+                'Id_Planta' => $plantaId,
+                'Txt_Nombre' => $newName,
+                'Fecha_Alta' => $currentDate,
+                'Txt_Estatus' => 'Alta',
+                'Fecha_Modificacion' => null,
+                'Fecha_Baja' => null,
+                'Id_Usuario_Alta' => $userId,
+                'Id_Usuario_Modificacion' => null,
+                'Id_Usuario_Baja' => null
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al insertar área: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al agregar el área.']);
+        }
 
-    if (!$idArea) {
-        return response()->json(['success' => false, 'message' => 'No se pudo confirmar la creación del área.']);
-    }
+        // 🔁 Esperar hasta que esté disponible
+        $idArea = null;
+        $maxRetries = 5;
+        $retries = 0;
 
-    // Obtener máquinas
-    $maquinas = DB::table('Ctrl_Mquinas')
-        ->where('Id_Planta', $plantaId)
-        ->pluck('Id_Maquina');
-
-    if ($maquinas->isEmpty()) {
-        return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
-    }
-
-    // Obtener artículos
-    $articulos = DB::table('Configuracion_Maquina')
-        ->whereIn('Id_Maquina', $maquinas)
-        ->whereNotNull('Id_Articulo')
-        ->distinct()
-        ->pluck('Id_Articulo');
-
-    if ($articulos->isEmpty()) {
-        return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
-    }
-
-    // Crear permisos
-    $permisos = [];
-    foreach ($articulos as $idArticulo) {
-        $permisos[] = [
-            'Id_Area' => $idArea,
-            'Id_Articulo' => $idArticulo,
-            'Frecuencia' => 0,
-            'Cantidad' => 0,
-            'Id_Planta' => $plantaId,
-            'Status' => 'Alta',
-        ];
-    }
-
-    try {
-        DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
-    } catch (\Exception $e) {
-        Log::error('Error al insertar permisos: ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'No se pudo crear los permisos del área.']);
-    }
-
-    return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
-}
-
-public function deleteArea(Request $request)
-{
-    $idArea = $request->input('id_area');
-
-    // Comprobar si existen registros en Ctrl_Permisos_x_Area
-    $permisosCount = DB::table('Ctrl_Permisos_x_Area')->where('Id_Area', $idArea)->count();
-    
-    // Comprobar si existen registros en Cat_Empleados
-    $empleadosCount = DB::table('Cat_Empleados')->where('Id_Area', $idArea)->count();
-
-    // Mensaje de alerta según los registros encontrados
-    if ($permisosCount > 0 && $empleadosCount > 0) {
-        return response()->json(['success' => false, 'message' => 'Reasigne los empleados y permisos a otra área.']);
-    } elseif ($permisosCount > 0) {
-        return response()->json(['success' => false, 'message' => 'Reasigne los permisos a otra área.']);
-    } elseif ($empleadosCount > 0) {
-        return response()->json(['success' => false, 'message' => 'Reasigne los empleados a otra área.']);
-    }
-
-    // Proceder a eliminar el área si no hay registros asociados
-    $deleted = DB::table('Cat_Area')->where('Id_Area', $idArea)->delete();
-
-    if ($deleted) {
-        return response()->json(['success' => true]);
-    } else {
-        return response()->json(['success' => false, 'message' => 'Error al eliminar el área.']);
-    }
-}
-
-public function exportExcelAreas() {
-    return Excel::download(new AreasExport, 'areas.xlsx');
-}
-
-public function generateMissingPermissions()
-{
-    if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-    $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
-
-    // Obtener todas las áreas de la planta
-    $areas = DB::table('Cat_Area')
-        ->where('Id_Planta', $plantaId)
-        ->where('Txt_Estatus', 'Alta')
-        ->get();
-
-    // Obtener todos los artículos de la planta
-    $articulos = DB::table('Cat_Articulos')
-        ->where('Txt_Estatus', 'Alta')
-        ->get();
-
-    foreach ($areas as $area) {
-        foreach ($articulos as $articulo) {
-            // Verificar si el permiso ya existe para el área y el artículo
-            $existingPermiso = DB::table('Ctrl_Permisos_x_Area')
-                ->where('Id_Area', $area->Id_Area)
-                ->where('Id_Articulo', $articulo->Id_Articulo)
+        while ($retries < $maxRetries) {
+            $area = DB::table('Cat_Area')
+                ->where('Txt_Nombre', $newName)
+                ->where('Id_Planta', $plantaId)
+                ->where('Fecha_Alta', $currentDate)
                 ->first();
 
-            // Si no existe, lo insertamos con Frecuencia y Cantidad en 0
-            if (!$existingPermiso) {
-                DB::table('Ctrl_Permisos_x_Area')->insert([
-                    'Id_Area' => $area->Id_Area,
-                    'Id_Articulo' => $articulo->Id_Articulo,
-                    'Frecuencia' => 0,
-                    'Cantidad' => 0,
-                    'Id_Planta' => $plantaId,
-                    'Status' => 'Alta',
-                ]);
+            if ($area) {
+                $idArea = $area->Id_Area;
+                break;
             }
+
+            usleep(200000); // 200ms
+            $retries++;
+        }
+
+        if (!$idArea) {
+            return response()->json(['success' => false, 'message' => 'No se pudo confirmar la creación del área.']);
+        }
+
+        // Obtener máquinas
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $plantaId)
+            ->pluck('Id_Maquina');
+
+        if ($maquinas->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay máquinas registradas en la planta.']);
+        }
+
+        // Obtener artículos
+        $articulos = DB::table('Configuracion_Maquina')
+            ->whereIn('Id_Maquina', $maquinas)
+            ->whereNotNull('Id_Articulo')
+            ->distinct()
+            ->pluck('Id_Articulo');
+
+        if ($articulos->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
+        }
+
+        // Crear permisos
+        $permisos = [];
+        foreach ($articulos as $idArticulo) {
+            $permisos[] = [
+                'Id_Area' => $idArea,
+                'Id_Articulo' => $idArticulo,
+                'Frecuencia' => 0,
+                'Cantidad' => 0,
+                'Id_Planta' => $plantaId,
+                'Status' => 'Alta',
+            ];
+        }
+
+        try {
+            DB::table('Ctrl_Permisos_x_Area')->insert($permisos);
+        } catch (\Exception $e) {
+            Log::error('Error al insertar permisos: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'No se pudo crear los permisos del área.']);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Área y permisos creados correctamente.']);
+    }
+
+    public function deleteArea(Request $request)
+    {
+        $idArea = $request->input('id_area');
+
+        // Comprobar si existen registros en Ctrl_Permisos_x_Area
+        $permisosCount = DB::table('Ctrl_Permisos_x_Area')->where('Id_Area', $idArea)->count();
+
+        // Comprobar si existen registros en Cat_Empleados
+        $empleadosCount = DB::table('Cat_Empleados')->where('Id_Area', $idArea)->count();
+
+        // Mensaje de alerta según los registros encontrados
+        if ($permisosCount > 0 && $empleadosCount > 0) {
+            return response()->json(['success' => false, 'message' => 'Reasigne los empleados y permisos a otra área.']);
+        } elseif ($permisosCount > 0) {
+            return response()->json(['success' => false, 'message' => 'Reasigne los permisos a otra área.']);
+        } elseif ($empleadosCount > 0) {
+            return response()->json(['success' => false, 'message' => 'Reasigne los empleados a otra área.']);
+        }
+
+        // Proceder a eliminar el área si no hay registros asociados
+        $deleted = DB::table('Cat_Area')->where('Id_Area', $idArea)->delete();
+
+        if ($deleted) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false, 'message' => 'Error al eliminar el área.']);
         }
     }
 
-    return response()->json(['success' => true, 'message' => 'Permisos faltantes generados correctamente.']);
-}
-    
+    public function exportExcelAreas()
+    {
+        return Excel::download(new AreasExport, 'areas.xlsx');
+    }
+
+    public function generateMissingPermissions()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $plantaId = $_SESSION['usuario']->Id_Planta; // Obtiene el Id de Planta desde la sesión
+
+        // Obtener todas las áreas de la planta
+        $areas = DB::table('Cat_Area')
+            ->where('Id_Planta', $plantaId)
+            ->where('Txt_Estatus', 'Alta')
+            ->get();
+
+        // Obtener todos los artículos de la planta
+        $articulos = DB::table('Cat_Articulos')
+            ->where('Txt_Estatus', 'Alta')
+            ->get();
+
+        foreach ($areas as $area) {
+            foreach ($articulos as $articulo) {
+                // Verificar si el permiso ya existe para el área y el artículo
+                $existingPermiso = DB::table('Ctrl_Permisos_x_Area')
+                    ->where('Id_Area', $area->Id_Area)
+                    ->where('Id_Articulo', $articulo->Id_Articulo)
+                    ->first();
+
+                // Si no existe, lo insertamos con Frecuencia y Cantidad en 0
+                if (!$existingPermiso) {
+                    DB::table('Ctrl_Permisos_x_Area')->insert([
+                        'Id_Area' => $area->Id_Area,
+                        'Id_Articulo' => $articulo->Id_Articulo,
+                        'Frecuencia' => 0,
+                        'Cantidad' => 0,
+                        'Id_Planta' => $plantaId,
+                        'Status' => 'Alta',
+                    ]);
+                }
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Permisos faltantes generados correctamente.']);
+    }
+
 }
