@@ -116,7 +116,8 @@ Route::group(['middleware' => 'checkSession'], function () {
         Route::get('/export/consumoxempleado', [ReportesClienteController::class, 'exportConsumoxEmpleado'])->name('export.consumoxempleado');
         Route::get('/getconsumoxarea/data', [ReportesClienteController::class, 'getConsumoxArea'])->name('consumosxarea.data');
         Route::get('/export/consumoxarea', [ReportesClienteController::class, 'exportConsumoxArea'])->name('export.consumoxarea');
-        Route::get('/getconsumoxvending/data', [ReportesClienteController::class, 'getConsumoxVending'])->name('consumosxvending.data');
+        // Changed to ANY to support POST (avoids URL length limits)
+        Route::any('/getconsumoxvending/data', [ReportesClienteController::class, 'getConsumoxVending'])->name('consumosxvending.data');
         Route::get('/export/consumoxvending', [ReportesClienteController::class, 'exportConsumoxVending'])->name('export.consumoxvending');
         /////////////////////////////////////////// REPORTES DE VENDINGS ///////////////////////////////////////////
         Route::get('/getinventariovm/data', [ReportesClienteController::class, 'getInventarioVM'])->name('inventariovm.data');

@@ -337,7 +337,9 @@
                 serverSide: true,
                 ajax: {
                     url: '{{ route("consumosxvending.data", ["language" => request()->route("language") ?? "es"]) }}',
+                    type: 'POST', // Changed to POST to avoid Query Query String Too Long (404.15)
                     data: function (d) {
+                        d._token = "{{ csrf_token() }}"; // CSRF Token required for POST
                         d.startDate = $('#startDate').val();
                         d.endDate = $('#endDate').val();
                         d.area = $('#filterArea').val();
