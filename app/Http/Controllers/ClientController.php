@@ -798,6 +798,7 @@ class ClientController extends Controller
             session_start();
         }
         $data = array();
+
         $Areas = DB::table('Cat_Area')->select('Id_Area', 'Id_Planta', 'Txt_Nombre', 'Txt_Estatus', 'Fecha_Alta', 'Fecha_Modificacion', 'Fecha_Baja')->where('Id_Planta', $_SESSION['usuario']->Id_Planta)->get();
         foreach ($Areas as $area) {
             $ModFecha = Date::parse($area->Fecha_Alta);
@@ -1065,4 +1066,48 @@ class ClientController extends Controller
         return response()->json(['success' => true, 'message' => 'Permisos faltantes generados correctamente.']);
     }
 
+    public function Profile()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $user = $_SESSION['usuario'];
+
+        // Obtener nombre de la planta
+        $planta = DB::table('Cat_Plantas')
+            ->where('Id_Planta', $user->Id_Planta)
+            ->value('Txt_Nombre_Planta');
+
+        return view('cliente.profile', compact('user', 'planta'));
+    }
+
+    public function updatePassword(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $request->validate([
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $userId = $_SESSION['usuario']->Id_Usuario;
+
+        try {
+            DB::table('Cat_Usuarios')
+                ->where('Id_Usuario', $userId)
+                ->update([
+                    'Contrasenia' => $request->password, // Guardar en texto plano como solicitado
+                    'Fecha_Modificacion' => now(),
+                    // 'Id_Usuario_Modificacion' => $userId // No tenemos este campo en la sesión del cliente usualmente, pero si existe se debería usar
+                ]);
+
+            // Actualizar la sesión con la nueva contraseña
+            $_SESSION['usuario']->Contrasenia = $request->password;
+
+            return redirect()->back()->with('success', 'Contraseña actualizada correctamente.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al actualizar la contraseña: ' . $e->getMessage());
+        }
+    }
 }

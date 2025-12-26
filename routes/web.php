@@ -61,6 +61,11 @@ Route::group(['middleware' => 'checkSession'], function () {
         Route::get('/permisos-cli', 'ClientController@PermisosArticulos')->name('permisos-cli'); // Asignacion de permiso
         // PERMISOS FILTRADO POR AREA
         Route::get('areas/permissions/{areaId}', 'ClientController@PermisosArticulosFilter')->name('permisos-cli'); // Asignacion de permiso
+
+        // PERFIL
+        Route::get('/cli/perfil', [ClientController::class, 'Profile'])->name('client.profile');
+        Route::post('/cli/perfil/password', [ClientController::class, 'updatePassword'])->name('client.profile.password');
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////// ADMIN CONTROLLER /////////////////////////////////////
         // DASHBOARD | INICIO

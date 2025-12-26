@@ -75,6 +75,8 @@
         <link rel="manifest" crossorigin="use-credentials" href="{{ asset('favicons/manifest.json') }}">
         <meta name="msapplication-TileColor" content="#ffffff">
         <meta name="msapplication-TileImage" content="{{ asset('favicon/ms-icon-144x144.png') }}">
+    @else
+        <link rel="shortcut icon" href="{{ asset('vendor/adminlte/dist/img/vending-machine2.png') }}" />
     @endif
 
 </head>
