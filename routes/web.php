@@ -65,6 +65,7 @@ Route::group(['middleware' => 'checkSession'], function () {
         // PERFIL
         Route::get('/cli/perfil', [ClientController::class, 'Profile'])->name('client.profile');
         Route::post('/cli/perfil/password', [ClientController::class, 'updatePassword'])->name('client.profile.password');
+        Route::post('/cli/perfil/update', [ClientController::class, 'updateProfile'])->name('client.profile.update');
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////// ADMIN CONTROLLER /////////////////////////////////////
