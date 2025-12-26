@@ -1,3 +1,114 @@
-.custom-logo-size {
-    height: 200px !important;
+/* Dynamic Sidebar Logo Sizing */
+body:not(.sidebar-collapse) .custom-logo-size {
+    height: 140px !important;
+    /* Large when expanded */
+    width: auto;
+    transition: all 0.3s ease-in-out;
+}
+
+body.sidebar-collapse .custom-logo-size {
+    height: 35px !important;
+    /* Small when minimized */
+    width: auto;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Ensure Brand Link adapts */
+body:not(.sidebar-collapse) .brand-link {
+    height: auto !important;
+    padding-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Custom Teal Gradient for specific accents (not navbar) */
+.bg-teal-gradient {
+    background: linear-gradient(90deg, #0ea5a5, #0ea56a) !important;
+    color: white !important;
+}
+
+/* Global Rounded Design */
+.card {
+    border-radius: 15px !important;
+    border: none !important;
+    /* Clean look */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.btn {
+    border-radius: 50px !important;
+    /* Pill shaped buttons */
+}
+
+.form-control {
+    border-radius: 12px !important;
+}
+
+/* Fix Input Group Rounding to ensure connection */
+.input-group>.form-control:not(:last-child),
+.input-group>.custom-select:not(:last-child) {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.input-group>.input-group-append>.btn,
+.input-group>.input-group-append>.input-group-text,
+.input-group>.input-group-prepend>.btn,
+.input-group>.input-group-prepend>.input-group-text {
+    border-radius: 0 !important;
+}
+
+.input-group>.input-group-append:last-child>.btn,
+.input-group>.input-group-append:last-child>.input-group-text {
+    border-top-right-radius: 12px !important;
+    border-bottom-right-radius: 12px !important;
+}
+
+.input-group>.input-group-prepend:first-child>.btn,
+.input-group>.input-group-prepend:first-child>.input-group-text {
+    border-top-left-radius: 12px !important;
+    border-bottom-left-radius: 12px !important;
+}
+
+.dropdown-menu {
+    border-radius: 20px !important;
+}
+
+/* Sidebar Active Link Override */
+/* Sidebar Active Link Override */
+.sidebar-dark-primary .nav-sidebar>.nav-item>.nav-link.active,
+.sidebar-light-primary .nav-sidebar>.nav-item>.nav-link.active {
+    background-color: #ffffff !important;
+    color: #343a40 !important;
+    /* Dark text */
+    font-weight: bold;
+    border: 1px solid #0ea56a !important;
+    /* Teal border */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+/* Ensure icons keep their distinct colors in active state */
+/* Ensure icons keep their distinct colors in active state */
+.sidebar-dark-primary .nav-sidebar>.nav-item>.nav-link.active i,
+.sidebar-light-primary .nav-sidebar>.nav-item>.nav-link.active i {
+    /* Icons already have specific color classes (text-cyan, text-teal), so we let them inherit. */
+}
+
+/* Fix Input Group: If input is NOT the first child (e.g. has prepend), flatten left corners */
+.input-group>.form-control:not(:first-child),
+.input-group>.custom-select:not(:first-child) {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Ensure Card Headers respect the Card's rounded corners */
+.card-header:first-child,
+.widget-user-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+/* Ensure Card Footers respect the Card's rounded corners */
+.card-footer:last-child {
+    border-radius: 0 0 15px 15px !important;
 }

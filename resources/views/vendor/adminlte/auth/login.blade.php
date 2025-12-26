@@ -7,7 +7,7 @@
 
     body {
         /* Restore Background Image */
-        background-image: url('/Images/Backgrounds/bgadmin.png') !important;
+        background-image: url('/Images/Backgrounds/bguser.png') !important;
         background-size: cover !important;
         background-repeat: no-repeat !important;
         background-position: center !important;
@@ -72,8 +72,8 @@
 </style>
 @stop
 
-{{-- Route for Admin Login --}}
-@php( $login_url = route('validar-admin', ['language' => app()->getLocale() ?: 'es']) )
+{{-- FIX: Use the correct named route for login, defaulting to 'es' if no locale --}}
+@php( $login_url = route('validar-registro', ['language' => app()->getLocale() ?: 'es']) )
 @php( $register_url = View::getSection('register_url') ?? config('adminlte.register_url', 'register') )
 @php( $password_reset_url = View::getSection('password_reset_url') ?? config('adminlte.password_reset_url', 'password/reset') )
 
@@ -194,7 +194,7 @@
         font-weight: 700;
         color: #333;
         margin-bottom: 30px;
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         text-align: center;
         display: block !important;
     }
@@ -211,7 +211,7 @@
 </style>
 
 <div class="glass-card">
-    <h4 class="custom-welcome-msg">Portal de Administración</h4>
+    <h4 class="custom-welcome-msg">¡Bienvenido!</h4>
 
     @if($errors->any())
         <div class="alert alert-danger text-center">
@@ -224,7 +224,7 @@
         <div class="custom-input-wrapper">
             <input type="text" name="usuario" class="form-control" value="{{ old('usuario') }}" placeholder="Usuario"
                 autofocus>
-            <span class="fas fa-user-shield custom-icon"></span>
+            <span class="fas fa-user custom-icon"></span>
         </div>
         <div class="custom-input-wrapper">
             <input type="password" name="password" class="form-control" placeholder="Contraseña">
@@ -238,11 +238,17 @@
                 </div>
             </div>
             <div class="col-7">
-                <button type=submit class="btn btn-primary btn-block"><i class="fas fa-sign-in-alt mr-2"></i>
-                    Entrar</button>
+                <button type=submit class="btn btn-primary btn-block"><i class="fas fa-sign-in-alt mr-2"></i> Iniciar
+                    Sesión</button>
             </div>
         </div>
     </form>
+
+    <div class="auth-links mt-4 text-center">
+        @if($password_reset_url)
+            <a href="{{ $password_reset_url }}">Olvidé mi contraseña</a>
+        @endif
+    </div>
 </div>
 
 <!-- Waves SVG -->

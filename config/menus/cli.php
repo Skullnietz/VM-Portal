@@ -1,9 +1,8 @@
-
 <?php
-return[
+return [
     'menu' => [
         // Navbar items:
-        
+
         [
             'type' => 'fullscreen-widget',
             'topnav_right' => true,
@@ -17,7 +16,7 @@ return[
 
 
         ['header' => 'CONFIGURACIÓN'],
-        
+
         [
             'text' => 'Empleados',
             'icon_color' => 'cyan',
@@ -39,45 +38,44 @@ return[
         ['header' => 'REPORTES'],
         [
             'text' => 'Consumos',
-            'icon_color' => 'green',
-            'icon' => 'fas fa-fw fa-people-carry',
+            'icon_color' => 'teal',
+            'icon' => 'fas fa-fw fa-chart-line',
             'url' => '#',
             'submenu' => [
                 [
                     'text' => 'Consumo por Area',
-                    'icon_color' => 'green',
+                    'icon_color' => 'teal',
                     'url' => '/cli/reporte/consumoxarea',
                 ],
                 [
                     'text' => 'Consumo por Empleado',
-                    'icon_color' => 'green',
+                    'icon_color' => 'teal',
                     'url' => '/cli/reporte/consumoxempleado',
                 ],
                 [
                     'text' => 'Consumo por Vending',
-                    'icon_color' => 'green',
+                    'icon_color' => 'teal',
                     'url' => '/cli/reporte/consumoxvending',
                 ],
-                
+
             ]
         ],
         [
             'text' => 'Permisos',
             'url' => 'admin/settings',
-            'icon_color' => 'green',
-            'icon' => 'fas fa-fw fa-user-lock',
+            'icon_color' => 'teal',
+            'icon' => 'fas fa-fw fa-lock',
             'submenu' => [
                 [
                     'text' => 'Consulta de Consumos',
-                    'icon_color' => 'green',
+                    'icon_color' => 'teal',
                     'url' => '/cli/reporte/consultaconsumos',
                 ],
             ]
         ],
-        
+
 
 
     ],
 ]
-?>
-
+    ?>
