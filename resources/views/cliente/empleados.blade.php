@@ -456,7 +456,7 @@
                     name: 'Permisos',
                     render: function (data, type, row) {
                         return `<a href="/cli/areas/permissions/${row.Id_Area}" class="btn btn-xs btn-info">Permisos ... <i class="fas fa-user-tag"></i></a>
-                                <a href="{{ route('consultasconsumo.index', ['language' => app()->getLocale()]) }}?employee_id=${row.No_Empleado}" class="btn btn-xs btn-primary ml-1">Consumos <i class="fas fa-chart-bar"></i></a>`;
+                                <a href="{{ route('consultasconsumo.index', ['language' => request()->route('language') ?? 'es']) }}?employee_id=${row.No_Empleado}" class="btn btn-xs btn-primary ml-1">Consumos <i class="fas fa-chart-bar"></i></a>`;
                     }
                 },
                 {
@@ -486,7 +486,7 @@
                     data: null,
                     name: 'Detalle',
                     render: function (data, type, row) {
-                        var url = '{{ route("empleados.detalle", ["language" => request()->route("language") ?? "es", "id" => ":id"]) }}';
+                        var url = '{{ route("empleados.detalle", ["id" => ":id"]) }}';
                         url = url.replace(':id', row.Id_Empleado);
                         return `<a href="${url}" class="btn btn-xs btn-info">Ver detalle <i class="fas fa-eye"></i></a>`;
                     }

@@ -45,7 +45,7 @@
                     <p class="mt-2 font-weight-bold" style="font-size: 1.1em;">
                         <?php
             $fullname = $_SESSION['usuario']->Txt_Nombre . " " . $_SESSION['usuario']->Txt_ApellidoP;
-                                        ?>
+                                                ?>
                         {{ Str::limit($fullname, 20) }}
                         <small class="d-block font-weight-light">{{ $_SESSION['usuario']->Txt_Puesto ?? 'Cliente' }}</small>
                     </p>
@@ -68,7 +68,7 @@
         <li class="user-footer bg-white d-flex justify-content-between p-3" style="border-radius: 0 0 15px 15px;">
 
             <a class="btn btn-outline-success shadow-sm px-4 font-weight-bold"
-                href="{{ route('client.profile', ['language' => app()->getLocale()]) }}">
+                href="{{ route('client.profile', ['language' => request()->route('language') ?? 'es']) }}">
                 <i class="fa fa-fw fa-user mr-1"></i>
                 Perfil
             </a>

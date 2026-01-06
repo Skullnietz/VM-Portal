@@ -46,7 +46,7 @@ class LoginController extends Controller
                     }
 
                     if ($_SESSION['usuario']->Txt_Rol == "cliente") {
-                        return redirect()->route('dash-cli', 'cli')->with('usuario', $user);
+                        return redirect()->route('dash-cli')->with('usuario', $user);
                     }
                     if ($_SESSION['usuario']->Txt_Rol == "administrador") {
                         return redirect()->route('dash-admin')->with('usuario', $user);

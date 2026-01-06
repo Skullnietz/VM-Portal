@@ -7,12 +7,12 @@
     <div class="row mb-2">
         <div class="col-sm-6">
             <h1>
-                <a href="{{ route('empleados-cli', ['language' => request()->route('language') ?? 'es']) }}"
-                    class="btn btn-outline-secondary btn-sm mr-2">
-                    <i class="fas fa-arrow-left"></i> Volver a Empleados
-                </a>
-                Detalle de Consumo
-            </h1>
+                <h1>
+                    <a href="{{ route('empleados-cli') }}" class="btn btn-outline-secondary btn-sm mr-2">
+                        <i class="fas fa-arrow-left"></i> Volver a Empleados
+                    </a>
+                    Detalle de Consumo
+                </h1>
         </div>
     </div>
 </div>
@@ -29,7 +29,7 @@
         </div>
         <div class="widget-user-image">
             <img class="img-circle elevation-2" style="background: white; object-fit: contain;"
-                src="/Images/Catalogo/{{ $empleado->Id_Empleado }}.jpg"
+                src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
                 onerror="this.onerror=null;this.src='/Images/user.png';" alt="User Avatar">
         </div>
         <div class="card-footer">
@@ -229,19 +229,18 @@
             }
         });
 
-        // 2. Trend Line Chart
+        // 2. Trend Chart (Now Bar for better visibility)
         var ctxLine = document.getElementById('lineChart').getContext('2d');
         var lineChart = new Chart(ctxLine, {
-            type: 'line',
+            type: 'bar', // Changed to Bar
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Consumos',
+                    label: 'Consumo Diario',
                     data: [],
                     borderColor: '#3c8dbc',
-                    backgroundColor: 'rgba(60, 141, 188, 0.2)',
-                    fill: true,
-                    tension: 0.4
+                    backgroundColor: 'rgba(60, 141, 188, 0.7)', // Increased opacity
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -254,39 +253,35 @@
             }
         });
 
-        // Update Charts on Table Draw
-        table.on('draw', function () {
-            var data = table.rows({ filter: 'applied' }).data();
+        // Update Charts on Table Draw (using full dataset from server)
+        table.on('xhr', function () {
+            var json = table.ajax.json();
+            if (!json || !json.chartProductData || !json.chartTrendData) return;
 
             // --- Update Product Chart ---
-            var products = {};
-            data.each(function (row) {
-                var prod = row.Producto;
-                var qty = parseInt(row.Cantidad) || 1;
-                if (products[prod]) products[prod] += qty;
-                else products[prod] = qty;
+            var labelsProd = [];
+            var dataProd = [];
+
+            json.chartProductData.forEach(function (item) {
+                labelsProd.push(item.Producto);
+                dataProd.push(item.Total);
             });
 
-            productChart.data.labels = Object.keys(products);
-            productChart.data.datasets[0].data = Object.values(products);
+            productChart.data.labels = labelsProd;
+            productChart.data.datasets[0].data = dataProd;
             productChart.update();
 
             // --- Update Line Chart ---
-            var dates = {};
-            data.each(function (row) {
-                // Assuming Fecha is YYYY-MM-DD HH:MM:SS, extract Date part
-                var date = row.Fecha.split(' ')[0];
-                var qty = parseInt(row.Cantidad) || 1;
-                if (dates[date]) dates[date] += qty;
-                else dates[date] = qty;
+            var labelsTrend = [];
+            var dataTrend = [];
+
+            json.chartTrendData.forEach(function (item) {
+                labelsTrend.push(item.Fecha);
+                dataTrend.push(item.Total);
             });
 
-            // Sort dates
-            var sortedDates = Object.keys(dates).sort();
-            var sortedCounts = sortedDates.map(d => dates[d]);
-
-            lineChart.data.labels = sortedDates;
-            lineChart.data.datasets[0].data = sortedCounts;
+            lineChart.data.labels = labelsTrend;
+            lineChart.data.datasets[0].data = dataTrend;
             lineChart.update();
         });
 

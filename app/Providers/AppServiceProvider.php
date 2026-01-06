@@ -32,5 +32,7 @@ class AppServiceProvider extends ServiceProvider
             ini_set('session.save_path', $path);
             ini_set('session.gc_probability', 0);
         }
+
+        \Illuminate\Support\Facades\URL::defaults(['language' => 'es']);
     }
 }

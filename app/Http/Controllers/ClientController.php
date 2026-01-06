@@ -874,7 +874,59 @@ class ClientController extends Controller
             $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
         }
 
-        return DataTables::of($data)->make(true);
+        // Clone logic for charts (before pagination)
+        $chartQuery = clone $data;
+
+        // --- Chart 1: Product Consumption (Full Range) ---
+        $productStats = DB::table('Ctrl_Consumos')
+            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin(DB::raw('(select b.Id_Maquina, b.Talla, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion from Ctrl_Consumos as a inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
+            ->where('Cat_Empleados.Id_Planta', $idPlanta)
+            ->where('Cat_Empleados.Id_Empleado', $id);
+
+        if ($request->filled('startDate') && $request->filled('endDate')) {
+            $startDate = $request->startDate . ' 00:00:00';
+            $endDate = $request->endDate . ' 23:59:59';
+            $productStats->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
+        }
+
+        $productData = $productStats
+            ->select(
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
+                DB::raw('SUM(ISNULL(Ctrl_Consumos.Cantidad, 1)) as Total')
+            )
+            ->groupBy(DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"))
+            ->get();
+
+        // --- Chart 2: Daily Trend (Full Range) ---
+        $trendStats = DB::table('Ctrl_Consumos')
+            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+            ->where('Cat_Empleados.Id_Planta', $idPlanta)
+            ->where('Cat_Empleados.Id_Empleado', $id);
+
+        if ($request->filled('startDate') && $request->filled('endDate')) {
+            $startDate = $request->startDate . ' 00:00:00';
+            $endDate = $request->endDate . ' 23:59:59';
+            $trendStats->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
+        }
+
+        $trendData = $trendStats
+            ->select(
+                DB::raw("FORMAT(Ctrl_Consumos.Fecha_Real, 'yyyy-MM-dd') as Fecha"),
+                DB::raw('SUM(ISNULL(Ctrl_Consumos.Cantidad, 1)) as Total')
+            )
+            ->groupBy(DB::raw("FORMAT(Ctrl_Consumos.Fecha_Real, 'yyyy-MM-dd')"))
+            ->orderBy(DB::raw("FORMAT(Ctrl_Consumos.Fecha_Real, 'yyyy-MM-dd')"), 'ASC')
+            ->get();
+
+
+        return DataTables::of($data)
+            ->with([
+                'chartProductData' => $productData,
+                'chartTrendData' => $trendData
+            ])
+            ->make(true);
     }
 
 

@@ -26,10 +26,11 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
     {
         // Obtener artículos faltantes
         $faltantes = DB::table('Configuracion_Maquina')
-            ->join('Cat_Articulos', 'Configuracion_Maquina.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin('Cat_Articulos', 'Configuracion_Maquina.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->select(
                 'Cat_Articulos.Txt_Descripcion',
                 'Cat_Articulos.Txt_Codigo',
+                'Configuracion_Maquina.Talla',
                 'Configuracion_Maquina.Num_Charola',
                 'Configuracion_Maquina.Seleccion',
                 'Configuracion_Maquina.Stock',
@@ -37,7 +38,8 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
                 DB::raw('(Configuracion_Maquina.Cantidad_Max - Configuracion_Maquina.Stock) as Faltante')
             )
             ->where('Configuracion_Maquina.Id_Maquina', $this->idMaquina)
-            ->whereRaw('Configuracion_Maquina.Stock < Configuracion_Maquina.Cantidad_Max')
+            ->where('Configuracion_Maquina.Cantidad_Max', '>', 0)
+            ->orderBy('Configuracion_Maquina.Seleccion')
             ->get();
 
         return $faltantes;
@@ -48,6 +50,7 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
         return [
             'Artículo',
             'Código',
+            'Talla',
             'Charola',
             'Selección',
             'Stock Actual',
@@ -71,25 +74,25 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
                 $sheet->insertNewRowBefore(1, 4);
 
                 // Título
-                $sheet->mergeCells('A1:G1');
+                $sheet->mergeCells('A1:H1');
                 $sheet->setCellValue('A1', 'Reporte de Faltantes - ' . $this->nombreMaquina);
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // Fecha
-                $sheet->mergeCells('A2:G2');
+                $sheet->mergeCells('A2:H2');
                 $sheet->setCellValue('A2', 'Generado el: ' . now()->format('d/m/Y H:i'));
                 $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // Estilo para los encabezados de la tabla (fila 5)
-                $sheet->getStyle('A5:G5')->getFont()->setBold(true);
-                $sheet->getStyle('A5:G5')->getFill()
+                $sheet->getStyle('A5:H5')->getFont()->setBold(true);
+                $sheet->getStyle('A5:H5')->getFill()
                     ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('FFCCCCCC');
 
                 // Bordes para la tabla
                 $highestRow = $sheet->getHighestRow();
-                $sheet->getStyle('A5:G' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $sheet->getStyle('A5:H' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
             },
         ];
     }

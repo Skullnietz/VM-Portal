@@ -50,13 +50,18 @@ Route::get('/oplogin', function () {
 Route::group(['middleware' => 'checkSession'], function () {
 
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% INTERFAZ Y VISTAS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
+
+    // VISTA EMPLEADOS (Sin prefijo de idioma)
+    Route::get('/cli/empleados-cli', 'ClientController@Empleados')->name('empleados-cli');
+    Route::get('/cli/empleados/{id}/detalle', [ClientController::class, 'showEmployeeDetail'])->name('empleados.detalle');
+    Route::get('/cli/empleados/{id}/consumos', [ClientController::class, 'getEmployeeConsumptionData'])->name('empleados.consumos.data');
+    Route::get('/cli/home-cli', 'ClientController@Home')->name('dash-cli');
+
     Route::prefix('{language}')->group(function () {
         // ------------> DENTRO DEL SISTEMA ADMINISTRATIVO <------------------
         //////////////////////////////////// CLIENT CONTROLLER ///////////////////////////////////// 
         // DASHBOARD | INICIO
-        Route::get('/home-cli', 'ClientController@Home')->name('dash-cli'); // Dashboard de Clientes
-        // VISTA EMPLEADOS
-        Route::get('/empleados-cli', 'ClientController@Empleados')->name('empleados-cli'); // Administracion Empleados
+
         //PERMISOS DE EMPLEADO
         Route::get('/permisos-cli', 'ClientController@PermisosArticulos')->name('permisos-cli'); // Asignacion de permiso
         // PERMISOS FILTRADO POR AREA
@@ -291,8 +296,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('empleado/delete/{Id_Empleado}', 'ClientController@destroyEmployee')->name('empleado.delete');
     Route::get('export-excel-employees', 'ClientController@exportExcel');
     Route::post('/empleado/add', [ClientController::class, 'storeemployee'])->name('empleado.add');
-    Route::get('/cli/empleados/{id}/detalle', [ClientController::class, 'showEmployeeDetail'])->name('empleados.detalle');
-    Route::get('/cli/empleados/{id}/consumos', [ClientController::class, 'getEmployeeConsumptionData'])->name('empleados.consumos.data');
+
     Route::get('areas/data', 'ClientController@getAreas')->name('areas.data');
     Route::post('empleado/update/{id}', 'ClientController@updateemployee')->name('empleados.update');
     ///////////////////////////////////////// PERMISOS TOOLS ///////////////////////////////////////////////////
