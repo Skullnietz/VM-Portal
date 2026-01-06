@@ -798,7 +798,6 @@ class ClientController extends Controller
             session_start();
         }
         $data = array();
-
         $Areas = DB::table('Cat_Area')->select('Id_Area', 'Id_Planta', 'Txt_Nombre', 'Txt_Estatus', 'Fecha_Alta', 'Fecha_Modificacion', 'Fecha_Baja')->where('Id_Planta', $_SESSION['usuario']->Id_Planta)->get();
         foreach ($Areas as $area) {
             $ModFecha = Date::parse($area->Fecha_Alta);
@@ -809,6 +808,72 @@ class ClientController extends Controller
             $area->MFecha = $MFecha;
             array_push($data, $area);
         }
+        return DataTables::of($data)->make(true);
+    }
+
+    public function showEmployeeDetail($id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+        // Fetch Employee Basic Info
+        $empleado = DB::table('Cat_Empleados')
+            ->leftJoin('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->select(
+                'Cat_Empleados.*',
+                'Cat_Area.Txt_Nombre as Area',
+                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as NombreCompleto")
+            )
+            ->where('Cat_Empleados.Id_Empleado', $id)
+            ->where('Cat_Empleados.Id_Planta', $idPlanta)
+            ->first();
+
+        if (!$empleado) {
+            return redirect()->back()->with('error', 'Empleado no encontrado o no pertenece a su planta.');
+        }
+
+        return view('cliente.empleados.detalle', compact('empleado'));
+    }
+
+    public function getEmployeeConsumptionData(Request $request, $id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+        // Consulta base para la DataTable
+        $data = DB::table('Ctrl_Consumos')
+            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+            ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin(DB::raw('(
+             select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
+             from Ctrl_Consumos as a
+             inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
+             right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
+             inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
+         ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
+            ->where('Cat_Empleados.Id_Planta', $idPlanta)
+            ->where('Cat_Empleados.Id_Empleado', $id)
+            ->select(
+                'Cat_Empleados.No_Empleado as Numero_de_empleado',
+                'Cat_Area.Txt_Nombre as Area',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+                'Ctrl_Consumos.Fecha_Real as Fecha',
+                'Ctrl_Consumos.Cantidad'
+            );
+
+        if ($request->filled('startDate') && $request->filled('endDate')) {
+            $startDate = $request->startDate . ' 00:00:00';
+            $endDate = $request->endDate . ' 23:59:59';
+            $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
+        }
+
         return DataTables::of($data)->make(true);
     }
 

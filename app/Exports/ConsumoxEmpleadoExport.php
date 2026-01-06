@@ -135,6 +135,8 @@ class ConsumoxEmpleadoExport implements FromCollection, WithHeadings, WithEvents
             }
         }
 
+
+
         if ($this->request->filled('dateRange')) {
             $dates = explode(' - ', $this->request->input('dateRange'));
             if (count($dates) === 2) {

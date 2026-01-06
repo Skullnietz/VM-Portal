@@ -80,9 +80,11 @@
                                 <th>Editar</th>
                                 <th>Borrar</th>
                                 <th>Estatus</th>
+                                <th>Detalle</th>
                                 <th>Última modificación</th>
                             </tr>
                         </thead>
+
                     </table>
                 </div>
             </div>
@@ -480,9 +482,19 @@
                         return `<button class="btn btn-xs ${btnClass}" onclick="toggleStatus(${row.Id_Empleado})">${btnText}</button>`;
                     }
                 },
+                {
+                    data: null,
+                    name: 'Detalle',
+                    render: function (data, type, row) {
+                        var url = '{{ route("empleados.detalle", ["language" => request()->route("language") ?? "es", "id" => ":id"]) }}';
+                        url = url.replace(':id', row.Id_Empleado);
+                        return `<a href="${url}" class="btn btn-xs btn-info">Ver detalle <i class="fas fa-eye"></i></a>`;
+                    }
+                },
                 { data: 'MFecha', name: 'MFecha' }
             ],
             responsive: true,
+
             scrollX: true,
             language: {
                 processing: "Procesando...",

@@ -86,6 +86,8 @@
                                     {{ $empleado->Nombre}} {{ $empleado->APaterno}} {{ $empleado->AMaterno}}
                                 </option>
                             @endforeach
+
+
                         </select>
                     </div>
                 </div><br>
@@ -231,6 +233,7 @@
         });
 
     });
+
 </script>
 <script>
     $(document).ready(function () {

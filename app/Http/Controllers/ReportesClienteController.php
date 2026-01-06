@@ -270,6 +270,8 @@ class ReportesClienteController extends Controller
             ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
             ->get();
 
+
+
         // 1️⃣ Obtener las máquinas de la planta
         $maquinas = DB::table('Ctrl_Mquinas')
             ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
@@ -435,6 +437,8 @@ class ReportesClienteController extends Controller
                 $data->whereIn(DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno)"), $selectedEmployees);
             }
         }
+
+
 
         if ($request->filled('startDate') && $request->filled('endDate')) {
             $startDate = $request->startDate . ' 00:00:00';

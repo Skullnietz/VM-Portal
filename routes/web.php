@@ -285,11 +285,14 @@ Route::group(['middleware' => 'checkSession'], function () {
 
     Route::post('empleado/toggle-status/{id}', 'ClientController@toggleStatus');
     Route::post('empleados/data', 'ClientController@getDataEmpleados')->name('empleados.data');
+    Route::get('/empleados/data', [ClientController::class, 'getDataEmpleados'])->name('empleados.data');
     Route::get('export-csv-employees', 'ClientController@exportCSV');
     Route::post('import-csv-employees', 'ClientController@importCSV');
     Route::get('empleado/delete/{Id_Empleado}', 'ClientController@destroyEmployee')->name('empleado.delete');
     Route::get('export-excel-employees', 'ClientController@exportExcel');
-    Route::post('empleado/add', 'ClientController@storeemployee');
+    Route::post('/empleado/add', [ClientController::class, 'storeemployee'])->name('empleado.add');
+    Route::get('/cli/empleados/{id}/detalle', [ClientController::class, 'showEmployeeDetail'])->name('empleados.detalle');
+    Route::get('/cli/empleados/{id}/consumos', [ClientController::class, 'getEmployeeConsumptionData'])->name('empleados.consumos.data');
     Route::get('areas/data', 'ClientController@getAreas')->name('areas.data');
     Route::post('empleado/update/{id}', 'ClientController@updateemployee')->name('empleados.update');
     ///////////////////////////////////////// PERMISOS TOOLS ///////////////////////////////////////////////////
