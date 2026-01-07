@@ -12,6 +12,7 @@ use App\Exports\EmpleadosExport;
 use App\Exports\PermisosExport;
 use App\Exports\AreasExport;
 use Illuminate\Support\Facades\Log;
+use App\Exports\ConsumoxEmpleadoExport;
 
 
 
@@ -236,5 +237,113 @@ class OperadorController extends Controller
         if (ob_get_contents())
             ob_end_clean();
         return Excel::download(new \App\Exports\MissingItemsExport($id), 'faltantes_vending_' . $id . '.xlsx');
+    }
+
+    public function indexConsumoEmpleado()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $plantasAccesoString = $_SESSION['usuario']->PlantasConAcceso;
+        $plantasAccesoArray = explode(',', $plantasAccesoString);
+        $plantasAccesoIn = "'" . implode("','", $plantasAccesoArray) . "'";
+
+        // Fetch plants assigned to the operator
+        $plantas = DB::select("
+            SELECT [Id_Planta],
+                [Txt_Nombre_Planta]
+            FROM [Vending_Machine].[dbo].[Cat_Plantas]
+            WHERE [Id_Planta] IN ($plantasAccesoIn)
+            ORDER BY [Txt_Nombre_Planta] ASC
+        ");
+
+        return view('operacion.reportes.consumoxempleado', [
+            'plantas' => $plantas
+        ]);
+    }
+
+    public function getConsumoEmpleadoData(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Validate that the requested plant is in the operator's access list
+        $requestedPlantId = $request->input('idPlanta');
+        $plantasAccesoString = $_SESSION['usuario']->PlantasConAcceso;
+        $plantasAccesoArray = explode(',', $plantasAccesoString);
+
+        if (!in_array($requestedPlantId, $plantasAccesoArray)) {
+            return response()->json(['error' => 'Unauthorized access to this plant'], 403);
+        }
+
+        $idPlanta = $requestedPlantId;
+
+        // Base query - similar to ReportesClienteController but with censorship
+        $data = DB::table('Ctrl_Consumos')
+            ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
+            ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->leftJoin(DB::raw('(
+                select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
+                from Ctrl_Consumos as a
+                inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
+                right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
+                inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
+            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
+            ->where('Cat_Empleados.Id_Planta', $idPlanta)
+            ->select(
+                DB::raw("'******' as Nombre"), // CENSORED
+                'Cat_Empleados.No_Empleado as Numero_de_empleado',
+                'Cat_Area.Txt_Nombre as Area',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+                'Ctrl_Consumos.Fecha_Real as Fecha',
+                'Ctrl_Consumos.Cantidad'
+            )
+            ->orderByDesc('Ctrl_Consumos.Fecha_Real');
+
+        // Apply filters
+        if ($request->filled('startDate') && $request->filled('endDate')) {
+            $startDate = $request->startDate . ' 00:00:00';
+            $endDate = $request->endDate . ' 23:59:59';
+            $data->whereBetween('Ctrl_Consumos.Fecha_Real', [$startDate, $endDate]);
+        }
+
+        $totalRecords = $data->count();
+        $filteredRecords = $totalRecords; // Simplified for now
+
+        $data = $data->offset($request->start)
+            ->limit($request->length)
+            ->get();
+
+        return response()->json([
+            'draw' => intval($request->draw),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
+    }
+
+    public function exportConsumoEmpleado(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $requestedPlantId = $request->input('idPlanta');
+
+        // Security Check: Ensure plant is accessible to operator
+        $plantasAccesoString = $_SESSION['usuario']->PlantasConAcceso;
+        $plantasAccesoArray = explode(',', $plantasAccesoString);
+
+        if (!$requestedPlantId || !in_array($requestedPlantId, $plantasAccesoArray)) {
+            return redirect()->back()->with('error', 'Acceso no autorizado a esta planta.');
+        }
+
+        // Trigger export with Censored = true
+        return Excel::download(new ConsumoxEmpleadoExport($request, $requestedPlantId, true), 'ConsumoPorEmpleado_Censurado.xlsx');
     }
 }

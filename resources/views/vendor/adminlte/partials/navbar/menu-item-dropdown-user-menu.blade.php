@@ -44,10 +44,14 @@
                     @endif
                     <p class="mt-2 font-weight-bold" style="font-size: 1.1em;">
                         <?php
-            $fullname = $_SESSION['usuario']->Txt_Nombre . " " . $_SESSION['usuario']->Txt_ApellidoP;
-                                                ?>
+            if (isset($_SESSION['usuario']->Txt_Nombre) && isset($_SESSION['usuario']->Txt_ApellidoP)) {
+                $fullname = $_SESSION['usuario']->Txt_Nombre . " " . $_SESSION['usuario']->Txt_ApellidoP;
+            } else {
+                $fullname = $_SESSION['usuario']->Nick_Usuario ?? 'Usuario';
+            }
+                                ?>
                         {{ Str::limit($fullname, 20) }}
-                        <small class="d-block font-weight-light">{{ $_SESSION['usuario']->Txt_Puesto ?? 'Cliente' }}</small>
+                        <small class="d-block font-weight-light">{{ $_SESSION['usuario']->Txt_Puesto ?? 'Operador' }}</small>
                     </p>
                 </li>
         @else

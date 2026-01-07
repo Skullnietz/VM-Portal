@@ -21,7 +21,6 @@ class StatusController extends Controller
         try {
             DB::statement('SET NOCOUNT ON');
             $syncRows = DB::select('EXEC dbo.SP_Consulta_Sincronizacion');
-            // Obtener fecha del server SQL para referencia confiable
             $dbDate = DB::select("SELECT GETDATE() as now")[0]->now;
             $serverNow = Carbon::parse($dbDate);
         } catch (\Exception $e) {
@@ -43,15 +42,25 @@ class StatusController extends Controller
             }
         }
 
-        $Stats = DB::table('Ctrl_Mquinas')
+        $query = DB::table('Ctrl_Mquinas')
             ->leftJoin('Configuracion_Maquina', 'Ctrl_Mquinas.Id_Maquina', '=', 'Configuracion_Maquina.Id_Maquina')
             ->select(
                 'Ctrl_Mquinas.Id_Maquina',
                 'Ctrl_Mquinas.Id_Planta',
                 DB::raw("CAST(ISNULL((SUM(Configuracion_Maquina.Stock) * 100.0) / NULLIF(SUM(Configuracion_Maquina.Cantidad_Max), 0), 0) AS INT) as Per_Alm")
-            )
-            ->where('Ctrl_Mquinas.Id_Planta', $_SESSION['usuario']->Id_Planta)
-            ->groupBy('Ctrl_Mquinas.Id_Maquina', 'Ctrl_Mquinas.Id_Planta')
+            );
+
+        if (isset($_SESSION['usuario']->Id_Planta)) {
+            $query->where('Ctrl_Mquinas.Id_Planta', $_SESSION['usuario']->Id_Planta);
+        } elseif (isset($_SESSION['usuario']->PlantasConAcceso)) {
+            $plantas = explode(',', $_SESSION['usuario']->PlantasConAcceso);
+            $query->whereIn('Ctrl_Mquinas.Id_Planta', $plantas);
+        } else {
+            // Fallback or empty result if no plant info
+            $query->whereRaw('1 = 0');
+        }
+
+        $Stats = $query->groupBy('Ctrl_Mquinas.Id_Maquina', 'Ctrl_Mquinas.Id_Planta')
             ->get();
 
         foreach ($Stats as $Stat) {
@@ -157,10 +166,19 @@ class StatusController extends Controller
             session_start();
         }
 
-        // Obtener las máquinas de la planta del usuario
-        $maquinas = DB::table('Ctrl_Mquinas')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
-            ->pluck('Id_Maquina');
+        // Obtener las máquinas de la planta del usuario o plantas asignadas
+        $queryMaquinas = DB::table('Ctrl_Mquinas');
+
+        if (isset($_SESSION['usuario']->Id_Planta)) {
+            $queryMaquinas->where('Id_Planta', $_SESSION['usuario']->Id_Planta);
+        } elseif (isset($_SESSION['usuario']->PlantasConAcceso)) {
+            $plantas = explode(',', $_SESSION['usuario']->PlantasConAcceso);
+            $queryMaquinas->whereIn('Id_Planta', $plantas);
+        } else {
+            return [];
+        }
+
+        $maquinas = $queryMaquinas->pluck('Id_Maquina');
 
         // Obtener los últimos 20 consumos de esas máquinas
         $consumos = DB::table('Ctrl_Consumos')
@@ -223,15 +241,23 @@ class StatusController extends Controller
             session_start();
         }
 
-        $plantaId = $_SESSION['usuario']->Id_Planta;
+        $plantas = [];
+        if (isset($_SESSION['usuario']->Id_Planta)) {
+            $plantas = [$_SESSION['usuario']->Id_Planta];
+        } elseif (isset($_SESSION['usuario']->PlantasConAcceso)) {
+            $plantas = explode(',', $_SESSION['usuario']->PlantasConAcceso);
+        } else {
+            return response()->json(['error' => 'No plants assigned']);
+        }
+
         $currentMonth = date('m');
         $currentYear = date('Y');
 
-        // Artículos más consumidos
+        // Artículos más consumidos (Filtered by plants)
         $articulos = DB::table('Ctrl_Consumos')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-            ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+            ->whereIn('Ctrl_Mquinas.Id_Planta', $plantas)
             ->select(
                 DB::raw('Cat_Articulos.Id_Articulo as id'),
                 DB::raw("ISNULL(NULLIF(Cat_Articulos.Txt_Codigo_Cliente, ''), ISNULL(NULLIF(
@@ -254,7 +280,7 @@ class StatusController extends Controller
         // Consumo por máquina
         $porMaquina = DB::table('Ctrl_Consumos')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-            ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+            ->whereIn('Ctrl_Mquinas.Id_Planta', $plantas)
             ->whereMonth('Ctrl_Consumos.Fecha_Consumo', $currentMonth)
             ->whereYear('Ctrl_Consumos.Fecha_Consumo', $currentYear)
             ->select(
@@ -269,7 +295,7 @@ class StatusController extends Controller
         $porArea = DB::table('Ctrl_Consumos')
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-            ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+            ->whereIn('Ctrl_Mquinas.Id_Planta', $plantas)
             ->whereMonth('Ctrl_Consumos.Fecha_Consumo', $currentMonth)
             ->whereYear('Ctrl_Consumos.Fecha_Consumo', $currentYear)
             ->select(
@@ -285,7 +311,7 @@ class StatusController extends Controller
         $menorConsumo = DB::table('Ctrl_Consumos')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-            ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+            ->whereIn('Ctrl_Mquinas.Id_Planta', $plantas)
             ->select(
                 DB::raw("ISNULL(NULLIF(Cat_Articulos.Txt_Codigo_Cliente, ''), ISNULL(NULLIF(
                     STUFF((
@@ -319,11 +345,24 @@ class StatusController extends Controller
             session_start();
         }
 
-        $plantaId = $_SESSION['usuario']->Id_Planta;
+        $plantas = [];
+        if (isset($_SESSION['usuario']->Id_Planta)) {
+            $plantas = [$_SESSION['usuario']->Id_Planta];
+        } elseif (isset($_SESSION['usuario']->PlantasConAcceso)) {
+            $plantas = explode(',', $_SESSION['usuario']->PlantasConAcceso);
+        } else {
+            return response()->json(['error' => 'No plants assigned']);
+        }
+
+        // For simple caching of 'first' plant if needed, but here we query all.
+        // Queries below might expect single plant logic if not careful.
+        // The original code passed $plantaId = $_SESSION['usuario']->Id_Planta;
+        // Now using whereIn($plantas) for safety.
+
         $currentMonth = date('m');
         $currentYear = date('Y');
 
-        // Producto más consumido (solo de la planta)
+        // Producto más consumido
         $productoMasConsumido = DB::table('Ctrl_Consumos')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
@@ -335,7 +374,7 @@ class StatusController extends Controller
                     FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
                 , 1, 1, '')
             , ''), Cat_Articulos.Txt_Codigo)) as Codigo"))
-            ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+            ->whereIn('Ctrl_Mquinas.Id_Planta', $plantas)
             ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
             ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->groupBy('Ctrl_Consumos.Id_Articulo', 'Cat_Articulos.Id_Articulo', 'Cat_Articulos.Txt_Codigo', 'Cat_Articulos.Txt_Codigo_Cliente')
@@ -349,7 +388,7 @@ class StatusController extends Controller
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->select('Cat_Area.Txt_Nombre')
-            ->where('Cat_Empleados.Id_Planta', $plantaId)
+            ->whereIn('Cat_Empleados.Id_Planta', $plantas)
             ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
             ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->groupBy('Cat_Empleados.Id_Area', 'Cat_Area.Txt_Nombre')
@@ -367,10 +406,9 @@ class StatusController extends Controller
             $serverNow = Carbon::parse($dbDate);
             DB::statement('SET NOCOUNT OFF');
 
-            // Filtrar solo las máquinas de esta planta
-            // Necesitamos saber qué máquinas son de esta planta primero
+            // Filtrar solo las máquinas de estas plantas
             $maquinasPlanta = DB::table('Ctrl_Mquinas')
-                ->where('Id_Planta', $plantaId)
+                ->whereIn('Id_Planta', $plantas)
                 ->pluck('Id_Maquina')
                 ->toArray();
 
@@ -392,7 +430,7 @@ class StatusController extends Controller
         // Artículos consumidos (filtro por máquina -> planta)
         $articulosConsumidos = DB::table('Ctrl_Consumos')
             ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-            ->where('Ctrl_Mquinas.Id_Planta', $plantaId)
+            ->whereIn('Ctrl_Mquinas.Id_Planta', $plantas)
             ->whereRaw('MONTH(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentMonth])
             ->whereRaw('YEAR(Ctrl_Consumos.Fecha_Consumo) = ?', [$currentYear])
             ->sum('Ctrl_Consumos.cantidad');

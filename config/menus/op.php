@@ -1,8 +1,8 @@
 <?php
-return[
+return [
     'menu' => [
         // Navbar items:
-        
+
         [
             'text' => 'Vendings',
             'url' => 'admin/settings',
@@ -16,9 +16,21 @@ return[
                 ],
             ]
         ],
-        
+        [
+            'text' => 'Reportes',
+            'icon_color' => 'blue',
+            'icon' => 'fas fa-fw fa-chart-line',
+            'submenu' => [
+                [
+                    'text' => 'Consumo por Empleado',
+                    'icon_color' => 'blue',
+                    'url' => 'op/reporte-op/consumoxempleado',
+                ],
+            ]
+        ],
+
 
 
     ],
 ]
-?>
+    ?>
