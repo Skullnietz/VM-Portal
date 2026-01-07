@@ -346,4 +346,88 @@ class OperadorController extends Controller
         // Trigger export with Censored = true
         return Excel::download(new ConsumoxEmpleadoExport($request, $requestedPlantId, true), 'ConsumoPorEmpleado_Censurado.xlsx');
     }
+
+    public function Profile()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $user = $_SESSION['usuario'];
+
+        $plantasIds = explode(',', $user->PlantasConAcceso ?? '');
+
+        $plantasNombres = DB::table('Cat_Plantas')
+            ->whereIn('Id_Planta', $plantasIds)
+            ->pluck('Txt_Nombre_Planta')
+            ->toArray();
+
+        // Mostrar Plantas con Acceso
+        $planta = count($plantasNombres) > 0 ? implode(' | ', $plantasNombres) : 'N/A';
+
+        return view('operacion.profile', compact('user', 'planta'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'apellidos' => 'required|string|max:255',
+            'puesto' => 'nullable|string|max:255',
+        ]);
+
+        $user = $_SESSION['usuario'];
+
+        try {
+            DB::table('Cat_Operadores')
+                ->where('Id_Operador', $user->Id_Operador)
+                ->update([
+                    'Txt_Nombre' => $request->nombre,
+                    'Txt_ApellidoP' => $request->apellidos,
+                    'Txt_Puesto' => $request->puesto
+                ]);
+
+            // Update Session
+            $_SESSION['usuario']->Txt_Nombre = $request->nombre;
+            $_SESSION['usuario']->Txt_ApellidoP = $request->apellidos;
+            $_SESSION['usuario']->Txt_Puesto = $request->puesto;
+
+            return redirect()->back()->with('success', 'Perfil actualizado correctamente.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al actualizar el perfil.');
+        }
+    }
+
+    public function updatePassword(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = $_SESSION['usuario'];
+
+        try {
+            DB::table('Cat_Operadores')
+                ->where('Id_Operador', $user->Id_Operador)
+                ->update([
+                    'Contrasenia' => $request->password
+                ]);
+
+            // Update Session
+            $_SESSION['usuario']->Contrasenia = $request->password;
+
+            return redirect()->back()->with('success', 'Contraseña actualizada correctamente.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al actualizar la contraseña.');
+        }
+    }
 }

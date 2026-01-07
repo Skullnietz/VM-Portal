@@ -336,6 +336,10 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/op/reporte-op/consumoxempleado/data', [OperadorController::class, 'getConsumoEmpleadoData'])->name('op.consumoxempleado.data');
     Route::get('/op/reporte-op/consumoxempleado/export', [OperadorController::class, 'exportConsumoEmpleado'])->name('op.consumoxempleado.export');
 
+    Route::get('/op/perfil', [OperadorController::class, 'Profile'])->name('op.profile');
+    Route::post('/op/perfil/update', [OperadorController::class, 'updateProfile'])->name('op.profile.update');
+    Route::post('/op/perfil/password', [OperadorController::class, 'updatePassword'])->name('op.profile.password');
+
 
 
     ////////////////////////////////////      PRUEBAS     ///////////////////////////////
