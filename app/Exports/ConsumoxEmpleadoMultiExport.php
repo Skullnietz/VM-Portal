@@ -18,8 +18,9 @@ class ConsumoxEmpleadoMultiExport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            'Detalle de consumos' => new ConsumoxEmpleadoExport($this->request, $this->idPlanta),
-            'Resumen por cliente' => new ResumenClienteExport($this->request, $this->idPlanta),
+            new ConsumoxEmpleadoSummarySheet($this->request, $this->idPlanta),
+            new ConsumoxEmpleadoDetailSheet($this->request, $this->idPlanta),
+            new ResumenClienteExport($this->request, $this->idPlanta),
         ];
     }
 }

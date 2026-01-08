@@ -6,8 +6,9 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class ResumenClienteExport implements FromCollection, WithHeadings, ShouldAutoSize
+class ResumenClienteExport implements FromCollection, WithHeadings, ShouldAutoSize, WithTitle
 {
     protected $request;
     protected $idPlanta;
@@ -48,7 +49,7 @@ class ResumenClienteExport implements FromCollection, WithHeadings, ShouldAutoSi
 
         // Total general
         $totalGeneral = $datos->sum('Total');
-        $datos->push((object)[
+        $datos->push((object) [
             'Codigo_Cliente' => 'Total general',
             'Total' => $totalGeneral
         ]);
@@ -59,5 +60,10 @@ class ResumenClienteExport implements FromCollection, WithHeadings, ShouldAutoSi
     public function headings(): array
     {
         return ['Codigo Cliente', 'Cuenta de Código de Cliente'];
+    }
+
+    public function title(): string
+    {
+        return 'Resumen por cliente';
     }
 }
