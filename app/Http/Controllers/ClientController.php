@@ -216,38 +216,63 @@ class ClientController extends Controller
                         'Cat_Area.Txt_Nombre as Nombre',
                         'Cat_Articulos.Txt_Descripcion as Articulo',
                         'Cat_Articulos.Id_Articulo',
+                        'Cat_Articulos.Txt_Codigo',
                         'Ctrl_Permisos_x_Area.Status as Estatus',
                         'Ctrl_Permisos_x_Area.Cantidad',
                         'Ctrl_Permisos_x_Area.Frecuencia'
                     )
                     ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
                     ->get();
-                
-                 // Fetch sizes
-                 $sizes = DB::table('Configuracion_Maquina')
-                 ->join('Ctrl_Mquinas', 'Configuracion_Maquina.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-                 ->where('Ctrl_Mquinas.Id_Planta', $idPlanta)
-                 ->select('Configuracion_Maquina.Id_Articulo', 'Configuracion_Maquina.Talla')
-                 ->whereNotNull('Configuracion_Maquina.Talla')
-                 ->distinct()
-                 ->get();
 
-             $sizesMap = [];
-             foreach ($sizes as $s) {
-                 if (!empty($s->Talla)) {
-                    $sizesMap[$s->Id_Articulo][] = $s->Talla;
-                 }
-             }
+                // Fetch sizes
+                $sizes = DB::table('Configuracion_Maquina')
+                    ->join('Ctrl_Mquinas', 'Configuracion_Maquina.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+                    ->where('Ctrl_Mquinas.Id_Planta', $idPlanta)
+                    ->select('Configuracion_Maquina.Id_Articulo', 'Configuracion_Maquina.Talla')
+                    ->whereNotNull('Configuracion_Maquina.Talla')
+                    ->distinct()
+                    ->get();
 
-             // Append sizes
-             foreach ($data as $row) {
-                  if (isset($sizesMap[$row->Id_Articulo])) { 
-                      $tallas = implode(', ', array_unique($sizesMap[$row->Id_Articulo]));
-                      $row->Articulo .= ' ' . $tallas;
-                  }
-             }
+                $sizesMap = [];
+                foreach ($sizes as $s) {
+                    if (!empty($s->Talla)) {
+                        $sizesMap[$s->Id_Articulo][] = $s->Talla;
+                    }
+                }
 
-                return DataTables::of($data)->make(true);
+                // Color mapping for sizes
+                $sizeColors = [
+                    'CH' => 'badge-primary',
+                    'S' => 'badge-primary',
+                    'M' => 'badge-success',
+                    'MED' => 'badge-success',
+                    'L' => 'badge-warning',
+                    'G' => 'badge-warning',
+                    'XL' => 'badge-danger',
+                    'XG' => 'badge-danger',
+                    'UNITALLA' => 'badge-secondary',
+                    'UNI' => 'badge-secondary'
+                ];
+
+                // Append sizes and image
+                foreach ($data as $row) {
+                    $imageHtml = '<img src="/Images/Catalogo/' . $row->Txt_Codigo . '.jpg" class="img-thumbnail" style="width: 50px; height: 50px; margin-right: 10px; object-fit: cover;" onerror="this.onerror=null;this.src=\'/img/no-image.png\';">';
+
+                    $badgesHtml = '';
+                    if (isset($sizesMap[$row->Id_Articulo])) {
+                        $tallas = array_unique($sizesMap[$row->Id_Articulo]);
+                        foreach ($tallas as $talla) {
+                            $colorClass = $sizeColors[strtoupper($talla)] ?? 'badge-info';
+                            $badgesHtml .= '<span class="badge ' . $colorClass . '" style="margin-right: 3px; font-size: 0.9em;">' . $talla . '</span>';
+                        }
+                    }
+
+                    $row->Articulo = '<div class="d-flex align-items-center">' . $imageHtml . '<div><div>' . $row->Articulo . '</div><div class="mt-1">' . $badgesHtml . '</div></div></div>';
+                }
+
+                return DataTables::of($data)
+                    ->rawColumns(['Articulo'])
+                    ->make(true);
 
             }
         } catch (\Exception $e) {
@@ -273,6 +298,7 @@ class ClientController extends Controller
                         'Cat_Area.Txt_Nombre as Nombre',
                         'Cat_Articulos.Txt_Descripcion as Articulo',
                         'Cat_Articulos.Id_Articulo',
+                        'Cat_Articulos.Txt_Codigo',
                         'Ctrl_Permisos_x_Area.Status as Estatus',
                         'Ctrl_Permisos_x_Area.Cantidad',
                         'Ctrl_Permisos_x_Area.Frecuencia'
@@ -281,31 +307,55 @@ class ClientController extends Controller
                     ->where('Ctrl_Permisos_x_Area.Id_Area', $areaId)
                     ->get();
 
-                 // Fetch sizes
-                 $sizes = DB::table('Configuracion_Maquina')
-                 ->join('Ctrl_Mquinas', 'Configuracion_Maquina.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
-                 ->where('Ctrl_Mquinas.Id_Planta', $idPlanta)
-                 ->select('Configuracion_Maquina.Id_Articulo', 'Configuracion_Maquina.Talla')
-                 ->whereNotNull('Configuracion_Maquina.Talla')
-                 ->distinct()
-                 ->get();
+                // Fetch sizes
+                $sizes = DB::table('Configuracion_Maquina')
+                    ->join('Ctrl_Mquinas', 'Configuracion_Maquina.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+                    ->where('Ctrl_Mquinas.Id_Planta', $idPlanta)
+                    ->select('Configuracion_Maquina.Id_Articulo', 'Configuracion_Maquina.Talla')
+                    ->whereNotNull('Configuracion_Maquina.Talla')
+                    ->distinct()
+                    ->get();
 
-             $sizesMap = [];
-             foreach ($sizes as $s) {
-                 if (!empty($s->Talla)) {
-                    $sizesMap[$s->Id_Articulo][] = $s->Talla;
-                 }
-             }
+                $sizesMap = [];
+                foreach ($sizes as $s) {
+                    if (!empty($s->Talla)) {
+                        $sizesMap[$s->Id_Articulo][] = $s->Talla;
+                    }
+                }
 
-             // Append sizes
-             foreach ($data as $row) {
-                  if (isset($sizesMap[$row->Id_Articulo])) { 
-                      $tallas = implode(', ', array_unique($sizesMap[$row->Id_Articulo]));
-                      $row->Articulo .= ' ' . $tallas;
-                  }
-             }
+                // Color mapping for sizes
+                $sizeColors = [
+                    'CH' => 'badge-primary',
+                    'S' => 'badge-primary',
+                    'M' => 'badge-success',
+                    'MED' => 'badge-success',
+                    'L' => 'badge-warning',
+                    'G' => 'badge-warning',
+                    'XL' => 'badge-danger',
+                    'XG' => 'badge-danger',
+                    'UNITALLA' => 'badge-secondary',
+                    'UNI' => 'badge-secondary'
+                ];
 
-                return DataTables::of($data)->make(true);
+                // Append sizes and image
+                foreach ($data as $row) {
+                    $imageHtml = '<img src="/Images/Catalogo/' . $row->Txt_Codigo . '.jpg" class="img-thumbnail" style="width: 50px; height: 50px; margin-right: 10px; object-fit: cover;" onerror="this.onerror=null;this.src=\'/img/no-image.png\';">';
+
+                    $badgesHtml = '';
+                    if (isset($sizesMap[$row->Id_Articulo])) {
+                        $tallas = array_unique($sizesMap[$row->Id_Articulo]);
+                        foreach ($tallas as $talla) {
+                            $colorClass = $sizeColors[strtoupper($talla)] ?? 'badge-info';
+                            $badgesHtml .= '<span class="badge ' . $colorClass . '" style="margin-right: 3px; font-size: 0.9em;">' . $talla . '</span>';
+                        }
+                    }
+
+                    $row->Articulo = '<div class="d-flex align-items-center">' . $imageHtml . '<div><div>' . $row->Articulo . '</div><div class="mt-1">' . $badgesHtml . '</div></div></div>';
+                }
+
+                return DataTables::of($data)
+                    ->rawColumns(['Articulo'])
+                    ->make(true);
 
             }
         } catch (\Exception $e) {
