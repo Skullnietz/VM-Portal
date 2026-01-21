@@ -76,9 +76,9 @@
                                 <th>Apellido Paterno</th>
                                 <th>Apellido Materno</th>
                                 <th>Área</th>
-                                <th>Permisos producto</th>
+                                <th>Permisos del Área</th>
                                 <th>Editar</th>
-                                <th>Borrar</th>
+                                <th class="d-none">Borrar</th>
                                 <th>Estatus</th>
                                 <th>Detalle</th>
                                 <th>Última modificación</th>
@@ -469,6 +469,7 @@
                 {
                     data: null,
                     name: 'Eliminar',
+                    className: 'd-none',
                     render: function (data, type, row) {
                         return `<button class="btn btn-xs btn-danger" onclick="confirmDelete(${row.Id_Empleado}, '${row.Nombre} ${row.APaterno} ${row.AMaterno}')">Eliminar <i class="fas fa-trash"></i></button>`;
                     }
