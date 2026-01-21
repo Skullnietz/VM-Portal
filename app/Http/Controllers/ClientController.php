@@ -485,8 +485,7 @@ class ClientController extends Controller
                     // 2. Pre-cargar empleados
                     $empleadosExistentes = DB::table('Cat_Empleados')
                         ->where('Id_Planta', $id_planta)
-                        ->pluck('No_Empleado')
-                        ->flip()
+                        ->pluck('Txt_Estatus', 'No_Empleado') // Changed to pluck status
                         ->toArray();
 
                     // 3. Pre-cargar tarjetas
@@ -591,8 +590,14 @@ class ClientController extends Controller
 
                                 if (!empty($estatus) && in_array($estatus, ['Alta', 'Baja'])) {
                                     $updateData['Txt_Estatus'] = $estatus;
+
+                                    $currentStatus = $empleadosExistentes[$no_empleado] ?? null;
+
                                     if ($estatus === 'Baja') {
                                         $updateData['Nip'] = '0000';
+                                    } elseif ($estatus === 'Alta' && $currentStatus === 'Baja') {
+                                        // Reactivation: Reset NIP
+                                        $updateData['Nip'] = '1234';
                                     }
                                 }
 
@@ -612,6 +617,8 @@ class ClientController extends Controller
 
                                 if ($finalEstatus === 'Baja') {
                                     $finalNip = '0000';
+                                } elseif ($finalEstatus === 'Alta') {
+                                    $finalNip = '1234'; // Force 1234 for new Alta records
                                 }
 
                                 DB::table('Cat_Empleados')->insert([
@@ -632,7 +639,7 @@ class ClientController extends Controller
                                     'Id_Usuario_Baja' => NULL,
                                 ]);
 
-                                $empleadosExistentes[$no_empleado] = true;
+                                $empleadosExistentes[$no_empleado] = $finalEstatus; // Update cache with new status
                                 if (!empty($no_tarjeta)) {
                                     $tarjetasExistentes[$no_tarjeta] = $no_empleado;
                                 }
