@@ -722,7 +722,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         @if (session('status'))
             let status = "{{ session('status') }}";
-            let message = "{!! session('message') !!}"; // Use {!! !!} for unescaped HTML content if controller sends safe HTML, or build it here.
+            let message = "{!! session('message') !!}";
 
             @if(session('import_errors'))
                 message += '<br><br><strong>Errores encontrados:</strong><ul style="text-align: left; max-height: 200px; overflow-y: auto;">';
