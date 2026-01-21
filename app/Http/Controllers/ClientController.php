@@ -454,8 +454,23 @@ class ClientController extends Controller
         if ($request->hasFile('csv_file')) {
             try {
                 $file = $request->file('csv_file');
-                // Leer del archivo temporal directamente, sin moverlo al storage
+
+                // 0. Validar que la subida fue exitosa
+                if (!$file->isValid()) {
+                    throw new \Exception("Error en la subida del archivo: " . $file->getErrorMessage());
+                }
+
+                // Leer del archivo temporal
+                // Intentamos getRealPath, si falla (retorna false/empty), usamos getPathname
                 $fullPath = $file->getRealPath();
+                if (!$fullPath) {
+                    $fullPath = $file->getPathname();
+                }
+
+                // Si aun así es vacío, hay un problema grave con el entorno
+                if (empty($fullPath)) {
+                    throw new \Exception("No se pudo obtener la ruta del archivo temporal.");
+                }
 
                 if (($handle = fopen($fullPath, "r")) !== FALSE) {
                     $header = fgetcsv($handle, 1000, ",");
