@@ -240,17 +240,6 @@ class ClientController extends Controller
                     }
                 }
 
-                // Color palette
-                $badgeColors = [
-                    'badge-primary',
-                    'badge-success',
-                    'badge-danger',
-                    'badge-warning',
-                    'badge-info',
-                    'badge-secondary',
-                    'badge-dark'
-                ];
-
                 // Append sizes and image
                 foreach ($data as $row) {
                     $imageHtml = '<img src="/Images/Catalogo/' . $row->Txt_Codigo . '.jpg" class="img-thumbnail" style="width: 50px; height: 50px; margin-right: 10px; object-fit: cover;" onerror="this.onerror=null;this.src=\'/img/no-image.png\';">';
@@ -259,11 +248,13 @@ class ClientController extends Controller
                     if (isset($sizesMap[$row->Id_Articulo])) {
                         $tallas = array_unique($sizesMap[$row->Id_Articulo]);
                         foreach ($tallas as $talla) {
-                            // Assign color based on hash of the size string
-                            $colorIndex = crc32($talla) % count($badgeColors);
-                            $colorClass = $badgeColors[$colorIndex];
+                            // Generate a consistent HSL color based on the size string
+                            $hash = crc32($talla);
+                            $hue = $hash % 360;
+                            // Saturation 70%, Lightness 45% ensures good contrast with white text and vibrant look
+                            $colorStyle = "background-color: hsl({$hue}, 70%, 45%); color: white;";
 
-                            $badgesHtml .= '<span class="badge ' . $colorClass . '" style="margin-right: 3px; font-size: 0.9em;">' . $talla . '</span>';
+                            $badgesHtml .= '<span class="badge" style="margin-right: 3px; font-size: 0.9em; ' . $colorStyle . '">' . $talla . '</span>';
                         }
                     }
 
@@ -323,17 +314,6 @@ class ClientController extends Controller
                     }
                 }
 
-                // Color palette
-                $badgeColors = [
-                    'badge-primary',
-                    'badge-success',
-                    'badge-danger',
-                    'badge-warning',
-                    'badge-info',
-                    'badge-secondary',
-                    'badge-dark'
-                ];
-
                 // Append sizes and image
                 foreach ($data as $row) {
                     $imageHtml = '<img src="/Images/Catalogo/' . $row->Txt_Codigo . '.jpg" class="img-thumbnail" style="width: 50px; height: 50px; margin-right: 10px; object-fit: cover;" onerror="this.onerror=null;this.src=\'/img/no-image.png\';">';
@@ -342,11 +322,13 @@ class ClientController extends Controller
                     if (isset($sizesMap[$row->Id_Articulo])) {
                         $tallas = array_unique($sizesMap[$row->Id_Articulo]);
                         foreach ($tallas as $talla) {
-                            // Assign color based on hash of the size string
-                            $colorIndex = crc32($talla) % count($badgeColors);
-                            $colorClass = $badgeColors[$colorIndex];
+                            // Generate a consistent HSL color based on the size string
+                            $hash = crc32($talla);
+                            $hue = $hash % 360;
+                            // Saturation 70%, Lightness 45% ensures good contrast with white text and vibrant look
+                            $colorStyle = "background-color: hsl({$hue}, 70%, 45%); color: white;";
 
-                            $badgesHtml .= '<span class="badge ' . $colorClass . '" style="margin-right: 3px; font-size: 0.9em;">' . $talla . '</span>';
+                            $badgesHtml .= '<span class="badge" style="margin-right: 3px; font-size: 0.9em; ' . $colorStyle . '">' . $talla . '</span>';
                         }
                     }
 
