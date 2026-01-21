@@ -214,7 +214,7 @@ class ClientController extends Controller
                     ->select(
                         'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
                         'Cat_Area.Txt_Nombre as Nombre',
-                        DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
+                        'Cat_Articulos.Txt_Descripcion as Articulo',
                         'Ctrl_Permisos_x_Area.Status as Estatus',
                         'Ctrl_Permisos_x_Area.Cantidad',
                         'Ctrl_Permisos_x_Area.Frecuencia'
@@ -246,7 +246,7 @@ class ClientController extends Controller
                     ->select(
                         'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
                         'Cat_Area.Txt_Nombre as Nombre',
-                        DB::raw("CONCAT(SUBSTRING(Cat_Articulos.Txt_Descripcion, 1, 50), CASE WHEN LEN(Cat_Articulos.Txt_Descripcion) > 50 THEN '...' ELSE '' END) as Articulo"),
+                        'Cat_Articulos.Txt_Descripcion as Articulo',
                         'Ctrl_Permisos_x_Area.Status as Estatus',
                         'Ctrl_Permisos_x_Area.Cantidad',
                         'Ctrl_Permisos_x_Area.Frecuencia'
