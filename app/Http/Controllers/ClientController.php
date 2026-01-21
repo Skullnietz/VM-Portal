@@ -591,6 +591,9 @@ class ClientController extends Controller
 
                                 if (!empty($estatus) && in_array($estatus, ['Alta', 'Baja'])) {
                                     $updateData['Txt_Estatus'] = $estatus;
+                                    if ($estatus === 'Baja') {
+                                        $updateData['Nip'] = '00000';
+                                    }
                                 }
 
                                 DB::table('Cat_Empleados')
@@ -606,6 +609,10 @@ class ClientController extends Controller
 
                                 $finalNip = empty($nip) ? '1234' : $nip;
                                 $finalEstatus = (!empty($estatus) && in_array($estatus, ['Alta', 'Baja'])) ? $estatus : 'Alta';
+
+                                if ($finalEstatus === 'Baja') {
+                                    $finalNip = '00000';
+                                }
 
                                 DB::table('Cat_Empleados')->insert([
                                     'No_Empleado' => $no_empleado,
