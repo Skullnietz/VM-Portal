@@ -240,18 +240,15 @@ class ClientController extends Controller
                     }
                 }
 
-                // Color mapping for sizes
-                $sizeColors = [
-                    'CH' => 'badge-primary',
-                    'S' => 'badge-primary',
-                    'M' => 'badge-success',
-                    'MED' => 'badge-success',
-                    'L' => 'badge-warning',
-                    'G' => 'badge-warning',
-                    'XL' => 'badge-danger',
-                    'XG' => 'badge-danger',
-                    'UNITALLA' => 'badge-secondary',
-                    'UNI' => 'badge-secondary'
+                // Color palette
+                $badgeColors = [
+                    'badge-primary',
+                    'badge-success',
+                    'badge-danger',
+                    'badge-warning',
+                    'badge-info',
+                    'badge-secondary',
+                    'badge-dark'
                 ];
 
                 // Append sizes and image
@@ -262,7 +259,10 @@ class ClientController extends Controller
                     if (isset($sizesMap[$row->Id_Articulo])) {
                         $tallas = array_unique($sizesMap[$row->Id_Articulo]);
                         foreach ($tallas as $talla) {
-                            $colorClass = $sizeColors[strtoupper($talla)] ?? 'badge-info';
+                            // Assign color based on hash of the size string
+                            $colorIndex = crc32($talla) % count($badgeColors);
+                            $colorClass = $badgeColors[$colorIndex];
+
                             $badgesHtml .= '<span class="badge ' . $colorClass . '" style="margin-right: 3px; font-size: 0.9em;">' . $talla . '</span>';
                         }
                     }
@@ -323,18 +323,15 @@ class ClientController extends Controller
                     }
                 }
 
-                // Color mapping for sizes
-                $sizeColors = [
-                    'CH' => 'badge-primary',
-                    'S' => 'badge-primary',
-                    'M' => 'badge-success',
-                    'MED' => 'badge-success',
-                    'L' => 'badge-warning',
-                    'G' => 'badge-warning',
-                    'XL' => 'badge-danger',
-                    'XG' => 'badge-danger',
-                    'UNITALLA' => 'badge-secondary',
-                    'UNI' => 'badge-secondary'
+                // Color palette
+                $badgeColors = [
+                    'badge-primary',
+                    'badge-success',
+                    'badge-danger',
+                    'badge-warning',
+                    'badge-info',
+                    'badge-secondary',
+                    'badge-dark'
                 ];
 
                 // Append sizes and image
@@ -345,7 +342,10 @@ class ClientController extends Controller
                     if (isset($sizesMap[$row->Id_Articulo])) {
                         $tallas = array_unique($sizesMap[$row->Id_Articulo]);
                         foreach ($tallas as $talla) {
-                            $colorClass = $sizeColors[strtoupper($talla)] ?? 'badge-info';
+                            // Assign color based on hash of the size string
+                            $colorIndex = crc32($talla) % count($badgeColors);
+                            $colorClass = $badgeColors[$colorIndex];
+
                             $badgesHtml .= '<span class="badge ' . $colorClass . '" style="margin-right: 3px; font-size: 0.9em;">' . $talla . '</span>';
                         }
                     }
