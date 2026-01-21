@@ -722,12 +722,30 @@
     document.addEventListener('DOMContentLoaded', function () {
         @if (session('status'))
             let status = "{{ session('status') }}";
-            let message = "{{ session('message') }}";
+            let message = "{!! session('message') !!}"; // Use {!! !!} for unescaped HTML content if controller sends safe HTML, or build it here.
+
+            @if(session('import_errors'))
+                message += '<br><br><strong>Errores encontrados:</strong><ul style="text-align: left; max-height: 200px; overflow-y: auto;">';
+                @foreach(session('import_errors') as $error)
+                    message += '<li>{{ $error }}</li>';
+                @endforeach
+                message += '</ul>';
+            @endif
+
+            @if(session('created_areas'))
+                message += '<br><strong>Áreas nuevas creadas:</strong><ul style="text-align: left;">';
+                @foreach(session('created_areas') as $area)
+                    message += '<li>{{ $area }}</li>';
+                @endforeach
+                message += '</ul>';
+            @endif
+
             Swal.fire({
                 icon: status,
-                title: status === 'success' ? 'Éxito' : 'Error',
+                title: status === 'success' ? 'Éxito' : (status === 'warning' ? 'Advertencia' : 'Error'),
                 html: message,
-                confirmButtonText: 'Aceptar'
+                confirmButtonText: 'Aceptar',
+                width: '600px'
             });
         @endif
     });

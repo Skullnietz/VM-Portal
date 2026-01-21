@@ -461,13 +461,11 @@ class ClientController extends Controller
                 }
 
                 // Leer del archivo temporal
-                // Intentamos getRealPath, si falla (retorna false/empty), usamos getPathname
                 $fullPath = $file->getRealPath();
                 if (!$fullPath) {
                     $fullPath = $file->getPathname();
                 }
 
-                // Si aun así es vacío, hay un problema grave con el entorno
                 if (empty($fullPath)) {
                     throw new \Exception("No se pudo obtener la ruta del archivo temporal.");
                 }
@@ -475,8 +473,7 @@ class ClientController extends Controller
                 if (($handle = fopen($fullPath, "r")) !== FALSE) {
                     $header = fgetcsv($handle, 1000, ",");
 
-                    // 1. Pre-cargar áreas de la planta para evitar consultas en el bucle
-                    // Key: Nombre del área (lowercase para comparación), Value: Id_Area
+                    // 1. Pre-cargar áreas
                     $areasCache = DB::table('Cat_Area')
                         ->where('Id_Planta', $id_planta)
                         ->pluck('Id_Area', 'Txt_Nombre')
@@ -485,55 +482,69 @@ class ClientController extends Controller
                         })
                         ->toArray();
 
-                    // 2. Pre-cargar empleados existentes para saber si es update o insert
-                    // Key: No_Empleado, Value: true
+                    // 2. Pre-cargar empleados
                     $empleadosExistentes = DB::table('Cat_Empleados')
-                        ->where('Id_Planta', $id_planta) // Asumimos No_Empleado único por planta o global, ajustar si es global
+                        ->where('Id_Planta', $id_planta)
                         ->pluck('No_Empleado')
                         ->flip()
                         ->toArray();
 
-                    // 3. Pre-cargar tarjetas existentes para validación rápida
-                    // Key: No_Tarjeta, Value: No_Empleado (para saber a quién pertenece)
+                    // 3. Pre-cargar tarjetas
                     $tarjetasExistentes = DB::table('Cat_Empleados')
                         ->whereNotNull('No_Tarjeta')
                         ->where('No_Tarjeta', '!=', '')
                         ->pluck('No_Empleado', 'No_Tarjeta')
                         ->toArray();
 
-                    DB::beginTransaction(); // Iniciar transacción para velocidad e integridad
+                    DB::beginTransaction();
+
+                    $importErrors = [];
+                    $createdAreas = [];
+                    $rowsProcessed = 0;
+                    $rowNumber = 1;
 
                     try {
                         while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                            $rowNumber++;
                             if (array_filter($row) == [])
                                 continue;
 
-                            $no_empleado = !empty($row[0]) ? $row[0] : null;
-                            $nip = !empty($row[1]) ? $row[1] : '1234';
-                            $no_tarjeta = !empty($row[2]) ? $this->sanitizeString($row[2]) : null;
-                            $nombre = !empty($row[3]) ? $this->sanitizeString($row[3]) : null;
-                            $a_paterno = !empty($row[4]) ? $this->sanitizeString($row[4]) : null;
-                            $a_materno = !empty($row[5]) ? $this->sanitizeString($row[5]) : '';
-                            $n_area = !empty($row[6]) ? $this->sanitizeString($row[6]) : null;
-                            $estatus = !empty($row[7]) ? $this->sanitizeString($row[7]) : 'Alta';
+                            $no_empleado = !empty($row[0]) ? trim($row[0]) : null;
+                            $nip = !empty($row[1]) ? trim($row[1]) : '';
+                            $no_tarjeta = !empty($row[2]) ? trim($this->sanitizeString($row[2])) : null;
+                            $nombre = !empty($row[3]) ? trim($this->sanitizeString($row[3])) : null;
+                            $a_paterno = !empty($row[4]) ? trim($this->sanitizeString($row[4])) : null;
+                            $a_materno = !empty($row[5]) ? trim($this->sanitizeString($row[5])) : '';
+                            $n_area = !empty($row[6]) ? trim($this->sanitizeString($row[6])) : null;
+                            $estatus = !empty($row[7]) ? trim($this->sanitizeString($row[7])) : '';
 
-                            // Validaciones básicas
-                            if (is_null($no_empleado)) {
-                                throw new \Exception("El campo No_Empleado está vacío en una fila.");
+                            // --- VALIDACIONES ---
+                            if (empty($no_empleado) || !is_numeric($no_empleado)) {
+                                $importErrors[] = "Fila $rowNumber: 'No. Empleado' inválido o vacio. Debe ser numérico.";
+                                continue;
                             }
-                            if (empty($nombre) || empty($a_paterno)) {
-                                throw new \Exception("Nombre o Apellido faltante para el empleado: $no_empleado");
+                            if (empty($nombre) || preg_match('/\d/', $nombre)) {
+                                $importErrors[] = "Fila $rowNumber: 'Nombre' es obligatorio y no puede contener números.";
+                                continue;
                             }
-                            if (is_null($n_area)) {
-                                throw new \Exception("Área faltante para el empleado: $no_empleado");
+                            if (empty($a_paterno) || preg_match('/\d/', $a_paterno)) {
+                                $importErrors[] = "Fila $rowNumber: 'Apellido Paterno' es obligatorio y no puede contener números.";
+                                continue;
+                            }
+                            if (!empty($a_materno) && preg_match('/\d/', $a_materno)) {
+                                $importErrors[] = "Fila $rowNumber: 'Apellido Materno' no puede contener números.";
+                                continue;
+                            }
+                            if (empty($n_area)) {
+                                $importErrors[] = "Fila $rowNumber: 'Área' es obligatoria.";
+                                continue;
                             }
 
-                            // --- Manejo de Áreas (In-Memory) ---
+                            // --- MANEJO AREA ---
                             $n_area_lower = strtolower($n_area);
                             if (isset($areasCache[$n_area_lower])) {
                                 $id_area = $areasCache[$n_area_lower];
                             } else {
-                                // Crear área nueva
                                 $id_area = DB::table('Cat_Area')->insertGetId([
                                     'Id_Planta' => $id_planta,
                                     'Txt_Nombre' => $n_area,
@@ -543,51 +554,63 @@ class ClientController extends Controller
                                     'Id_Usuario_Alta' => $usuario,
                                     'Id_Usuario_Modificacion' => $usuario,
                                 ]);
-                                // Agregar al caché local
                                 $areasCache[$n_area_lower] = $id_area;
+                                if (!in_array($n_area, $createdAreas)) {
+                                    $createdAreas[] = $n_area;
+                                }
                             }
 
-                            // --- Lógica Empleado ---
+                            // --- MANEJO EMPLEADO ---
                             if (isset($empleadosExistentes[$no_empleado])) {
                                 // UPDATE
-                                // Validar tarjeta duplicada si cambió
+                                $updateData = [
+                                    'Nombre' => $nombre,
+                                    'APaterno' => $a_paterno,
+                                    'AMaterno' => $a_materno,
+                                    'Id_Area' => $id_area,
+                                    'Fecha_Modificacion' => now(),
+                                    'Id_Usuario_Modificacion' => $usuario,
+                                ];
+
+                                if (empty($nip)) {
+                                    $updateData['Nip'] = '1234';
+                                } else {
+                                    $updateData['Nip'] = $nip;
+                                }
+
                                 if (!empty($no_tarjeta)) {
                                     if (isset($tarjetasExistentes[$no_tarjeta]) && $tarjetasExistentes[$no_tarjeta] != $no_empleado) {
-                                        // Tarjeta existe y pertenece a OTRO empleado
-                                        // Podríamos lanzar error o saltar. Aquí lanzamos error para avisar.
-                                        // Opcional: break y rollback si es estricto.
-                                        // Por simplicidad, ignoraremos el cambio de tarjeta o marcaremos error.
-                                        // throw new \Exception("La tarjeta $no_tarjeta ya pertenece a otro empleado.");
-                                        // Decisión: No actualizar tarjeta si está duplicada.
-                                        $no_tarjeta = null; // O mantener la anterior.
+                                        $importErrors[] = "Fila $rowNumber: Tarjeta '$no_tarjeta' en uso por otro empleado.";
+                                        continue;
                                     }
+                                    $updateData['No_Tarjeta'] = $no_tarjeta;
+                                    $tarjetasExistentes[$no_tarjeta] = $no_empleado;
+                                } else {
+                                    $updateData['No_Tarjeta'] = null;
+                                }
+
+                                if (!empty($estatus) && in_array($estatus, ['Alta', 'Baja'])) {
+                                    $updateData['Txt_Estatus'] = $estatus;
                                 }
 
                                 DB::table('Cat_Empleados')
                                     ->where('No_Empleado', $no_empleado)
-                                    ->update([
-                                        'Nip' => $nip,
-                                        'No_Tarjeta' => $no_tarjeta,
-                                        'Nombre' => $nombre,
-                                        'APaterno' => $a_paterno,
-                                        'AMaterno' => $a_materno,
-                                        'Id_Area' => $id_area,
-                                        'Fecha_Modificacion' => now(),
-                                        'Txt_Estatus' => $estatus,
-                                        'Id_Usuario_Modificacion' => $usuario,
-                                    ]);
+                                    ->update($updateData);
 
                             } else {
                                 // INSERT
-                                // Validar tarjeta
                                 if (!empty($no_tarjeta) && isset($tarjetasExistentes[$no_tarjeta])) {
-                                    throw new \Exception("La tarjeta $no_tarjeta ya está asignada al empleado " . $tarjetasExistentes[$no_tarjeta]);
+                                    $importErrors[] = "Fila $rowNumber: Tarjeta '$no_tarjeta' en uso por otro empleado.";
+                                    continue;
                                 }
+
+                                $finalNip = empty($nip) ? '1234' : $nip;
+                                $finalEstatus = (!empty($estatus) && in_array($estatus, ['Alta', 'Baja'])) ? $estatus : 'Alta';
 
                                 DB::table('Cat_Empleados')->insert([
                                     'No_Empleado' => $no_empleado,
-                                    'Nip' => $nip,
-                                    'No_Tarjeta' => $no_tarjeta,
+                                    'Nip' => $finalNip,
+                                    'No_Tarjeta' => empty($no_tarjeta) ? null : $no_tarjeta,
                                     'Nombre' => $nombre,
                                     'APaterno' => $a_paterno,
                                     'AMaterno' => $a_materno,
@@ -595,28 +618,42 @@ class ClientController extends Controller
                                     'Id_Planta' => $id_planta,
                                     'Fecha_alta' => now(),
                                     'Fecha_Modificacion' => now(),
-                                    'Txt_Estatus' => 'Alta',
+                                    'Txt_Estatus' => $finalEstatus,
                                     'Tipo_Acceso' => 'E',
                                     'Id_Usuario_Alta' => $usuario,
                                     'Id_Usuario_Modificacion' => $usuario,
                                     'Id_Usuario_Baja' => NULL,
                                 ]);
 
-                                // Actualizar caché
                                 $empleadosExistentes[$no_empleado] = true;
                                 if (!empty($no_tarjeta)) {
                                     $tarjetasExistentes[$no_tarjeta] = $no_empleado;
                                 }
                             }
+                            $rowsProcessed++;
                         }
 
                         DB::commit();
                         fclose($handle);
 
+                        $message = "Proceso completado. Registros procesados: $rowsProcessed.";
+                        if (count($importErrors) > 0) {
+                            $status = 'warning';
+                            $message .= " Se encontraron " . count($importErrors) . " lineas con errores.";
+                        }
+
+                        return redirect()->back()->with([
+                            'status' => $status,
+                            'message' => $message,
+                            'import_errors' => $importErrors,
+                            'created_areas' => $createdAreas
+                        ]);
+
                     } catch (\Exception $e) {
                         DB::rollBack();
-                        fclose($handle);
-                        throw $e; // Re-lanzar para el bloque catch externo
+                        if (is_resource($handle))
+                            fclose($handle);
+                        throw $e;
                     }
 
                 } else {
