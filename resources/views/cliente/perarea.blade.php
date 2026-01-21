@@ -7,30 +7,33 @@
 
 @section('content_header')
 <div class="container">
-        <div class="row">
-            <!-- Columna de la izquierda con contenido alineado a la izquierda -->
-            <div class="col-9 d-flex align-items-center">
-                <h4 class="mb-0">
-                    <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de Articulos |') }} {{ $areaName}}
-                </h4>
-            </div>
+    <div class="row">
+        <!-- Columna de la izquierda con contenido alineado a la izquierda -->
+        <div class="col-9 d-flex align-items-center">
+            <h4 class="mb-0">
+                <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i
+                        class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Permisos de Articulos |') }}
+                {{ $areaName}}
+            </h4>
+        </div>
 
-            <!-- Columna de la derecha con contenido alineado a la derecha -->
-            <div class="col-3 d-flex justify-content-end align-items-center">
-                <div class="btn-group" role="group" aria-label="Basic example">
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPermissionModal">
-                        Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-lock"></i>
-                    </button>
-                    <a href="{{ url('export-excel-permissions') }}" type="button" class="btn btn-success">
-                        Reporte <i class="fas fa-file-excel"></i>
-                    </a>
-                </div>
+        <!-- Columna de la derecha con contenido alineado a la derecha -->
+        <div class="col-3 d-flex justify-content-end align-items-center">
+            <div class="btn-group" role="group" aria-label="Basic example">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPermissionModal">
+                    Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-lock"></i>
+                </button>
+                <a href="{{ url('export-excel-permissions') }}" type="button" class="btn btn-success">
+                    Reporte <i class="fas fa-file-excel"></i>
+                </a>
             </div>
         </div>
     </div>
+</div>
 
 <!-- Modal para Agregar Permiso -->
-<div class="modal fade" id="addPermissionModal" tabindex="-1" role="dialog" aria-labelledby="addPermissionModalLabel" aria-hidden="true">
+<div class="modal fade" id="addPermissionModal" tabindex="-1" role="dialog" aria-labelledby="addPermissionModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form id="addPermissionForm" method="POST">
@@ -46,7 +49,9 @@
                         <label for="area">Área</label>
                         <select class="form-control select3" required disabled>
                             @foreach($areas as $area)
-                                <option value="{{ $area->Id_Area }}" {{ $area->Id_Area == $areaId ? 'selected' : '' }}>{{ $area->Txt_Nombre }}</option>
+                                <option value="{{ $area->Id_Area }}" {{ $area->Id_Area == $areaId ? 'selected' : '' }}>
+                                    {{ $area->Txt_Nombre }}
+                                </option>
                             @endforeach
                         </select>
                         <input type="hidden" name="Id_Area" value="{{ $areaId }}">
@@ -79,81 +84,84 @@
 @stop
 
 @section('content')
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                <div class="card">
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="card">
 
-                    <div class="card-header">
-                        <h5 class="card-title">
-                            Permisos de {{ $areaName}}
-                        </h5>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
+                <div class="card-header">
+                    <h5 class="card-title">
+                        Permisos de {{ $areaName}}
+                    </h5>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-tool dropdown-toggle" data-toggle="dropdown">
+                                <i class="fas fa-wrench"></i>
                             </button>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-tool dropdown-toggle" data-toggle="dropdown">
-                                    <i class="fas fa-wrench"></i>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right" role="menu">
-                                    <a href="#" class="dropdown-item">Action</a>
-                                    <a href="#" class="dropdown-item">Another action</a>
-                                    <a href="#" class="dropdown-item">Something else here</a>
-                                    <a class="dropdown-divider"></a>
-                                    <a href="#" class="dropdown-item">Separated link</a>
-                                </div>
+                            <div class="dropdown-menu dropdown-menu-right" role="menu">
+                                <a href="#" class="dropdown-item">Action</a>
+                                <a href="#" class="dropdown-item">Another action</a>
+                                <a href="#" class="dropdown-item">Something else here</a>
+                                <a class="dropdown-divider"></a>
+                                <a href="#" class="dropdown-item">Separated link</a>
                             </div>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove">
-                                <i class="fas fa-times"></i>
-                            </button>
                         </div>
+                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
 
-                    </div>
-                    <div class="card-body">
+                </div>
+                <div class="card-body">
                     <table class="table table-bordered" id="permisos-articulos-table">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Artículo</th>
-                    <th>Frecuencia</th>
-                    <th>Cantidad</th>
-                    <th>Estatus</th>
-                    <th>Acciones </th>
-                </tr>
-            </thead>
-                    </div>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Artículo</th>
+                                <th>Frecuencia</th>
+                                <th>Cantidad</th>
+                                <th class="d-none">Estatus</th>
+                                <th class="d-none">Acciones </th>
+                            </tr>
+                        </thead>
                 </div>
             </div>
         </div>
     </div>
+</div>
 @stop
 
 @section('right-sidebar')
 @stop
 
 @section('css')
-        <!-- jQuery UI CSS -->
-        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
-    <!-- Incluir CSS de Select2 -->
-    <link href="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/styles/choices.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<!-- jQuery UI CSS -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
+<!-- Incluir CSS de Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/styles/choices.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
-        #areasTable {
-    width: 100% !important; /* Asegura que la tabla ocupe todo el ancho disponible */
-}
+    #areasTable {
+        width: 100% !important;
+        /* Asegura que la tabla ocupe todo el ancho disponible */
+    }
 
-.dataTables_scroll {
-    overflow-x: auto; /* Permite el desplazamiento horizontal si es necesario */
-}
+    .dataTables_scroll {
+        overflow-x: auto;
+        /* Permite el desplazamiento horizontal si es necesario */
+    }
 
-.dataTables_scrollHead,
-.dataTables_scrollBody {
-    overflow-x: auto; /* Asegura que el scroll horizontal esté disponible */
-}
-    </style>
+    .dataTables_scrollHead,
+    .dataTables_scrollBody {
+        overflow-x: auto;
+        /* Asegura que el scroll horizontal esté disponible */
+    }
+</style>
 @stop
 
 @section('js')
@@ -170,14 +178,14 @@
 <!-- Incluir JavaScript de Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/scripts/choices.min.js"></script>
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
 
-                document.querySelectorAll('.select3').forEach(function(element) {
+        document.querySelectorAll('.select3').forEach(function (element) {
             new Choices(element, {
                 // Options for Choices.js, if needed.
                 // For example, to match the width:
@@ -185,7 +193,7 @@
             });
         });
 
-        $('#submitBtn').click(function(e) {
+        $('#submitBtn').click(function (e) {
             e.preventDefault();
 
             let form = $('#addPermissionForm');
@@ -196,8 +204,8 @@
                 url: "{{ url('check-permission') }}", // Ruta que verifica duplicados
                 method: 'POST',
                 data: form.serialize(),
-                success: function(response) {
-                    if(response.exists) {
+                success: function (response) {
+                    if (response.exists) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -209,8 +217,8 @@
                             url: actionUrl,
                             method: 'POST',
                             data: form.serialize(),
-                            success: function(result) {
-                                if(result.success) {
+                            success: function (result) {
+                                if (result.success) {
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Éxito',
@@ -235,33 +243,33 @@
         });
     });
 </script>
-    <script type="text/javascript">
-$(document).ready(function() {
-    $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        }
-    });
-
-    var table = $('#permisos-articulos-table').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: '/get-permisos-articulos/{{$areaId}}',
-            type: 'GET',
-            dataSrc: function(json) {
-                // Asegúrate de que el formato de datos es el esperado
-                console.log(json);
-                return json.data;
+<script type="text/javascript">
+    $(document).ready(function () {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
-        },
-        columns: [
-            { data: 'Nombre' },
-            { data: 'Articulo' },
-            { 
-                data: 'Frecuencia',
-                render: function(data, type, row) {
-                    return `
+        });
+
+        var table = $('#permisos-articulos-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '/get-permisos-articulos/{{$areaId}}',
+                type: 'GET',
+                dataSrc: function (json) {
+                    // Asegúrate de que el formato de datos es el esperado
+                    console.log(json);
+                    return json.data;
+                }
+            },
+            columns: [
+                { data: 'Nombre' },
+                { data: 'Articulo' },
+                {
+                    data: 'Frecuencia',
+                    render: function (data, type, row) {
+                        return `
                         <div class="input-group">
                             <input type="number" class="form-control update-frecuencia" min="0" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
@@ -269,12 +277,12 @@ $(document).ready(function() {
                             </div>
                         </div>
                     `;
-                }
-            },
-            { 
-                data: 'Cantidad',
-                render: function(data, type, row) {
-                    return `
+                    }
+                },
+                {
+                    data: 'Cantidad',
+                    render: function (data, type, row) {
+                        return `
                         <div class="input-group">
                             <input type="number" class="form-control update-cantidad" min="0" max="99" data-id="${row.Clave}" value="${data}">
                             <div class="input-group-append">
@@ -282,195 +290,197 @@ $(document).ready(function() {
                             </div>
                         </div>
                     `;
-                }
-            },
-            { 
-                data: 'Estatus',
-                render: function(data, type, row) {
-                    var btnClass = data === 'Alta' ? 'btn-danger' : 'btn-success';
-                    var btnText = data === 'Alta' ? 'Desactivar <i class="fas fa-lock"></i>' : '&nbsp;&nbsp;Activar&nbsp;&nbsp; <i class="fas fa-lock-open"></i>';
-                    return `
+                    }
+                },
+                {
+                    data: 'Estatus',
+                    className: 'd-none',
+                    render: function (data, type, row) {
+                        var btnClass = data === 'Alta' ? 'btn-danger' : 'btn-success';
+                        var btnText = data === 'Alta' ? 'Desactivar <i class="fas fa-lock"></i>' : '&nbsp;&nbsp;Activar&nbsp;&nbsp; <i class="fas fa-lock-open"></i>';
+                        return `
                         <button class="btn btn-xs ${btnClass} toggle-status" data-id="${row.Clave}" data-status="${data}">
                             ${btnText}
                         </button>
                     `;
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    className: 'd-none',
+                    render: function (data, type, row) {
+                        return `<button class="btn btn-danger btn-xs delete-btn" data-id="${row.Clave}">&nbsp;&nbsp;&nbsp; Eliminar &nbsp;&nbsp;&nbsp;<i class="fas fa-trash"></i></button>`;
+                    }
                 }
-            },
-            { 
-                data: null, 
-                orderable: false, 
-                searchable: false, 
-                render: function(data, type, row) {
-                    return `<button class="btn btn-danger btn-xs delete-btn" data-id="${row.Clave}">&nbsp;&nbsp;&nbsp; Eliminar &nbsp;&nbsp;&nbsp;<i class="fas fa-trash"></i></button>`;
-                }
-            }
-        ],
+            ],
             responsive: true,
             scrollX: true,
-        language: {
-            processing: "Procesando...",
-            search: "Buscar:",
-            lengthMenu: "Mostrar _MENU_ registros",
-            info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-            infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
-            infoFiltered: "(filtrado de un total de _MAX_ registros)",
-            infoPostFix: "",
-            loadingRecords: "Cargando...",
-            zeroRecords: "No se encontraron resultados",
-            emptyTable: "No hay datos disponibles en la tabla",
-            paginate: {
-                first: "Primero",
-                previous: "Anterior",
-                next: "Siguiente",
-                last: "Último"
-            },
-            aria: {
-                sortAscending: ": activar para ordenar la columna de manera ascendente",
-                sortDescending: ": activar para ordenar la columna de manera descendente"
+            language: {
+                processing: "Procesando...",
+                search: "Buscar:",
+                lengthMenu: "Mostrar _MENU_ registros",
+                info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+                infoFiltered: "(filtrado de un total de _MAX_ registros)",
+                infoPostFix: "",
+                loadingRecords: "Cargando...",
+                zeroRecords: "No se encontraron resultados",
+                emptyTable: "No hay datos disponibles en la tabla",
+                paginate: {
+                    first: "Primero",
+                    previous: "Anterior",
+                    next: "Siguiente",
+                    last: "Último"
+                },
+                aria: {
+                    sortAscending: ": activar para ordenar la columna de manera ascendente",
+                    sortDescending: ": activar para ordenar la columna de manera descendente"
+                }
             }
-        }
-    });
+        });
 
- // Función para eliminar un permiso
-$('#permisos-articulos-table').on('click', '.delete-btn', function() {
-    var id = $(this).data('id');
-    Swal.fire({
-        title: '¿Estás seguro?',
-        text: 'Una vez eliminado, no podrás recuperar este permiso.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, eliminarlo',
-        cancelButtonText: 'Cancelar',
-        dangerMode: true,
-    }).then((result) => {
-        if (result.isConfirmed) {
+        // Función para eliminar un permiso
+        $('#permisos-articulos-table').on('click', '.delete-btn', function () {
+            var id = $(this).data('id');
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: 'Una vez eliminado, no podrás recuperar este permiso.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminarlo',
+                cancelButtonText: 'Cancelar',
+                dangerMode: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/delete-permiso-articulo/${id}`,
+                        type: 'POST',
+                        success: function (result) {
+                            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+                            Swal.fire(
+                                'Eliminado',
+                                'Permiso eliminado con éxito',
+                                'success'
+                            );
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire(
+                                'Error',
+                                `Error eliminando el permiso: ${xhr.responseJSON.error || xhr.responseText}`,
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+
+        // Función para cambiar el estado
+        $('#permisos-articulos-table').on('click', '.toggle-status', function () {
+            var id = $(this).data('id');
+            var status = $(this).data('status');
+            var newStatus = status === 'Alta' ? 'Baja' : 'Alta';
             $.ajax({
-                url: `/delete-permiso-articulo/${id}`,
+                url: `/toggle-status-permiso-articulo/${id}`,
                 type: 'POST',
-                success: function(result) {
+                data: {
+                    status: newStatus
+                },
+                success: function (result) {
                     $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
                     Swal.fire(
-                        'Eliminado',
-                        'Permiso eliminado con éxito',
+                        'Actualizado',
+                        'Estado actualizado con éxito',
                         'success'
                     );
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     Swal.fire(
                         'Error',
-                        `Error eliminando el permiso: ${xhr.responseJSON.error || xhr.responseText}`,
+                        `Error actualizando el estado: ${xhr.responseJSON.error || xhr.responseText}`,
                         'error'
                     );
                 }
             });
-        }
-    });
-});
+        });
 
-// Función para cambiar el estado
-$('#permisos-articulos-table').on('click', '.toggle-status', function() {
-    var id = $(this).data('id');
-    var status = $(this).data('status');
-    var newStatus = status === 'Alta' ? 'Baja' : 'Alta';
-    $.ajax({
-        url: `/toggle-status-permiso-articulo/${id}`,
-        type: 'POST',
-        data: {
-            status: newStatus
-        },
-        success: function(result) {
-            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
-            Swal.fire(
-                'Actualizado',
-                'Estado actualizado con éxito',
-                'success'
-            );
-        },
-        error: function(xhr, status, error) {
-            Swal.fire(
-                'Error',
-                `Error actualizando el estado: ${xhr.responseJSON.error || xhr.responseText}`,
-                'error'
-            );
-        }
-    });
-});
+        // Función para actualizar la cantidad en tiempo real
+        // Función para actualizar la cantidad en tiempo real
+        $('#permisos-articulos-table').on('change', '.update-cantidad', function () {
+            var id = $(this).data('id');
+            var value = $(this).val();
 
-// Función para actualizar la cantidad en tiempo real
-// Función para actualizar la cantidad en tiempo real
-$('#permisos-articulos-table').on('change', '.update-cantidad', function() {
-    var id = $(this).data('id');
-    var value = $(this).val();
-    
-    $.ajax({
-        url: `/update-permiso-articulo/${id}`,
-        type: 'POST',
-        data: {
-            field: 'Cantidad',
-            value: value
-        },
-        success: function(result) {
-           
-            
-            // Mostrar Toast de éxito
-            $(document).Toasts('create', {
-                class: 'bg-success',
-                title: 'Actualizado',
-                body: 'Cantidad actualizada con éxito',
-                autohide: true,
-                delay: 3000
-            });
-        },
-        error: function(xhr, status, error) {
-            // Mostrar Toast de error
-            $(document).Toasts('create', {
-                class: 'bg-danger',
-                title: 'Error',
-                body: `Error actualizando la cantidad: ${xhr.responseJSON?.error || xhr.responseText}`,
-                autohide: true,
-                delay: 5000
-            });
-        }
-    });
-});
+            $.ajax({
+                url: `/update-permiso-articulo/${id}`,
+                type: 'POST',
+                data: {
+                    field: 'Cantidad',
+                    value: value
+                },
+                success: function (result) {
 
-// Función para actualizar la frecuencia en tiempo real
-$('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
-    var id = $(this).data('id');
-    var value = $(this).val();
 
-    $.ajax({
-        url: `/update-permiso-articulo/${id}`,
-        type: 'POST',
-        data: {
-            field: 'Frecuencia',
-            value: value
-        },
-        success: function(result) {
-            $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
-            
-            // Mostrar Toast de éxito
-            $(document).Toasts('create', {
-                class: 'bg-success',
-                title: 'Actualizado',
-                body: 'Frecuencia actualizada con éxito',
-                autohide: true,
-                delay: 3000
+                    // Mostrar Toast de éxito
+                    $(document).Toasts('create', {
+                        class: 'bg-success',
+                        title: 'Actualizado',
+                        body: 'Cantidad actualizada con éxito',
+                        autohide: true,
+                        delay: 3000
+                    });
+                },
+                error: function (xhr, status, error) {
+                    // Mostrar Toast de error
+                    $(document).Toasts('create', {
+                        class: 'bg-danger',
+                        title: 'Error',
+                        body: `Error actualizando la cantidad: ${xhr.responseJSON?.error || xhr.responseText}`,
+                        autohide: true,
+                        delay: 5000
+                    });
+                }
             });
-        },
-        error: function(xhr, status, error) {
-            // Mostrar Toast de error
-            $(document).Toasts('create', {
-                class: 'bg-danger',
-                title: 'Error',
-                body: `Error actualizando la frecuencia: ${xhr.responseJSON?.error || xhr.responseText}`,
-                autohide: true,
-                delay: 5000
+        });
+
+        // Función para actualizar la frecuencia en tiempo real
+        $('#permisos-articulos-table').on('change', '.update-frecuencia', function () {
+            var id = $(this).data('id');
+            var value = $(this).val();
+
+            $.ajax({
+                url: `/update-permiso-articulo/${id}`,
+                type: 'POST',
+                data: {
+                    field: 'Frecuencia',
+                    value: value
+                },
+                success: function (result) {
+                    $('#permisos-articulos-table').DataTable().ajax.reload(); // Actualiza la tabla
+
+                    // Mostrar Toast de éxito
+                    $(document).Toasts('create', {
+                        class: 'bg-success',
+                        title: 'Actualizado',
+                        body: 'Frecuencia actualizada con éxito',
+                        autohide: true,
+                        delay: 3000
+                    });
+                },
+                error: function (xhr, status, error) {
+                    // Mostrar Toast de error
+                    $(document).Toasts('create', {
+                        class: 'bg-danger',
+                        title: 'Error',
+                        body: `Error actualizando la frecuencia: ${xhr.responseJSON?.error || xhr.responseText}`,
+                        autohide: true,
+                        delay: 5000
+                    });
+                }
             });
-        }
+        });
     });
-});
-});
 
 
 </script>
@@ -478,7 +488,7 @@ $('#permisos-articulos-table').on('change', '.update-frecuencia', function() {
 
 <script>
     function goBack() {
-      window.history.back();
+        window.history.back();
     }
 </script>
 @stop
