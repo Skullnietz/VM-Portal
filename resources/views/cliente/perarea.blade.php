@@ -161,6 +161,11 @@
         overflow-x: auto;
         /* Asegura que el scroll horizontal esté disponible */
     }
+
+    table.dataTable tbody td {
+        white-space: normal !important;
+        word-wrap: break-word;
+    }
 </style>
 @stop
 
