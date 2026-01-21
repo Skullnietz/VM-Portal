@@ -215,12 +215,37 @@ class ClientController extends Controller
                         'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
                         'Cat_Area.Txt_Nombre as Nombre',
                         'Cat_Articulos.Txt_Descripcion as Articulo',
+                        'Cat_Articulos.Id_Articulo',
                         'Ctrl_Permisos_x_Area.Status as Estatus',
                         'Ctrl_Permisos_x_Area.Cantidad',
                         'Ctrl_Permisos_x_Area.Frecuencia'
                     )
                     ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
                     ->get();
+                
+                 // Fetch sizes
+                 $sizes = DB::table('Configuracion_Maquina')
+                 ->join('Ctrl_Mquinas', 'Configuracion_Maquina.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+                 ->where('Ctrl_Mquinas.Id_Planta', $idPlanta)
+                 ->select('Configuracion_Maquina.Id_Articulo', 'Configuracion_Maquina.Talla')
+                 ->whereNotNull('Configuracion_Maquina.Talla')
+                 ->distinct()
+                 ->get();
+
+             $sizesMap = [];
+             foreach ($sizes as $s) {
+                 if (!empty($s->Talla)) {
+                    $sizesMap[$s->Id_Articulo][] = $s->Talla;
+                 }
+             }
+
+             // Append sizes
+             foreach ($data as $row) {
+                  if (isset($sizesMap[$row->Id_Articulo])) { 
+                      $tallas = implode(', ', array_unique($sizesMap[$row->Id_Articulo]));
+                      $row->Articulo .= ' ' . $tallas;
+                  }
+             }
 
                 return DataTables::of($data)->make(true);
 
@@ -247,6 +272,7 @@ class ClientController extends Controller
                         'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
                         'Cat_Area.Txt_Nombre as Nombre',
                         'Cat_Articulos.Txt_Descripcion as Articulo',
+                        'Cat_Articulos.Id_Articulo',
                         'Ctrl_Permisos_x_Area.Status as Estatus',
                         'Ctrl_Permisos_x_Area.Cantidad',
                         'Ctrl_Permisos_x_Area.Frecuencia'
@@ -254,6 +280,30 @@ class ClientController extends Controller
                     ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
                     ->where('Ctrl_Permisos_x_Area.Id_Area', $areaId)
                     ->get();
+
+                 // Fetch sizes
+                 $sizes = DB::table('Configuracion_Maquina')
+                 ->join('Ctrl_Mquinas', 'Configuracion_Maquina.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
+                 ->where('Ctrl_Mquinas.Id_Planta', $idPlanta)
+                 ->select('Configuracion_Maquina.Id_Articulo', 'Configuracion_Maquina.Talla')
+                 ->whereNotNull('Configuracion_Maquina.Talla')
+                 ->distinct()
+                 ->get();
+
+             $sizesMap = [];
+             foreach ($sizes as $s) {
+                 if (!empty($s->Talla)) {
+                    $sizesMap[$s->Id_Articulo][] = $s->Talla;
+                 }
+             }
+
+             // Append sizes
+             foreach ($data as $row) {
+                  if (isset($sizesMap[$row->Id_Articulo])) { 
+                      $tallas = implode(', ', array_unique($sizesMap[$row->Id_Articulo]));
+                      $row->Articulo .= ' ' . $tallas;
+                  }
+             }
 
                 return DataTables::of($data)->make(true);
 
