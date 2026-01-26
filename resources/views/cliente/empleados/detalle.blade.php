@@ -29,8 +29,8 @@
         </div>
         <div class="widget-user-image">
             <img class="img-circle elevation-2" style="background: white; object-fit: contain;"
-                src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                onerror="this.onerror=null;this.src='/Images/user.png';" alt="User Avatar">
+                src="/Images/industrial-user.png" onerror="this.onerror=null;this.src='/Images/user.png';"
+                alt="User Avatar">
         </div>
         <div class="card-footer">
             <div class="row">
