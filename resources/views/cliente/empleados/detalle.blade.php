@@ -81,6 +81,9 @@
                         <div class="col-md-6 d-flex align-items-end">
                             <button class="btn btn-primary btn-block" id="btnFilter">Filtrar</button>
                         </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-success btn-block" id="btnExport">Exportar a Excel</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,6 +181,23 @@
             onSelect: function () {
                 table.draw();
             }
+        });
+
+        $('#btnExport').click(function () {
+            var startDate = $('#startDate').val();
+            var endDate = $('#endDate').val();
+            var url = '{{ route("empleados.detalle.export", ["id" => $empleado->Id_Empleado]) }}';
+
+            // Build query parameters
+            var params = [];
+            if (startDate) params.push('startDate=' + encodeURIComponent(startDate));
+            if (endDate) params.push('endDate=' + encodeURIComponent(endDate));
+
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+
+            window.location.href = url;
         });
 
         // DataTable

@@ -17,12 +17,14 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
     protected $request;
     protected $idPlanta;
     protected $censored;
+    protected $employeeId;
 
-    public function __construct($request, $idPlanta, $censored = false)
+    public function __construct($request, $idPlanta, $censored = false, $employeeId = null)
     {
         $this->request = $request;
         $this->idPlanta = $idPlanta;
         $this->censored = $censored;
+        $this->employeeId = $employeeId;
     }
 
     public function collection()
@@ -50,6 +52,10 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
                 'Ctrl_Consumos.Fecha_Real as Fecha',
                 'Ctrl_Consumos.Cantidad'
             );
+
+        if ($this->employeeId) {
+            $data->where('Cat_Empleados.Id_Empleado', $this->employeeId);
+        }
 
         // Aplicar filtros si están presentes
         if ($this->request->filled('area')) {

@@ -55,6 +55,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/cli/empleados-cli', 'ClientController@Empleados')->name('empleados-cli');
     Route::get('/cli/empleados/{id}/detalle', [ClientController::class, 'showEmployeeDetail'])->name('empleados.detalle');
     Route::get('/cli/empleados/{id}/consumos', [ClientController::class, 'getEmployeeConsumptionData'])->name('empleados.consumos.data');
+    Route::get('/cli/empleados/{id}/export-detail', [ClientController::class, 'exportEmployeeConsumptionData'])->name('empleados.detalle.export');
     Route::get('/cli/home-cli', 'ClientController@Home')->name('dash-cli');
 
     ///////////////////////////////////// REPORTE DE CONSULTA CONSUMOS /////////////////////////////

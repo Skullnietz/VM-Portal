@@ -1086,6 +1086,30 @@ class ClientController extends Controller
             ->make(true);
     }
 
+    public function exportEmployeeConsumptionData(Request $request, $id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+        // Validar que el empleado pertenece a la planta
+        $exists = DB::table('Cat_Empleados')
+            ->where('Id_Empleado', $id)
+            ->where('Id_Planta', $idPlanta)
+            ->exists();
+
+        if (!$exists) {
+            return redirect()->back()->with('error', 'Empleado no encontrado o denegado.');
+        }
+
+        // Generate filename
+        $date = Carbon::now()->format('Ymd_His');
+        $fileName = "Detalle_Consumo_Empleado_{$id}_{$date}.xlsx";
+
+        return Excel::download(new \App\Exports\ConsumoxEmpleadoDetailSheet($request, $idPlanta, false, $id), $fileName);
+    }
+
 
     public function updateNameArea(Request $request)
     {
