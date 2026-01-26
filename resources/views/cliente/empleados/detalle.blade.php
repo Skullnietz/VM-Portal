@@ -70,18 +70,18 @@
                 <div class="card-body">
                     <div class="row">
                         <!-- Inputs para el rango de fechas -->
-                        <div class="col-md-3">
+                        <div class="col-sm-6 col-md-3 mb-3">
                             <label for="startDate">Fecha Inicio:</label>
                             <input type="text" id="startDate" class="form-control" placeholder="AAAA-MM-DD">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-sm-6 col-md-3 mb-3">
                             <label for="endDate">Fecha Fin:</label>
                             <input type="text" id="endDate" class="form-control" placeholder="AAAA-MM-DD">
                         </div>
-                        <div class="col-md-6 d-flex align-items-end">
+                        <div class="col-sm-6 col-md-3 mb-3 d-flex align-items-end">
                             <button class="btn btn-primary btn-block" id="btnFilter">Filtrar</button>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-sm-6 col-md-3 mb-3 d-flex align-items-end">
                             <button class="btn btn-success btn-block" id="btnExport">Exportar a Excel</button>
                         </div>
                     </div>
