@@ -57,6 +57,19 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/cli/empleados/{id}/consumos', [ClientController::class, 'getEmployeeConsumptionData'])->name('empleados.consumos.data');
     Route::get('/cli/home-cli', 'ClientController@Home')->name('dash-cli');
 
+    ///////////////////////////////////// REPORTE DE CONSULTA CONSUMOS /////////////////////////////
+    Route::get('/cli/reporte/consultaconsumos', [ReportesClienteController::class, 'indexConsultaConsumos'])
+        ->name('consultasconsumo.index');
+    Route::post('/cli/reporte/consultaconsumos/data', [ReportesClienteController::class, 'dataConsultaConsumos'])
+        ->name('consultasconsumo.data');
+    Route::get('/cli/export/consultaconsumos', [ReportesClienteController::class, 'exportConsultaConsumos'])
+        ->name('export.consultaconsumos');
+
+    ///////////////////////////////////// PERFIL CLIENTE /////////////////////////////
+    Route::get('/cli/perfil', [ClientController::class, 'Profile'])->name('client.profile');
+    Route::post('/cli/perfil/password', [ClientController::class, 'updatePassword'])->name('client.profile.password');
+    Route::post('/cli/perfil/update', [ClientController::class, 'updateProfile'])->name('client.profile.update');
+
     Route::prefix('{language}')->group(function () {
         // ------------> DENTRO DEL SISTEMA ADMINISTRATIVO <------------------
         //////////////////////////////////// CLIENT CONTROLLER ///////////////////////////////////// 
@@ -67,10 +80,6 @@ Route::group(['middleware' => 'checkSession'], function () {
         // PERMISOS FILTRADO POR AREA
         Route::get('areas/permissions/{areaId}', 'ClientController@PermisosArticulosFilter')->name('permisos-cli'); // Asignacion de permiso
 
-        // PERFIL
-        Route::get('/cli/perfil', [ClientController::class, 'Profile'])->name('client.profile');
-        Route::post('/cli/perfil/password', [ClientController::class, 'updatePassword'])->name('client.profile.password');
-        Route::post('/cli/perfil/update', [ClientController::class, 'updateProfile'])->name('client.profile.update');
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////// ADMIN CONTROLLER /////////////////////////////////////
@@ -115,12 +124,6 @@ Route::group(['middleware' => 'checkSession'], function () {
         Route::get('/reporte/inventariovm', [ReportesClienteController::class, 'indexInventarioVM'])->name('inventariovm.index');
         ///////////////////////////////////// REPORTE DE PERMISOS /////////////////////////////
 
-        Route::get('/reporte/consultaconsumos', [ReportesClienteController::class, 'indexConsultaConsumos'])
-            ->name('consultasconsumo.index');
-        Route::post('/reporte/consultaconsumos/data', [ReportesClienteController::class, 'dataConsultaConsumos'])
-            ->name('consultasconsumo.data'); // <- endpoint de datos (POST)
-        Route::get('/export/consultaconsumos', [ReportesClienteController::class, 'exportConsultaConsumos'])
-            ->name('export.consultaconsumos');
 
         /////////////////////////////////////////// REPORTES DE CONSUMO ///////////////////////////////////////////
         Route::get('/getconsumoxempleado/data', [ReportesClienteController::class, 'getConsumoxEmpleado'])->name('consumosxempleado.data');

@@ -92,7 +92,7 @@
             <div class="card-header text-white" style="background: linear-gradient(90deg, #0ea5a5, #0ea56a);">
                 <h3 class="card-title"><i class="fas fa-id-card mr-2 text-white"></i> Información Personal</h3>
             </div>
-            <form action="{{ route('client.profile.update', ['language' => app()->getLocale()]) }}" method="POST">
+            <form action="{{ route('client.profile.update') }}" method="POST">
                 @csrf
                 <div class="card-body">
                      <div class="form-group row">
@@ -142,7 +142,7 @@
             <div class="card-header text-white" style="background: linear-gradient(90deg, #0ea5a5, #0ea56a);">
                 <h3 class="card-title"><i class="fas fa-lock mr-2 text-white"></i> Seguridad de la Cuenta</h3>
             </div>
-            <form action="{{ route('client.profile.password', ['language' => app()->getLocale()]) }}" method="POST">
+            <form action="{{ route('client.profile.password') }}" method="POST">
                 @csrf
                 <div class="card-body">
                     <div class="alert alert-light border-info text-info alert-dismissible fade show shadow-sm" role="alert" style="background-color: #f4fbfc;">

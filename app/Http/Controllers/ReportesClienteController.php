@@ -81,17 +81,41 @@ class ReportesClienteController extends Controller
         }
 
         $validated = $request->validate([
-            'NoEmpleado' => ['nullable', 'string', 'max:50'],
-            'Articulo' => ['nullable', 'string', 'max:255'], // Filtro por nombre de artículo
+            'NoEmpleado' => ['nullable'], // Puede ser string o array
+            'Articulo' => ['nullable'],   // Puede ser string o array
         ]);
 
         $idPlanta = (int) $_SESSION['usuario']->Id_Planta;
-        $noEmpleado = ($validated['NoEmpleado'] ?? '') === '' ? null : $validated['NoEmpleado'];
-        $articuloFiltro = ($validated['Articulo'] ?? '') === '' ? null : $validated['Articulo'];
 
+        // Normalizar NoEmpleado a array o null
+        $noEmpleadosInput = $validated['NoEmpleado'] ?? null;
+        if ($noEmpleadosInput === '' || $noEmpleadosInput === null) {
+            $noEmpleados = [];
+        } else {
+            $noEmpleados = is_array($noEmpleadosInput) ? $noEmpleadosInput : [$noEmpleadosInput];
+        }
+
+        // Normalizar Articulo a array o null
+        $articulosInput = $validated['Articulo'] ?? null;
+        if ($articulosInput === '' || $articulosInput === null) {
+            $articulosFiltro = [];
+        } else {
+            $articulosFiltro = is_array($articulosInput) ? $articulosInput : [$articulosInput];
+        }
+
+        // Determinar qué enviar al SP
+        // Si hay mas de 1 empleado seleccionado, enviamos NULL al SP para traer todo y filtrar en PHP.
+        // Si hay exactamente 1 empleado, enviamos ese ID al SP.
+        // Si no hay empleados seleccionados (filtro vacío), enviamos NULL al SP (trae todos).
+        $paramNoEmpleado = null;
+        if (count($noEmpleados) === 1) {
+            $paramNoEmpleado = $noEmpleados[0];
+        }
+
+        // EJECUCION DEL SP
         $rows = \DB::select(
             'SET NOCOUNT ON;EXEC dbo.SP_Consulta_Consumos @Id_Planta = ?, @NoEmpleado = ?',
-            [$idPlanta, $noEmpleado]
+            [$idPlanta, $paramNoEmpleado]
         );
 
         // Obtener mapa de Artículos (Descripción -> Código) para fallback
@@ -106,16 +130,28 @@ class ReportesClienteController extends Controller
             $articulosMap[$key] = $art->Txt_Codigo;
         }
 
-        // Filtrado en PHP (ya que el SP no recibe Articulo)
-        if ($articuloFiltro) {
-            $rows = array_filter($rows, function ($r) use ($articuloFiltro) {
-                // El SP devuelve columnas que pueden ser 'Articulo' o 'articulo'
-                $art = $r->Articulo ?? $r->articulo ?? '';
-                return $art === $articuloFiltro;
+        // FILTRADO EN PHP
+        // 1. Filtrar por Empleados (si seleccionaron múltiples, el SP trajo todos, aquí dejamos solo los seleccionados)
+        //    Si seleccionaron 0 (todos) o 1 (ya filtrado por SP), no hace falta este paso, pero mal no hace si es array check.
+        //    Sin embargo, si paramNoEmpleado era null y count > 1, debemos filtrar.
+        if (count($noEmpleados) > 1) {
+            $rows = array_filter($rows, function ($r) use ($noEmpleados) {
+                $empId = $r->No_Empleado ?? $r->no_empleado ?? '';
+                // Comparación flexible (string/int)
+                return in_array($empId, $noEmpleados);
             });
-            // Reindexar array
-            $rows = array_values($rows);
         }
+
+        // 2. Filtrar por Artículos
+        if (!empty($articulosFiltro)) {
+            $rows = array_filter($rows, function ($r) use ($articulosFiltro) {
+                $art = $r->Articulo ?? $r->articulo ?? '';
+                return in_array($art, $articulosFiltro);
+            });
+        }
+
+        // Reindexar array después de filtros
+        $rows = array_values($rows);
 
         $data = array_map(function ($r) use ($articulosMap) {
             $r = (array) $r;

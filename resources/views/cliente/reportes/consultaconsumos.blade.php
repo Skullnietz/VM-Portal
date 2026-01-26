@@ -177,31 +177,27 @@
 
       <div class="col-md-5">
         <label class="form-label">Empleado (buscar por número o nombre)</label>
-        <select id="NoEmpleadoSelect" class="form-select">
-          <option value="">— Todos —</option>
+        <select id="NoEmpleadoSelect" class="form-select" multiple>
+          {{-- <option value="">— Todos —</option> Choices lo gestiona con placeholder --}}
           @foreach($empleados as $e)
             @php
               $nombreCompleto = trim(($e->APaterno ? $e->APaterno . ' ' : '') . ($e->AMaterno ? $e->AMaterno . ' ' : '') . $e->Nombre);
-              $label = ($e->No_Empleado ?? '') . ' — ' . $nombreCompleto; // visible en el dropdown
+              $label = ($e->No_Empleado ?? '') . ' — ' . $nombreCompleto; 
             @endphp
-            {{-- VALUE = No_Empleado (lo que consume tu SP). Si prefieres Id_Empleado, cambia aquí y en backend. --}}
             <option value="{{ $e->No_Empleado }}">{{ $label }}</option>
           @endforeach
         </select>
-        {{-- Hidden que se envía por AJAX como NoEmpleado --}}
-        <input type="hidden" name="NoEmpleado" id="NoEmpleado" value="">
+        {{-- Hidden que se elimina porque ahora tomaremos valor directo del select en JS --}}
       </div>
 
       <div class="col-md-4">
         <label class="form-label">Artículo</label>
-        <select id="ArticuloSelect" class="form-select">
-          <option value="">— Todos —</option>
+        <select id="ArticuloSelect" class="form-select" multiple>
+          {{-- <option value="">— Todos —</option> --}}
           @foreach($productos as $p)
             <option value="{{ $p->Txt_Descripcion }}">{{ $p->Txt_Descripcion }}</option>
           @endforeach
         </select>
-        {{-- Hidden que se envía por AJAX --}}
-        <input type="hidden" name="Articulo" id="Articulo" value="">
       </div>
 
       <div class="col-md-3 d-flex align-items-end gap-2">
@@ -334,19 +330,17 @@
         searchEnabled: true,
         searchFields: ['label', 'value'],
         searchPlaceholderValue: 'Escribe número o nombre…',
-        placeholder: true, placeholderValue: '— Todos —',
+        placeholder: true, placeholderValue: '— Selecciona empleados —',
         shouldSort: true, itemSelectText: '', removeItemButton: true
       });
-      function syncEmpleado() { $('#NoEmpleado').val($sel.val() || ''); }
-      syncEmpleado(); $sel.on('change', syncEmpleado);
+      // NO necesitamos syncEmpleado, DataTables leerá directo del select múltiple
 
       // ===== Auto-select from URL =====
       const urlParams = new URLSearchParams(window.location.search);
       const empId = urlParams.get('employee_id');
       if (empId) {
-        empChoices.setChoiceByValue(empId);
-        // Trigger change to update hidden input and reload table if needed (though table init will pick it up if we set it before)
-        $sel.val(empId).trigger('change');
+        // En modo múltiple, setChoiceByValue espera un array para setear valores
+        empChoices.setChoiceByValue([empId]); 
       }
 
       // ===== Choices (buscar Artículo) =====
@@ -354,11 +348,9 @@
       const artChoices = new Choices($selArt[0], {
         searchEnabled: true,
         searchPlaceholderValue: 'Buscar artículo…',
-        placeholder: true, placeholderValue: '— Todos —',
+        placeholder: true, placeholderValue: '— Selecciona artículos —',
         shouldSort: true, itemSelectText: '', removeItemButton: true
       });
-      function syncArticulo() { $('#Articulo').val($selArt.val() || ''); }
-      syncArticulo(); $selArt.on('change', syncArticulo);
 
       // ===== Helpers =====
       function clampPct(n) { return Math.max(0, Math.min(100, Math.round(n))); }
@@ -422,8 +414,9 @@
           url: '/cli/reporte/consultaconsumos/data', type: 'POST',
           data: function (d) {
             d._token = $('input[name="_token"]').val();
-            d.NoEmpleado = $('#NoEmpleado').val();
-            d.Articulo = $('#Articulo').val();
+            // .val() en un select múltiple retorna un array de strings (o null)
+            d.NoEmpleado = $('#NoEmpleadoSelect').val(); 
+            d.Articulo = $('#ArticuloSelect').val();
           },
           error: function (xhr) {
             console.error('Error AJAX:', xhr.responseText || xhr.statusText);
@@ -502,24 +495,40 @@
       // Buscar / Todos
       $('#filtro').on('submit', function (e) { e.preventDefault(); table.ajax.reload(); });
       $('#btnTodos').on('click', function () {
-        empChoices.removeActiveItems(); $sel.val('').trigger('change');
-        artChoices.removeActiveItems(); $selArt.val('').trigger('change');
-        $('#NoEmpleado').val('');
-        $('#Articulo').val('');
+        empChoices.removeActiveItems(); 
+        artChoices.removeActiveItems();
+        // Recargar tabla, al estar vacíos los selects se enviará null/todos
         table.ajax.reload();
       });
 
       // Exportar Excel
       $('#btnExport').on('click', function () {
-        const noEmp = $('#NoEmpleado').val() || '';
-        const art = $('#Articulo').val() || '';
+        // Obtenemos arrays
+        const noEmp = $('#NoEmpleadoSelect').val() || [];
+        const art = $('#ArticuloSelect').val() || [];
 
-        // Construir URL basándonos en el path actual para mantener el idioma dinámico
-        // Actual: /{lang}/reporte/consultaconsumos
-        // Destino: /{lang}/export/consultaconsumos
+        // Construir query string manualmente para soportar arrays PHP style
+        // Ejemplo: NoEmpleado[]=123&NoEmpleado[]=456
+        const params = new URLSearchParams();
+        
+        // Agregar empleados
+        if (Array.isArray(noEmp)) {
+             noEmp.forEach(val => params.append('NoEmpleado[]', val));
+        } else {
+             params.append('NoEmpleado[]', noEmp);
+        }
+
+        // Agregar articulos
+        if (Array.isArray(art)) {
+             art.forEach(val => params.append('Articulo[]', val));
+        } else {
+             params.append('Articulo[]', art);
+        }
+
         const currentPath = window.location.pathname;
         const newPath = currentPath.replace('/reporte/consultaconsumos', '/export/consultaconsumos');
-        const url = window.location.origin + newPath + "?NoEmpleado=" + encodeURIComponent(noEmp) + "&Articulo=" + encodeURIComponent(art);
+        
+        const url = window.location.origin + newPath + "?" + params.toString();
 
         window.location.href = url;
       });

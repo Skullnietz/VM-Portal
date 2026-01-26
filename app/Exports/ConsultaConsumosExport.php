@@ -32,23 +32,45 @@ class ConsultaConsumosExport implements FromCollection, WithHeadings, WithEvents
         }
         ob_start();
 
-        $noEmpleado = $this->request->get('NoEmpleado');
-        $noEmpleado = ($noEmpleado === '' || $noEmpleado === 'null') ? null : $noEmpleado;
+        // Normalizar Inputs (pueden venir como arrays desde el request)
+        $noEmpleadosInput = $this->request->get('NoEmpleado');
+        $noEmpleados = [];
+        if ($noEmpleadosInput !== '' && $noEmpleadosInput !== 'null' && $noEmpleadosInput !== null) {
+            $noEmpleados = is_array($noEmpleadosInput) ? $noEmpleadosInput : [$noEmpleadosInput];
+        }
 
-        $articuloFiltro = $this->request->get('Articulo');
-        $articuloFiltro = ($articuloFiltro === '' || $articuloFiltro === 'null') ? null : $articuloFiltro;
+        $articulosInput = $this->request->get('Articulo');
+        $articulosFiltro = [];
+        if ($articulosInput !== '' && $articulosInput !== 'null' && $articulosInput !== null) {
+            $articulosFiltro = is_array($articulosInput) ? $articulosInput : [$articulosInput];
+        }
+
+        // Lógica de SP: Si seleccionaron múltiples o ninguno, traemos TODO (null). Si es 1, traemos ese.
+        $paramNoEmpleado = null;
+        if (count($noEmpleados) === 1) {
+            $paramNoEmpleado = $noEmpleados[0];
+        }
 
         // Execute SP
         $rows = DB::select(
             'SET NOCOUNT ON;EXEC dbo.SP_Consulta_Consumos @Id_Planta = ?, @NoEmpleado = ?',
-            [$this->idPlanta, $noEmpleado]
+            [$this->idPlanta, $paramNoEmpleado]
         );
 
+        // Filter by Employees in PHP if we fetched all but unwanted some (multi-select case)
+        if (count($noEmpleados) > 1) {
+            $rows = array_filter($rows, function ($r) use ($noEmpleados) {
+                $empId = $r->No_Empleado ?? $r->no_empleado ?? '';
+                return in_array($empId, $noEmpleados);
+            });
+        }
+
         // Filter by Article in PHP if needed
-        if ($articuloFiltro) {
-            $rows = array_filter($rows, function ($r) use ($articuloFiltro) {
+        if (!empty($articulosFiltro)) {
+            $rows = array_filter($rows, function ($r) use ($articulosFiltro) {
+                // El SP devuelve columnas que pueden ser 'Articulo' o 'articulo'
                 $art = $r->Articulo ?? $r->articulo ?? '';
-                return $art === $articuloFiltro;
+                return in_array($art, $articulosFiltro);
             });
         }
 
