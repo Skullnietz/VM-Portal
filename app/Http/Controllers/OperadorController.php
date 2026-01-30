@@ -285,6 +285,7 @@ class OperadorController extends Controller
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->leftJoin(DB::raw('(
                 select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
                 from Ctrl_Consumos as a
@@ -301,7 +302,9 @@ class OperadorController extends Controller
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
                 DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
                 'Ctrl_Consumos.Fecha_Real as Fecha',
-                'Ctrl_Consumos.Cantidad'
+                'Ctrl_Consumos.Cantidad',
+                'Ctrl_Consumos.Seleccion',
+                'Ctrl_Mquinas.Txt_Nombre as Vending'
             )
             ->orderByDesc('Ctrl_Consumos.Fecha_Real');
 

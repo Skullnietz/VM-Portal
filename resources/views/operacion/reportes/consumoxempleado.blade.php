@@ -89,6 +89,8 @@
                                     <th>Área</th>
                                     <th>Producto</th>
                                     <th>Código Urvina</th>
+                                    <th>Selección</th>
+                                    <th>Vending</th>
                                     <th>Fecha</th>
                                     <th>Cantidad</th>
                                 </tr>
@@ -106,7 +108,8 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+<link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
 @stop
 
 @section('js')
@@ -193,6 +196,8 @@
                     { data: 'Area' },
                     { data: 'Producto' },
                     { data: 'Codigo_Urvina' },
+                    { data: 'Seleccion' },
+                    { data: 'Vending' },
                     { data: 'Fecha' },
                     { data: 'Cantidad' }
                 ],
