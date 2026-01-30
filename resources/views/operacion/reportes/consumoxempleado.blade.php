@@ -69,11 +69,11 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                       <label for="selectVending">Vending:</label>
-                       <select id="selectVending" class="form-control" multiple>
-                           <!-- Options populated dynamically -->
-                       </select>
-                   </div>
+                        <label for="selectVending">Vending:</label>
+                        <select id="selectVending" class="form-control" multiple>
+                            <!-- Options populated dynamically -->
+                        </select>
+                    </div>
                     <div class="col-md-2">
                         <button id="btnFilter" class="btn btn-primary btn-block">
                             <i class="fas fa-filter"></i> Filtrar
@@ -115,7 +115,8 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+<link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 @stop
 
@@ -133,7 +134,7 @@
 
     $(document).ready(function () {
         console.log("Document ready - initializing components");
-        
+
         // Initialize Select2 ONLY for Plant selector (as requested to keep Vending with Choices)
         $('#selectPlanta').select2({
             placeholder: "Seleccione una opción",
@@ -148,7 +149,7 @@
             searchEnabled: true,
             searchPlaceholderValue: 'Buscar Vending...',
             placeholder: true,
-            placeholderValue: 'Todas las Vendings',
+            placeholderValue: 'Seleccione Vending',
             itemSelectText: '',
             shouldSort: false
         });
@@ -160,7 +161,7 @@
         $('#selectPlanta').on('change', function () {
             var idPlanta = $(this).val();
             console.log("Plant selection changed: " + idPlanta);
-            
+
             // Clear and reset Vending select
             $('#selectVending').empty();
 
@@ -173,35 +174,35 @@
                         idPlanta: idPlanta,
                         _token: '{{ csrf_token() }}'
                     },
-                    success: function(response) {
+                    success: function (response) {
                         // Clear and Destroy existing Choices instance
                         // vendingChoices.clearStore(); // clearStore removes active items but keeps choices? No, destroy is safer for full reload.
                         // Actually clearStore removes choices too? 
                         // Let's stick to destroy and re-init pattern from operadores.blade.php
-                        
+
                         vendingChoices.destroy();
-                        
+
                         var $select = $('#selectVending');
                         $select.empty(); // Clear DOM options
-                        
-                        if(response && response.length > 0){
-                            $.each(response, function(index, vending) {
+
+                        if (response && response.length > 0) {
+                            $.each(response, function (index, vending) {
                                 $select.append('<option value="' + vending.Id_Maquina + '">' + vending.Txt_Nombre + '</option>');
                             });
                         }
-                        
+
                         // Re-initialize Choices
                         vendingChoices = new Choices('#selectVending', {
                             removeItemButton: true,
                             searchEnabled: true,
                             searchPlaceholderValue: 'Buscar Vending...',
                             placeholder: true,
-                            placeholderValue: 'Todas las Vendings',
+                            placeholderValue: 'Seleccione Vending',
                             itemSelectText: '',
                             shouldSort: false
                         });
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error("Error fetching vendings:", xhr);
                     }
                 });
@@ -225,14 +226,14 @@
         // Let's make "Filtrar" button handle everything to avoid too many requests?
         // Or update table on Vending change? The user requested "Inserta tambien un filto select", usually implies usage like the others.
         // For consistency with typical dashboards: Vending change -> Update Table.
-        
+
         $('#btnFilter').on('click', function () {
             console.log("Filter button clicked");
             // Reload table with current selections
             var idPlanta = $('#selectPlanta').val();
             // Choices.js updates the underlying select value, but let's be sure
-            var vendingId = $('#selectVending').val(); 
-            if(idPlanta) {
+            var vendingId = $('#selectVending').val();
+            if (idPlanta) {
                 loadTable(idPlanta, vendingId);
             }
         });
@@ -241,8 +242,8 @@
             var idPlanta = $('#selectPlanta').val();
             var vendingId = $('#selectVending').val();
             var startDate = $('#startDate').val();
-       var endDate = $('#endDate').val();
-            
+            var endDate = $('#endDate').val();
+
             if (!idPlanta) {
                 alert("Seleccione una planta primero.");
                 return;
@@ -251,20 +252,20 @@
             // Serialize array for URL if needed, but standard query param array syntax is handled by backend usually headers?
             // For Excel export via GET, we need to handle array parameters correctly.
             // Construct URL parameters manually for array.
-            
+
             var url = '{{ route("op.consumoxempleado.export") }}' + '?idPlanta=' + idPlanta + '&startDate=' + startDate + '&endDate=' + endDate;
-            
+
             if (vendingId && vendingId.length > 0) {
                 // If it's an array, append each
-                if(Array.isArray(vendingId)){
-                    vendingId.forEach(function(id) {
+                if (Array.isArray(vendingId)) {
+                    vendingId.forEach(function (id) {
                         url += '&vendingId[]=' + id;
                     });
                 } else {
-                     url += '&vendingId[]=' + vendingId;
+                    url += '&vendingId[]=' + vendingId;
                 }
             }
-            
+
             window.location.href = url;
         });
 
