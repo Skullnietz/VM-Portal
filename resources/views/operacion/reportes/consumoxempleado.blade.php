@@ -24,7 +24,7 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-5 offset-md-1">
+                    <div class="col-md-6 offset-md-3">
                         <label for="selectPlanta"><strong><i class="fas fa-industry"></i> Planta a
                                 Consultar:</strong></label>
                         <select id="selectPlanta" class="form-control select2">
@@ -34,12 +34,6 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-5">
-                       <label for="selectVending"><strong><i class="fas fa-server"></i> Vending (Opcional):</strong></label>
-                       <select id="selectVending" class="form-control select2">
-                           <option value="">Todas las Vendings</option>
-                       </select>
-                   </div>
                 </div>
             </div>
         </div>
@@ -54,6 +48,14 @@
                 </div>
             </div>
             <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                       <label for="selectVending"><strong><i class="fas fa-server"></i> Vending:</strong></label>
+                       <select id="selectVending" class="form-control select2">
+                           <option value="">Todas las Vendings</option>
+                       </select>
+                   </div>
+                </div>
                 <div class="row mb-3 align-items-end">
                     <div class="col-md-3">
                         <label for="startDate">Fecha Inicio:</label>
