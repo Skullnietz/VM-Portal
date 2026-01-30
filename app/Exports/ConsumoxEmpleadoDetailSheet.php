@@ -34,6 +34,7 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->leftJoin(DB::raw('(
             select b.Id_Maquina, b.Talla,c.Codigo_Clientte as Txt_Codigo_Cliente,a.Id_Articulo, a.Id_Consumo,d.Txt_Descripcion,d.Txt_Codigo 
             from Ctrl_Consumos as a
@@ -49,6 +50,8 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
                 DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
                 DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+                'Ctrl_Consumos.Seleccion',
+                'Ctrl_Mquinas.Txt_Nombre as Vending',
                 'Ctrl_Consumos.Fecha_Real as Fecha',
                 'Ctrl_Consumos.Cantidad'
             );
@@ -169,6 +172,8 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
             'Descripción del Artículo',
             'Código de Urvina',
             'Código de Cliente',
+            'Selección',
+            'Vending',
             'Fecha de Consumo',
             'Cantidad',
         ];
@@ -193,7 +198,7 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
                 $drawing->setWorksheet($sheet);
 
                 // Título
-                $sheet->mergeCells('A1:H1');
+                $sheet->mergeCells('A1:J1');
                 $sheet->setCellValue('A1', 'Reporte de Consumos por Empleado');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -203,11 +208,11 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
                 $sheet->fromArray($this->headings(), NULL, 'A2'); // Agregar encabezados en la fila 2
     
                 // Encabezado en negritas
-                $sheet->getStyle('B2:H2')->getFont()->setBold(true);
+                $sheet->getStyle('B2:J2')->getFont()->setBold(true);
 
                 // Mensajes en el footer
                 $highestRow = $sheet->getHighestRow();
-                $sheet->mergeCells('B' . ($highestRow + 3) . ':H' . ($highestRow + 3));
+                $sheet->mergeCells('B' . ($highestRow + 3) . ':J' . ($highestRow + 3));
                 $sheet->setCellValue('B' . ($highestRow + 3), 'En consumos esta deshabilitada la edición o subida masiva. Siga su manual de Usuario.');
                 $sheet->getStyle('B' . ($highestRow + 3))->getFont()->getColor()->setRGB('FF0000');
                 $sheet->getStyle('B' . ($highestRow + 3))->getFont()->setSize(10);
