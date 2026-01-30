@@ -24,7 +24,7 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6 offset-md-3">
+                    <div class="col-md-5 offset-md-1">
                         <label for="selectPlanta"><strong><i class="fas fa-industry"></i> Planta a
                                 Consultar:</strong></label>
                         <select id="selectPlanta" class="form-control select2">
@@ -34,6 +34,12 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-5">
+                       <label for="selectVending"><strong><i class="fas fa-server"></i> Vending (Opcional):</strong></label>
+                       <select id="selectVending" class="form-control select2">
+                           <option value="">Todas las Vendings</option>
+                       </select>
+                   </div>
                 </div>
             </div>
         </div>
@@ -139,36 +145,86 @@
         $('#selectPlanta').on('change', function () {
             var idPlanta = $(this).val();
             console.log("Plant selection changed: " + idPlanta);
+            
+            // Clear and reset Vending select
+            $('#selectVending').empty().append('<option value="">Todas las Vendings</option>');
+
             if (idPlanta) {
+                // Fetch Vendings for the selected Plant
+                $.ajax({
+                    url: '{{ route("op.get_vendings_by_plant") }}',
+                    type: 'POST',
+                    data: {
+                        idPlanta: idPlanta,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if(response && response.length > 0){
+                            $.each(response, function(index, vending) {
+                                $('#selectVending').append('<option value="' + vending.Id_Maquina + '">' + vending.Txt_Nombre + '</option>');
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error("Error fetching vendings:", xhr);
+                    }
+                });
+
                 $('#reportCard').show();
-                loadTable(idPlanta);
+                // We don't load table immediately on plant change anymore, user should filter or we load with defaults?
+                // Original behavior was loadTable(idPlanta). Maintaining it but passing null for vending initially.
+                loadTable(idPlanta, null);
             } else {
                 $('#reportCard').hide();
                 if (table) table.clear().draw();
             }
         });
 
+        // Trigger filter on Vending change as well? 
+        // Or kept to "Filter" button? Original code had "Filter" button for dates but loaded table immediately on plant selection.
+        // Let's reload table on vending selection too for better UX, or just wait for filter?
+        // Given existing code loaded table on plant selection, let's keep it responsive.
+
+        // Actually, the previous code had a "Filtrar" button for dates. 
+        // Let's make "Filtrar" button handle everything to avoid too many requests?
+        // Or update table on Vending change? The user requested "Inserta tambien un filto select", usually implies usage like the others.
+        // For consistency with typical dashboards: Vending change -> Update Table.
+        
+        $('#selectVending').on('change', function() {
+             var idPlanta = $('#selectPlanta').val();
+             var vendingId = $(this).val();
+             if(idPlanta) {
+                 loadTable(idPlanta, vendingId);
+             }
+        });
+
         $('#btnFilter').on('click', function () {
             console.log("Filter button clicked");
-            if (table) table.draw();
+            // Reload table with current selections
+            var idPlanta = $('#selectPlanta').val();
+            var vendingId = $('#selectVending').val();
+            if(idPlanta) {
+                loadTable(idPlanta, vendingId);
+            }
         });
 
         $('#btnExport').on('click', function () {
             var idPlanta = $('#selectPlanta').val();
+            var vendingId = $('#selectVending').val();
             var startDate = $('#startDate').val();
             var endDate = $('#endDate').val();
-
+            
             if (!idPlanta) {
                 alert("Seleccione una planta primero.");
                 return;
             }
 
-            var url = '{{ route("op.consumoxempleado.export") }}' + '?idPlanta=' + idPlanta + '&startDate=' + startDate + '&endDate=' + endDate;
+            var url = '{{ route("op.consumoxempleado.export") }}' + '?idPlanta=' + idPlanta + '&startDate=' + startDate + '&endDate=' + endDate + '&vendingId=' + vendingId;
             window.location.href = url;
         });
 
-        function loadTable(idPlanta) {
-            console.log("Loading table for plant: " + idPlanta);
+        function loadTable(idPlanta, vendingId) {
+            console.log("Loading table for plant: " + idPlanta + ", vending: " + vendingId);
             if ($.fn.DataTable.isDataTable('#consumptionReport')) {
                 table.clear().destroy();
             }
@@ -184,6 +240,7 @@
                     },
                     data: function (d) {
                         d.idPlanta = idPlanta;
+                        d.vendingId = vendingId;
                         d.startDate = $('#startDate').val();
                         d.endDate = $('#endDate').val();
                         console.log("Sending AJAX request with data:", d);
