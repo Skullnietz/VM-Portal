@@ -337,7 +337,7 @@ Route::group(['middleware' => 'checkSession'], function () {
 
     //////////////////////////////////// REPORTES OPERADOR ///////////////////////////////
     Route::get('/op/reporte-op/consumoxempleado', [OperadorController::class, 'indexConsumoEmpleado'])->name('op.consumoxempleado.index');
-    Route::get('/op/reporte-op/consumoxempleado/data', [OperadorController::class, 'getConsumoEmpleadoData'])->name('op.consumoxempleado.data');
+    Route::any('/op/reporte-op/consumoxempleado/data', [OperadorController::class, 'getConsumoEmpleadoData'])->name('op.consumoxempleado.data');
     Route::get('/op/reporte-op/consumoxempleado/export', [OperadorController::class, 'exportConsumoEmpleado'])->name('op.consumoxempleado.export');
 
     Route::get('/op/perfil', [OperadorController::class, 'Profile'])->name('op.profile');

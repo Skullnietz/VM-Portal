@@ -178,6 +178,10 @@
                 serverSide: true,
                 ajax: {
                     url: '{{ route("op.consumoxempleado.data") }}',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: function (d) {
                         d.idPlanta = idPlanta;
                         d.startDate = $('#startDate').val();
