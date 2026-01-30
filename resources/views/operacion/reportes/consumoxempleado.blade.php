@@ -48,7 +48,7 @@
                 </div>
             </div>
             <div class="card-body">
-            <div class="card-body">
+
                 <div class="row mb-3 align-items-end">
                     <div class="col-md-2">
                         <label for="startDate">Fecha Inicio:</label>
@@ -69,8 +69,8 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                       <label for="selectVending"><strong><i class="fas fa-server"></i> Vending:</strong></label>
-                       <select id="selectVending" class="form-control select2" multiple="multiple">
+                       <label for="selectVending">Vending:</label>
+                       <select id="selectVending" class="form-control" multiple>
                            <!-- Options populated dynamically -->
                        </select>
                    </div>
@@ -115,8 +115,8 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 @stop
 
 @section('js')
@@ -124,6 +124,7 @@
 <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 <script>
     function goBack() {
@@ -132,12 +133,24 @@
 
     $(document).ready(function () {
         console.log("Document ready - initializing components");
-        $('.select2').select2({
+        
+        // Initialize Select2 ONLY for Plant selector (as requested to keep Vending with Choices)
+        $('#selectPlanta').select2({
             placeholder: "Seleccione una opción",
             allowClear: true,
             width: '100%',
-            theme: 'bootstrap4',
-            closeOnSelect: false // Keep open for multiple selection
+            theme: 'bootstrap4'
+        });
+
+        // Initialize Choices.js for Vending selector
+        let vendingChoices = new Choices('#selectVending', {
+            removeItemButton: true,
+            searchEnabled: true,
+            searchPlaceholderValue: 'Buscar Vending...',
+            placeholder: true,
+            placeholderValue: 'Todas las Vendings',
+            itemSelectText: '',
+            shouldSort: false
         });
 
         $("#startDate, #endDate").datepicker({ dateFormat: 'yy-mm-dd', changeMonth: true, changeYear: true });
@@ -161,11 +174,32 @@
                         _token: '{{ csrf_token() }}'
                     },
                     success: function(response) {
+                        // Clear and Destroy existing Choices instance
+                        // vendingChoices.clearStore(); // clearStore removes active items but keeps choices? No, destroy is safer for full reload.
+                        // Actually clearStore removes choices too? 
+                        // Let's stick to destroy and re-init pattern from operadores.blade.php
+                        
+                        vendingChoices.destroy();
+                        
+                        var $select = $('#selectVending');
+                        $select.empty(); // Clear DOM options
+                        
                         if(response && response.length > 0){
                             $.each(response, function(index, vending) {
-                                $('#selectVending').append('<option value="' + vending.Id_Maquina + '">' + vending.Txt_Nombre + '</option>');
+                                $select.append('<option value="' + vending.Id_Maquina + '">' + vending.Txt_Nombre + '</option>');
                             });
                         }
+                        
+                        // Re-initialize Choices
+                        vendingChoices = new Choices('#selectVending', {
+                            removeItemButton: true,
+                            searchEnabled: true,
+                            searchPlaceholderValue: 'Buscar Vending...',
+                            placeholder: true,
+                            placeholderValue: 'Todas las Vendings',
+                            itemSelectText: '',
+                            shouldSort: false
+                        });
                     },
                     error: function(xhr) {
                         console.error("Error fetching vendings:", xhr);
@@ -192,19 +226,12 @@
         // Or update table on Vending change? The user requested "Inserta tambien un filto select", usually implies usage like the others.
         // For consistency with typical dashboards: Vending change -> Update Table.
         
-        $('#selectVending').on('change', function() {
-             var idPlanta = $('#selectPlanta').val();
-             var vendingId = $(this).val();
-             if(idPlanta) {
-                 loadTable(idPlanta, vendingId);
-             }
-        });
-
         $('#btnFilter').on('click', function () {
             console.log("Filter button clicked");
             // Reload table with current selections
             var idPlanta = $('#selectPlanta').val();
-            var vendingId = $('#selectVending').val();
+            // Choices.js updates the underlying select value, but let's be sure
+            var vendingId = $('#selectVending').val(); 
             if(idPlanta) {
                 loadTable(idPlanta, vendingId);
             }
@@ -214,7 +241,7 @@
             var idPlanta = $('#selectPlanta').val();
             var vendingId = $('#selectVending').val();
             var startDate = $('#startDate').val();
-            var endDate = $('#endDate').val();
+       var endDate = $('#endDate').val();
             
             if (!idPlanta) {
                 alert("Seleccione una planta primero.");
