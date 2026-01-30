@@ -263,6 +263,31 @@ class OperadorController extends Controller
         ]);
     }
 
+    public function getVendingsByPlant(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $idPlanta = $request->input('idPlanta');
+
+        // Security check
+        $plantasAccesoString = $_SESSION['usuario']->PlantasConAcceso;
+        $plantasAccesoArray = explode(',', $plantasAccesoString);
+
+        if (!in_array($idPlanta, $plantasAccesoArray)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $vendings = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $idPlanta)
+            ->where('Txt_Estatus', 'Alta')
+            ->select('Id_Maquina', 'Txt_Nombre', 'Txt_Serie_Maquina')
+            ->orderBy('Txt_Nombre')
+            ->get();
+
+        return response()->json($vendings);
+    }
+
     public function getConsumoEmpleadoData(Request $request)
     {
         if (session_status() == PHP_SESSION_NONE) {
@@ -308,6 +333,11 @@ class OperadorController extends Controller
             )
             ->orderByDesc('Ctrl_Consumos.Fecha_Real');
 
+        // Apply Vending Filter
+        if ($request->filled('vendingId')) {
+            $data->where('Ctrl_Mquinas.Id_Maquina', $request->input('vendingId'));
+        }
+
         // Apply filters
         if ($request->filled('startDate') && $request->filled('endDate')) {
             $startDate = $request->startDate . ' 00:00:00';
@@ -337,6 +367,7 @@ class OperadorController extends Controller
         }
 
         $requestedPlantId = $request->input('idPlanta');
+        $vendingId = $request->input('vendingId');
 
         // Security Check: Ensure plant is accessible to operator
         $plantasAccesoString = $_SESSION['usuario']->PlantasConAcceso;
@@ -347,7 +378,7 @@ class OperadorController extends Controller
         }
 
         // Trigger export with Censored = true
-        return Excel::download(new ConsumoxEmpleadoExport($request, $requestedPlantId, true), 'ConsumoPorEmpleado_Censurado.xlsx');
+        return Excel::download(new ConsumoxEmpleadoExport($request, $requestedPlantId, true, $vendingId), 'ConsumoPorEmpleado_Censurado.xlsx');
     }
 
     public function Profile()

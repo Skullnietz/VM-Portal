@@ -18,13 +18,15 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
     protected $idPlanta;
     protected $censored;
     protected $employeeId;
+    protected $vendingId;
 
-    public function __construct($request, $idPlanta, $censored = false, $employeeId = null)
+    public function __construct($request, $idPlanta, $censored = false, $employeeId = null, $vendingId = null)
     {
         $this->request = $request;
         $this->idPlanta = $idPlanta;
         $this->censored = $censored;
         $this->employeeId = $employeeId;
+        $this->vendingId = $vendingId;
     }
 
     public function collection()
@@ -58,6 +60,10 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
 
         if ($this->employeeId) {
             $data->where('Cat_Empleados.Id_Empleado', $this->employeeId);
+        }
+
+        if ($this->vendingId) {
+            $data->where('Ctrl_Mquinas.Id_Maquina', $this->vendingId);
         }
 
         // Aplicar filtros si están presentes

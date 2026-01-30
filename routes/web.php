@@ -336,6 +336,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/op/vending/download-missing-items/{id}', [OperadorController::class, 'downloadMissingItems'])->name('vending.download_missing_items');
 
     //////////////////////////////////// REPORTES OPERADOR ///////////////////////////////
+    Route::post('/op/get-vendings-by-plant', [OperadorController::class, 'getVendingsByPlant'])->name('op.get_vendings_by_plant');
     Route::get('/op/reporte-op/consumoxempleado', [OperadorController::class, 'indexConsumoEmpleado'])->name('op.consumoxempleado.index');
     Route::any('/op/reporte-op/consumoxempleado/data', [OperadorController::class, 'getConsumoEmpleadoData'])->name('op.consumoxempleado.data');
     Route::get('/op/reporte-op/consumoxempleado/export', [OperadorController::class, 'exportConsumoEmpleado'])->name('op.consumoxempleado.export');
