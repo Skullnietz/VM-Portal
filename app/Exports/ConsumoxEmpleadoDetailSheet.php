@@ -63,7 +63,11 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
         }
 
         if ($this->vendingId) {
-            $data->where('Ctrl_Mquinas.Id_Maquina', $this->vendingId);
+            if (is_array($this->vendingId)) {
+                $data->whereIn('Ctrl_Mquinas.Id_Maquina', $this->vendingId);
+            } else {
+                $data->where('Ctrl_Mquinas.Id_Maquina', $this->vendingId);
+            }
         }
 
         // Aplicar filtros si están presentes

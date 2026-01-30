@@ -70,8 +70,8 @@
                     </div>
                     <div class="col-md-4">
                        <label for="selectVending"><strong><i class="fas fa-server"></i> Vending:</strong></label>
-                       <select id="selectVending" class="form-control select2">
-                           <option value="">Todas las Vendings</option>
+                       <select id="selectVending" class="form-control select2" multiple="multiple">
+                           <!-- Options populated dynamically -->
                        </select>
                    </div>
                     <div class="col-md-2">
@@ -136,7 +136,8 @@
             placeholder: "Seleccione una opción",
             allowClear: true,
             width: '100%',
-            theme: 'bootstrap4'
+            theme: 'bootstrap4',
+            closeOnSelect: false // Keep open for multiple selection
         });
 
         $("#startDate, #endDate").datepicker({ dateFormat: 'yy-mm-dd', changeMonth: true, changeYear: true });
@@ -148,7 +149,7 @@
             console.log("Plant selection changed: " + idPlanta);
             
             // Clear and reset Vending select
-            $('#selectVending').empty().append('<option value="">Todas las Vendings</option>');
+            $('#selectVending').empty();
 
             if (idPlanta) {
                 // Fetch Vendings for the selected Plant
@@ -174,7 +175,7 @@
                 $('#reportCard').show();
                 // We don't load table immediately on plant change anymore, user should filter or we load with defaults?
                 // Original behavior was loadTable(idPlanta). Maintaining it but passing null for vending initially.
-                loadTable(idPlanta, null);
+                loadTable(idPlanta, []);
             } else {
                 $('#reportCard').hide();
                 if (table) table.clear().draw();
@@ -220,7 +221,23 @@
                 return;
             }
 
-            var url = '{{ route("op.consumoxempleado.export") }}' + '?idPlanta=' + idPlanta + '&startDate=' + startDate + '&endDate=' + endDate + '&vendingId=' + vendingId;
+            // Serialize array for URL if needed, but standard query param array syntax is handled by backend usually headers?
+            // For Excel export via GET, we need to handle array parameters correctly.
+            // Construct URL parameters manually for array.
+            
+            var url = '{{ route("op.consumoxempleado.export") }}' + '?idPlanta=' + idPlanta + '&startDate=' + startDate + '&endDate=' + endDate;
+            
+            if (vendingId && vendingId.length > 0) {
+                // If it's an array, append each
+                if(Array.isArray(vendingId)){
+                    vendingId.forEach(function(id) {
+                        url += '&vendingId[]=' + id;
+                    });
+                } else {
+                     url += '&vendingId[]=' + vendingId;
+                }
+            }
+            
             window.location.href = url;
         });
 

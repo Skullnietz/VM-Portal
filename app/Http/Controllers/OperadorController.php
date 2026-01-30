@@ -335,7 +335,12 @@ class OperadorController extends Controller
 
         // Apply Vending Filter
         if ($request->filled('vendingId')) {
-            $data->where('Ctrl_Mquinas.Id_Maquina', $request->input('vendingId'));
+            $vendingId = $request->input('vendingId');
+            if (is_array($vendingId)) {
+                $data->whereIn('Ctrl_Mquinas.Id_Maquina', $vendingId);
+            } else {
+                $data->where('Ctrl_Mquinas.Id_Maquina', $vendingId);
+            }
         }
 
         // Apply filters
