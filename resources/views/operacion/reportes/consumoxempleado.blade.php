@@ -48,33 +48,32 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="row mb-3">
+            <div class="card-body">
+                <div class="row mb-3 align-items-end">
+                    <div class="col-md-2">
+                        <label for="startDate">Fecha Inicio:</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                            </div>
+                            <input type="text" id="startDate" class="form-control" placeholder="Fecha Inicio">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="endDate">Fecha Fin:</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                            </div>
+                            <input type="text" id="endDate" class="form-control" placeholder="Fecha Fin">
+                        </div>
+                    </div>
                     <div class="col-md-4">
                        <label for="selectVending"><strong><i class="fas fa-server"></i> Vending:</strong></label>
                        <select id="selectVending" class="form-control select2">
                            <option value="">Todas las Vendings</option>
                        </select>
                    </div>
-                </div>
-                <div class="row mb-3 align-items-end">
-                    <div class="col-md-3">
-                        <label for="startDate">Fecha Inicio:</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-                            </div>
-                            <input type="text" id="startDate" class="form-control" placeholder="AAAA-MM-DD">
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="endDate">Fecha Fin:</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-                            </div>
-                            <input type="text" id="endDate" class="form-control" placeholder="AAAA-MM-DD">
-                        </div>
-                    </div>
                     <div class="col-md-2">
                         <button id="btnFilter" class="btn btn-primary btn-block">
                             <i class="fas fa-filter"></i> Filtrar
