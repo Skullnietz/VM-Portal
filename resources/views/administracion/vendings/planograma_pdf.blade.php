@@ -221,9 +221,14 @@
 
     <div class="container-fluid">
         <div class="header-container">
-            <div>
-                <img src="/Images/header_planograma.png" alt="Grupo Urvina" class="header-logo"
-                    onerror="this.onerror=null;this.src='';this.outerHTML='<h1 style=\'font-size:36px;color:#004b87;\'>PLANOGRAMA VM</h1>'">
+            <div style="display: flex; align-items: center;">
+                <img src="{{ asset('vendor/adminlte/dist/img/vending-machine2.png') }}" alt="Spartan Vending"
+                    class="header-logo" style="margin-right: 15px;">
+                <div>
+                    <h1 style="color: #000; font-size: 28px; margin: 0; line-height: 1;">SPARTAN VENDING</h1>
+                    <p style="color: #666; font-size: 14px; margin: 0; font-weight: bold; letter-spacing: 1px;">
+                        PLANOGRAMA VM</p>
+                </div>
             </div>
             <div class="header-info">
                 <h1>{{ $maquina->Txt_Nombre_Planta ?? 'Planta' }}</h1>
