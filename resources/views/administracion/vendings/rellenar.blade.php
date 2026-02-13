@@ -22,6 +22,10 @@
     style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; background-color: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;">
     <button id="saveChangesBtn" class="btn btn-success mb-2" style="width: 100%;">Guardar Cambios</button>
     <button id="fillMaxFloatingBtn" class="btn btn-primary" style="width: 100%;">Rellenar Máximos</button>
+    <a href="{{ route('ArellenarPrint', ['id' => request()->route('id')]) }}" target="_blank" class="btn btn-info mt-2"
+        style="width: 100%;">
+        <i class="fas fa-print"></i> Imprimir Planograma
+    </a>
 </div>
 
 

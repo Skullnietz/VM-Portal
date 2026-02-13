@@ -2497,6 +2497,81 @@ class AdminController extends Controller
         return view('administracion.vendings.rellenar')->with('planograma', $planograma);
     }
 
+    public function SurtirJson(Request $request, $lang, $id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Obtener el planograma
+        $planograma = DB::table('Configuracion_Maquina')
+            ->where('Id_Maquina', $id)
+            ->leftJoin('Cat_Articulos', 'Configuracion_Maquina.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->select(
+                'Configuracion_Maquina.Id_Configuracion',
+                'Configuracion_Maquina.Id_Articulo',
+                'Configuracion_Maquina.Stock',
+                'Configuracion_Maquina.Cantidad_Max',
+                'Configuracion_Maquina.Cantidad_Min',
+                'Configuracion_Maquina.Seleccion',
+                'Configuracion_Maquina.Num_Charola',
+                'Configuracion_Maquina.Talla',
+                'Cat_Articulos.Txt_Codigo',
+                'Cat_Articulos.Txt_Descripcion',
+                'Cat_Articulos.Tamano_Espiral',
+                'Cat_Articulos.Capacidad_Espiral'
+            )
+            ->get()
+            ->groupBy('Num_Charola');
+
+        if ($planograma->isEmpty()) {
+            return response()->json(['message' => 'Vending no encontrada o vacía'], 404);
+        }
+
+        return response()->json($planograma);
+    }
+
+    public function SurtirPrint(Request $request, $lang, $id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Obtener la info de la maquina
+        $maquina = DB::table('Ctrl_Mquinas')
+            ->where('Id_Maquina', $id)
+            ->leftJoin('Cat_Plantas', 'Ctrl_Mquinas.Id_Planta', '=', 'Cat_Plantas.Id_Planta')
+            ->select('Ctrl_Mquinas.*', 'Cat_Plantas.Txt_Nombre_Planta')
+            ->first();
+
+        // Obtener el planograma
+        $planograma = DB::table('Configuracion_Maquina')
+            ->where('Id_Maquina', $id)
+            ->leftJoin('Cat_Articulos', 'Configuracion_Maquina.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->select(
+                'Configuracion_Maquina.Id_Configuracion',
+                'Configuracion_Maquina.Id_Articulo',
+                'Configuracion_Maquina.Stock',
+                'Configuracion_Maquina.Cantidad_Max',
+                'Configuracion_Maquina.Cantidad_Min',
+                'Configuracion_Maquina.Seleccion',
+                'Configuracion_Maquina.Num_Charola',
+                'Configuracion_Maquina.Talla',
+                'Cat_Articulos.Txt_Codigo',
+                'Cat_Articulos.Txt_Descripcion',
+                'Cat_Articulos.Tamano_Espiral',
+                'Cat_Articulos.Capacidad_Espiral'
+            )
+            ->get()
+            ->groupBy('Num_Charola');
+
+        if ($planograma->isEmpty()) {
+            return abort(404, 'Vending no encontrada o vacía');
+        }
+
+        return view('administracion.vendings.planograma_pdf', compact('planograma', 'maquina'));
+    }
+
     public function updateStock(Request $request)
     {
         if (session_status() == PHP_SESSION_NONE) {
