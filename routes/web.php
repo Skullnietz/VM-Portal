@@ -108,7 +108,8 @@ Route::group(['middleware' => 'checkSession'], function () {
         // RELLENAR
         Route::get('/Astock/rellenar/{id}', 'AdminController@Surtir')->name('Arellenar'); // Administracion Surtido
         Route::get('/Astock/rellenar/{id}/json', 'AdminController@SurtirJson')->name('ArellenarJson'); // Administracion Surtido JSON
-        Route::get('/Astock/rellenar/{id}/print', 'AdminController@SurtirPrint')->name('ArellenarPrint'); // Administracion Surtido Print
+        Route::get('/Astock/rellenar/{id}/print', 'AdminController@SurtirPrint')->name('ArellenarPrint');
+        Route::get('/Astock/rellenar/{id}/labels', 'AdminController@SurtirLabels')->name('ArellenarLabels'); // Administracion Surtido Print
         // ALERTAS
         Route::get('/alertas', [AdminController::class, 'Alertas']);
 

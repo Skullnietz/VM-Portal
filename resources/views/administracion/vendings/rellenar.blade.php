@@ -26,6 +26,10 @@
         style="width: 100%;">
         <i class="fas fa-print"></i> Imprimir Planograma
     </a>
+    <a href="{{ route('ArellenarLabels', ['id' => request()->route('id')]) }}" target="_blank"
+        class="btn btn-warning mt-2" style="width: 100%;">
+        <i class="fas fa-tags"></i> Imprimir Etiquetas
+    </a>
 </div>
 
 

@@ -2958,4 +2958,38 @@ class AdminController extends Controller
 
         return response()->json($maquinas);
     }
+
+    public function SurtirLabels(Request $request, $lang, $id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $maquina = DB::table('Ctrl_Mquinas')
+            ->where('Id_Maquina', $id)
+            ->leftJoin('Cat_Plantas', 'Ctrl_Mquinas.Id_Planta', '=', 'Cat_Plantas.Id_Planta')
+            ->select('Ctrl_Mquinas.*', 'Cat_Plantas.Txt_Nombre_Planta')
+            ->first();
+
+        // Fetch planogram with Nombre_Etiqueta
+        $planograma = DB::table('Configuracion_Maquina')
+            ->where('Id_Maquina', $id)
+            ->leftJoin('Cat_Articulos', 'Configuracion_Maquina.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->whereNotNull('Configuracion_Maquina.Id_Articulo') // Only items with articles
+            ->select(
+                'Configuracion_Maquina.Seleccion',
+                'Configuracion_Maquina.Id_Articulo',
+                'Configuracion_Maquina.Talla',
+                'Cat_Articulos.Nombre_Etiqueta',
+                'Cat_Articulos.Txt_Descripcion'
+            )
+            ->orderBy('Configuracion_Maquina.Seleccion')
+            ->get();
+
+        if ($planograma->isEmpty()) {
+            return abort(404, 'Vending no encontrada o vacía');
+        }
+
+        return view('administracion.vendings.etiquetas_pdf', compact('planograma', 'maquina'));
+    }
 }
