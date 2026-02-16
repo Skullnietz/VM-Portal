@@ -253,8 +253,9 @@
                                     onerror="this.src='/Images/product.png'" alt="Img" class="product-img">
 
                                 <div class="product-code">{{ $seleccion->Txt_Codigo ?? 'S/C' }}</div>
-                                <div class="product-desc" title="{{ $seleccion->Txt_Descripcion ?? '' }}">
-                                    {{ $seleccion->Txt_Descripcion ?? 'Sin descripción' }}
+                                <div class="product-desc"
+                                    title="{{ $seleccion->Nombre_Etiqueta ?? ($seleccion->Txt_Descripcion ?? '') }}">
+                                    {{ $seleccion->Nombre_Etiqueta ?? ($seleccion->Txt_Descripcion ?? 'Sin descripción') }}
                                 </div>
 
                                 <div class="product-meta">

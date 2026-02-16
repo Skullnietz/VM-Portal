@@ -2559,6 +2559,7 @@ class AdminController extends Controller
                 'Configuracion_Maquina.Talla',
                 'Cat_Articulos.Txt_Codigo',
                 'Cat_Articulos.Txt_Descripcion',
+                'Cat_Articulos.Nombre_Etiqueta',
                 'Cat_Articulos.Tamano_Espiral',
                 'Cat_Articulos.Capacidad_Espiral'
             )
