@@ -30,15 +30,15 @@
             margin-bottom: 10px;
         }
 
-        /* Container for the pair to ensure exact 10cm width */
+        /* Container for the pair to ensure exact 7cm width */
         .pair-container {
             display: flex;
-            width: 10cm !important;
-            min-width: 10cm !important;
-            max-width: 10cm !important;
-            height: 1.5cm !important;
-            min-height: 1.5cm !important;
-            max-height: 1.5cm !important;
+            width: 7cm !important;
+            min-width: 7cm !important;
+            max-width: 7cm !important;
+            height: 1.2cm !important;
+            min-height: 1.2cm !important;
+            max-height: 1.2cm !important;
             border: 0.5px solid black;
             margin: 1px;
             /* 2px gap via margin */
@@ -48,29 +48,28 @@
         }
 
         .lbl-num {
-            width: 2.5cm;
+            width: 2cm;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: white;
-            font-size: 20pt;
+            font-size: 14pt;
             font-weight: bold;
             border-right: 0.5px solid black;
         }
 
         .lbl-art {
-            width: 7.5cm;
+            width: 5cm;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13pt;
+            font-size: 10pt;
             font-weight: bold;
             overflow: hidden;
             white-space: nowrap;
         }
-
 
 
         /* Generated grid wrapper */
@@ -95,10 +94,10 @@
                 print-color-adjust: exact;
             }
 
-            /* Ensure A4 size and Portrait */
+            /* Ensure A4 size and Landscape */
             @page {
-                size: A4 portrait;
-                margin: 0.4cm;
+                size: A4 landscape;
+                margin: 0.5cm;
             }
         }
     </style>
