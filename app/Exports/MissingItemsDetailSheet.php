@@ -35,11 +35,40 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
                 'Configuracion_Maquina.Seleccion',
                 'Configuracion_Maquina.Stock',
                 'Configuracion_Maquina.Cantidad_Max',
+                'Cat_Articulos.Tamano_Espiral',
                 DB::raw('(Configuracion_Maquina.Cantidad_Max - Configuracion_Maquina.Stock) as Faltante')
             )
             ->where('Configuracion_Maquina.Id_Maquina', $this->idMaquina)
             ->orderBy('Configuracion_Maquina.Seleccion')
             ->get();
+
+        // Procesar las selecciones vacías
+        $lastTamanoEspiral = null;
+        $lastCharola = null;
+
+        $faltantes->transform(function ($item) use (&$lastTamanoEspiral, &$lastCharola) {
+            // Reiniciar el tamaño del espiral si cambiamos de charola
+            if ($lastCharola !== $item->Num_Charola) {
+                $lastTamanoEspiral = null;
+                $lastCharola = $item->Num_Charola;
+            }
+
+            if (empty($item->Txt_Descripcion)) {
+                if ($lastTamanoEspiral === 'Grande') {
+                    $item->Txt_Descripcion = 'SELECCIÓN OCUPADA';
+                } else {
+                    $item->Txt_Descripcion = 'SELECCIÓN VACÍA';
+                }
+            }
+
+            // Actualizar el último tamaño de espiral con el actual para la siguiente iteración
+            $lastTamanoEspiral = $item->Tamano_Espiral;
+
+            // Remover la columna extra que no va en el excel
+            unset($item->Tamano_Espiral);
+
+            return $item;
+        });
 
         return $faltantes;
     }
