@@ -121,6 +121,14 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
                 // Bordes para la tabla
                 $highestRow = $sheet->getHighestRow();
                 $sheet->getStyle('A5:H' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+                // Colorear de rojo las selecciones vacías/ocupadas
+                for ($row = 6; $row <= $highestRow; $row++) {
+                    $cellValue = $sheet->getCell('A' . $row)->getValue();
+                    if ($cellValue === 'SELECCIÓN VACÍA' || $cellValue === 'SELECCIÓN OCUPADA') {
+                        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+                    }
+                }
             },
         ];
     }
