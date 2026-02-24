@@ -59,6 +59,11 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
                 } else {
                     $item->Txt_Descripcion = 'SELECCIÓN VACÍA';
                 }
+
+                // Limpiar valores numéricos para selecciones vacías/ocupadas
+                $item->Stock = '';
+                $item->Cantidad_Max = '';
+                $item->Faltante = '';
             }
 
             // Actualizar el último tamaño de espiral con el actual para la siguiente iteración
@@ -122,11 +127,13 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
                 $highestRow = $sheet->getHighestRow();
                 $sheet->getStyle('A5:H' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-                // Colorear de rojo las selecciones vacías/ocupadas
+                // Colorear el fondo de rojo tenue para las selecciones vacías/ocupadas
                 for ($row = 6; $row <= $highestRow; $row++) {
                     $cellValue = $sheet->getCell('A' . $row)->getValue();
                     if ($cellValue === 'SELECCIÓN VACÍA' || $cellValue === 'SELECCIÓN OCUPADA') {
-                        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+                        $sheet->getStyle('A' . $row . ':H' . $row)->getFill()
+                            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                            ->getStartColor()->setARGB('FFFFCCCC');
                     }
                 }
             },
