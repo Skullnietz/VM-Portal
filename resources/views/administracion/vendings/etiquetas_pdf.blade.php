@@ -40,8 +40,7 @@
             min-height: 1.2cm !important;
             max-height: 1.2cm !important;
             border: 0.5px solid black;
-            margin: 1px;
-            /* 2px gap via margin */
+            margin: 0;
             page-break-inside: avoid;
             overflow: hidden;
             flex-shrink: 0;

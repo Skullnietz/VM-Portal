@@ -38,7 +38,6 @@ class MissingItemsDetailSheet implements FromCollection, WithHeadings, WithTitle
                 DB::raw('(Configuracion_Maquina.Cantidad_Max - Configuracion_Maquina.Stock) as Faltante')
             )
             ->where('Configuracion_Maquina.Id_Maquina', $this->idMaquina)
-            ->where('Configuracion_Maquina.Cantidad_Max', '>', 0)
             ->orderBy('Configuracion_Maquina.Seleccion')
             ->get();
 
