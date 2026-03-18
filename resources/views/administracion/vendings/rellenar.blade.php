@@ -503,6 +503,27 @@
                             stockInput.setAttribute('data-initial-stock', stockInput.value);
                         }
                     });
+
+                    // Generar Corte POST si hay un corte_pre en el URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const cortePreId = urlParams.get('corte_pre');
+                    if (cortePreId) {
+                        var lang = window.location.pathname.split('/')[1] || 'es';
+                        fetch('/' + lang + '/corte/post', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ id_corte_pre: cortePreId })
+                        }).then(resp => resp.json()).then(data => {
+                            if (data.id_corte_post) {
+                                if (confirm('Corte POST generado. ¿Desea ver el comparativo Planeado vs Real?')) {
+                                    window.location.href = '/' + lang + '/corte/post/' + data.id_corte_post + '/ver';
+                                }
+                            }
+                        }).catch(err => console.error('Error generando corte POST:', err));
+                    }
                 } else {
                     alert('Hubo un error al guardar los cambios');
                 }

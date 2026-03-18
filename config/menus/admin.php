@@ -127,7 +127,40 @@ return[
                 ],
             ]
         ],
+        [
+            'text' => 'Resurtimiento',
+            'icon_color' => 'orange',
+            'icon' => 'fas fa-fw fa-clipboard-check',
+            'submenu' => [
+                [
+                    'text' => 'Historial de Cortes',
+                    'icon_color' => 'orange',
+                    'url' => '/admin/corte/historial',
+                ],
+                [
+                    'text' => 'Consumo entre Resurtimientos',
+                    'icon_color' => 'orange',
+                    'url' => '/admin/reporte/consumo-entre-resurtimientos',
+                ],
+                [
+                    'text' => 'Discrepancias de Inventario',
+                    'icon_color' => 'orange',
+                    'url' => '/admin/reporte/discrepancias',
+                ],
+                [
+                    'text' => 'Tendencias de Consumo',
+                    'icon_color' => 'orange',
+                    'url' => '/admin/reporte/tendencias',
+                ],
+            ]
+        ],
         ['header' => 'MONITOREO'],
+        [
+            'text' => 'Dashboard Operativo',
+            'url' => '/admin/dashboard-operativo',
+            'icon_color' => 'green',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
+        ],
         [
             'text' => 'Vendings',
             'url' => 'admin/settings',
