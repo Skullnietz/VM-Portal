@@ -243,8 +243,17 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::post('/reportes/guardar-configuracion', [ReportesClienteController::class, 'guardarConfiguracion'])->name('reportes.guardar_configuracion');
 
     // REPORTES ADMINISTRADOR
-    Route::get('/admin/reporte/consumoxempleado', [AdminController::class, 'ReporteConsumoEmpleado'])->name('admin.consumoxempleado.index');
-    Route::get('/admin/getconsumoxempleado/data', [AdminController::class, 'getReporteConsumoEmpleadoData'])->name('admin.getconsumoxempleado.data');
+    Route::get('/admin/reporte/consumoxempleado', [ReportesAdministradorController::class, 'ReporteConsumoEmpleado'])->name('admin.consumoxempleado.index');
+    Route::get('/admin/getconsumoxempleado/data', [ReportesAdministradorController::class, 'getReporteConsumoEmpleadoData'])->name('admin.getconsumoxempleado.data');
+    Route::get('/admin/export/consumoxempleado', [ReportesAdministradorController::class, 'exportConsumoEmpleado'])->name('admin.export.consumoxempleado');
+
+    Route::get('/admin/reporte/consumoxarea', [ReportesAdministradorController::class, 'ReporteConsumoArea'])->name('admin.consumoxarea.index');
+    Route::get('/admin/getconsumoxarea/data', [ReportesAdministradorController::class, 'getReporteConsumoAreaData'])->name('admin.getconsumoxarea.data');
+    Route::get('/admin/export/consumoxarea', [ReportesAdministradorController::class, 'exportConsumoArea'])->name('admin.export.consumoxarea');
+
+    Route::get('/admin/reporte/consumoxvending', [ReportesAdministradorController::class, 'ReporteConsumoVending'])->name('admin.consumoxvending.index');
+    Route::any('/admin/getconsumoxvending/data', [ReportesAdministradorController::class, 'getReporteConsumoVendingData'])->name('admin.getconsumoxvending.data');
+    Route::get('/admin/export/consumoxvending', [ReportesAdministradorController::class, 'exportConsumoVending'])->name('admin.export.consumoxvending');
 
     // SINCRONIZACION
     Route::post('/sync-data', [AdminController::class, 'getSyncData'])->name('sync.data');

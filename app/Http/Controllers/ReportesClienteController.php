@@ -290,29 +290,40 @@ class ReportesClienteController extends Controller
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
+        $idPlanta = $_SESSION['usuario']->Id_Planta ?? null;
+
         // Obtener las áreas de la tabla Cat_Area
-        $areas = DB::table('Cat_Area')
+        $areasQuery = DB::table('Cat_Area')
             ->select('Id_Area', 'Txt_Nombre')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta
-            ->where('Txt_Estatus', 'Alta') // Filtrar solo las áreas activas
-            ->get();
+            ->where('Txt_Estatus', 'Alta'); // Filtrar solo las áreas activas
+
+        if ($idPlanta) {
+            $areasQuery->where('Id_Planta', $idPlanta); // Filtrar por planta
+        }
+        $areas = $areasQuery->get();
         // Obtener los productos de la tabla Cat_Articulos
         $productos = DB::table('Cat_Articulos')
             ->select('Id_Articulo', 'Txt_Descripcion')
             ->get();
         // Obtener los empleados de la planta
-        $empleados = DB::table('Cat_Empleados')
-            ->select('Id_Empleado', 'Nombre', 'APaterno', 'AMaterno')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
-            ->get();
+        $empleadosQuery = DB::table('Cat_Empleados')
+            ->select('Id_Empleado', 'Nombre', 'APaterno', 'AMaterno');
+
+        if ($idPlanta) {
+            $empleadosQuery->where('Id_Planta', $idPlanta);
+        }
+        $empleados = $empleadosQuery->get();
 
 
 
         // 1️⃣ Obtener las máquinas de la planta
-        $maquinas = DB::table('Ctrl_Mquinas')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
-            ->pluck('Id_Maquina')
-            ->toArray();
+        $maquinasQuery = DB::table('Ctrl_Mquinas')->pluck('Id_Maquina');
+        if ($idPlanta) {
+            $maquinasQuery = DB::table('Ctrl_Mquinas')
+                ->where('Id_Planta', $idPlanta)
+                ->pluck('Id_Maquina');
+        }
+        $maquinas = $maquinasQuery->toArray();
 
         // 2️⃣ Obtener los artículos configurados en esas máquinas
         $articulosIds = DB::table('Configuracion_Maquina')
@@ -336,18 +347,26 @@ class ReportesClienteController extends Controller
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
+        $idPlanta = $_SESSION['usuario']->Id_Planta ?? null;
+
         // Obtener las áreas de la tabla Cat_Area
-        $areas = DB::table('Cat_Area')
+        $areasQuery = DB::table('Cat_Area')
             ->select('Id_Area', 'Txt_Nombre')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta
-            ->where('Txt_Estatus', 'Alta') // Filtrar solo las áreas activas
-            ->get();
+            ->where('Txt_Estatus', 'Alta'); // Filtrar solo las áreas activas
+
+        if ($idPlanta) {
+            $areasQuery->where('Id_Planta', $idPlanta); // Filtrar por planta
+        }
+        $areas = $areasQuery->get();
 
         // 1️⃣ Obtener las máquinas de la planta
-        $maquinas = DB::table('Ctrl_Mquinas')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
-            ->pluck('Id_Maquina')
-            ->toArray();
+        $maquinasQuery = DB::table('Ctrl_Mquinas')->pluck('Id_Maquina');
+        if ($idPlanta) {
+            $maquinasQuery = DB::table('Ctrl_Mquinas')
+                ->where('Id_Planta', $idPlanta)
+                ->pluck('Id_Maquina');
+        }
+        $maquinas = $maquinasQuery->toArray();
 
         // 2️⃣ Obtener los artículos configurados en esas máquinas
         $articulosIds = DB::table('Configuracion_Maquina')
@@ -371,18 +390,26 @@ class ReportesClienteController extends Controller
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
+        $idPlanta = $_SESSION['usuario']->Id_Planta ?? null;
+
         // Obtener las áreas de la tabla Cat_Area
-        $areas = DB::table('Cat_Area')
+        $areasQuery = DB::table('Cat_Area')
             ->select('Id_Area', 'Txt_Nombre')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta
-            ->where('Txt_Estatus', 'Alta') // Filtrar solo las áreas activas
-            ->get();
+            ->where('Txt_Estatus', 'Alta'); // Filtrar solo las áreas activas
+
+        if ($idPlanta) {
+            $areasQuery->where('Id_Planta', $idPlanta); // Filtrar por planta
+        }
+        $areas = $areasQuery->get();
 
         // 1️⃣ Obtener las máquinas de la planta
-        $mquinas = DB::table('Ctrl_Mquinas')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta)
-            ->pluck('Id_Maquina')
-            ->toArray();
+        $mquinasQuery = DB::table('Ctrl_Mquinas')->pluck('Id_Maquina');
+        if ($idPlanta) {
+            $mquinasQuery = DB::table('Ctrl_Mquinas')
+                ->where('Id_Planta', $idPlanta)
+                ->pluck('Id_Maquina');
+        }
+        $mquinas = $mquinasQuery->toArray();
 
         // 2️⃣ Obtener los artículos configurados en esas máquinas
         $articulosIds = DB::table('Configuracion_Maquina')
@@ -399,10 +426,12 @@ class ReportesClienteController extends Controller
             ->get();
 
         // Obtener las máquinas de la tabla Ctrl_Mquinas
-        $maquinas = DB::table('Ctrl_Mquinas')
-            ->select('Id_Maquina', 'Txt_Nombre')
-            ->where('Id_Planta', $_SESSION['usuario']->Id_Planta) // Filtrar por planta si es necesario
-            ->get();
+        $maquinasQuery2 = DB::table('Ctrl_Mquinas')
+            ->select('Id_Maquina', 'Txt_Nombre');
+        if ($idPlanta) {
+            $maquinasQuery2->where('Id_Planta', $idPlanta); // Filtrar por planta si es necesario
+        }
+        $maquinas = $maquinasQuery2->get();
 
         // Pasar las áreas, productos y máquinas a la vista
         return view('cliente.reportes.consumoxvending', compact('areas', 'productos', 'maquinas'));
@@ -413,7 +442,7 @@ class ReportesClienteController extends Controller
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        $idPlanta = $_SESSION['usuario']->Id_Planta;
+        $idPlanta = $_SESSION['usuario']->Id_Planta ?? null;
 
         // Consulta base para la DataTable
         $data = DB::table('Ctrl_Consumos')
@@ -426,18 +455,22 @@ class ReportesClienteController extends Controller
                 inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
                 right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
                 inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
-            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-            ->where('Cat_Empleados.Id_Planta', $idPlanta)
-            ->select(
-                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
-                'Cat_Empleados.No_Empleado as Numero_de_empleado',
-                'Cat_Area.Txt_Nombre as Area',
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
-                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
-                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
-                'Ctrl_Consumos.Fecha_Real as Fecha',
-                'Ctrl_Consumos.Cantidad'
-            )
+            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo');
+
+        if ($idPlanta) {
+            $data->where('Cat_Empleados.Id_Planta', $idPlanta);
+        }
+
+        $data->select(
+            DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
+            'Cat_Empleados.No_Empleado as Numero_de_empleado',
+            'Cat_Area.Txt_Nombre as Area',
+            DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
+            DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+            DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+            'Ctrl_Consumos.Fecha_Real as Fecha',
+            'Ctrl_Consumos.Cantidad'
+        )
             ->orderByDesc('Ctrl_Consumos.Fecha_Real'); // Ordena por la fecha del último consumo;
 
         // Aplicar filtros de área si están presentes
@@ -505,7 +538,7 @@ class ReportesClienteController extends Controller
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        $idPlanta = $_SESSION['usuario']->Id_Planta;
+        $idPlanta = $_SESSION['usuario']->Id_Planta ?? null;
 
         // Consulta base para la DataTable enfocada en consumos por área
         $consumos = DB::table('Ctrl_Consumos')
@@ -518,18 +551,22 @@ class ReportesClienteController extends Controller
                 inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
                 right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
                 inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
-            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-            ->where('Cat_Empleados.Id_Planta', $idPlanta)
-            ->select(
-                'Cat_Area.Txt_Nombre as Area',
-                DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
-                DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
-                DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
-                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
-                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
-                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
-                DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo')
-            )
+            ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo');
+
+        if ($idPlanta) {
+            $consumos->where('Cat_Empleados.Id_Planta', $idPlanta);
+        }
+
+        $consumos->select(
+            'Cat_Area.Txt_Nombre as Area',
+            DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
+            DB::raw('COUNT(DISTINCT Cat_Empleados.Id_Empleado) as Numero_de_Empleados'),
+            DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre_Empleado"),
+            DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'') as Producto"),
+            DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
+            DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente) as Codigo_Cliente"),
+            DB::raw('MAX(Ctrl_Consumos.Fecha_Real) as Ultimo_Consumo')
+        )
             ->groupBy(
                 'Cat_Area.Txt_Nombre',
                 DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
@@ -630,7 +667,7 @@ class ReportesClienteController extends Controller
             if (session_status() == PHP_SESSION_NONE) {
                 session_start();
             }
-            $idPlanta = $_SESSION['usuario']->Id_Planta;
+            $idPlanta = $_SESSION['usuario']->Id_Planta ?? null;
 
             // Consulta para obtener la información agrupada por máquina (nombre), producto, área y fecha del último consumo
             $data = DB::table('Ctrl_Consumos')
@@ -644,16 +681,20 @@ class ReportesClienteController extends Controller
                     inner join Configuracion_Maquina as b on a.Id_Maquina = b.Id_Maquina and a.Seleccion = b.Seleccion 
                     right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
                     inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
-                ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-                ->where('Cat_Empleados.Id_Planta', $idPlanta)
-                ->groupBy(
-                    'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
-                    'Ctrl_Consumos.Id_Articulo',
-                    DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
-                    DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
-                    DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
-                    'Cat_Area.Txt_Nombre'
-                )
+                ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo');
+
+            if ($idPlanta) {
+                $data->where('Cat_Empleados.Id_Planta', $idPlanta);
+            }
+
+            $data->groupBy(
+                'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
+                'Ctrl_Consumos.Id_Articulo',
+                DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.Talla,'')"),
+                DB::raw("isnull(z.Txt_Codigo_Cliente, Cat_Articulos.Txt_Codigo_Cliente)"),
+                DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)"),
+                'Cat_Area.Txt_Nombre'
+            )
                 ->select(
                     'Ctrl_Mquinas.Txt_Nombre as Maquina', // Se selecciona el nombre de la máquina
                     DB::raw('COUNT(Ctrl_Consumos.Id_Articulo) as Total_Consumos'), // Total de consumos del producto en la vending

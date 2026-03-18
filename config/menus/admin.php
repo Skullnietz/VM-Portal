@@ -1,6 +1,6 @@
 <?php
-return[
-'menu' => [
+return [
+    'menu' => [
         // Navbar items:
         [
             'type' => 'navbar-search',
@@ -89,7 +89,7 @@ return[
             'icon_color' => 'red',
             'label_color' => 'success',
         ],
-        
+
         ['header' => 'REPORTES'],
         [
             'text' => 'Empleados',
@@ -100,17 +100,22 @@ return[
                 [
                     'text' => 'Reporte de Consumos',
                     'icon_color' => 'cyan',
-                    'url' => '/all/reportesCE',
+                    'url' => '/admin/reporte/consumoxempleado',
+                ],
+                [
+                    'text' => 'Reporte Consumo por Area',
+                    'icon_color' => 'cyan',
+                    'url' => '/admin/reporte/consumoxarea',
+                ],
+                [
+                    'text' => 'Reporte Consumo por Vending',
+                    'icon_color' => 'cyan',
+                    'url' => '/admin/reporte/consumoxvending',
                 ],
                 [
                     'text' => 'Reporte de Activación NIP',
                     'icon_color' => 'cyan',
                     'url' => '/activaciones',
-                ],
-                [
-                    'text' => 'Reporte Consumo por area',
-                    'icon_color' => 'cyan',
-                    'url' => '/all/reportesCA',
                 ],
             ]
         ],
@@ -182,5 +187,5 @@ return[
 
 
     ],
-    ]
+]
     ?>

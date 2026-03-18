@@ -44,7 +44,6 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
             right join Codigos_Clientes as c on b.Id_Articulo= c.Id_Articulo and b.Talla = c.Talla
             inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
         ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-            ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
             ->select(
                 $this->censored ? DB::raw("'******' as Nombre") : DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
                 'Cat_Empleados.No_Empleado as Numero_de_empleado',
@@ -57,6 +56,10 @@ class ConsumoxEmpleadoDetailSheet implements FromCollection, WithHeadings, WithE
                 'Ctrl_Consumos.Fecha_Real as Fecha',
                 'Ctrl_Consumos.Cantidad'
             );
+
+        if ($this->idPlanta) {
+            $data->where('Cat_Empleados.Id_Planta', $this->idPlanta);
+        }
 
         if ($this->employeeId) {
             $data->where('Cat_Empleados.Id_Empleado', $this->employeeId);

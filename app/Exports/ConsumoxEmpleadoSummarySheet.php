@@ -36,7 +36,6 @@ class ConsumoxEmpleadoSummarySheet implements FromCollection, WithHeadings, With
                 right join Codigos_Clientes as c on b.Id_Articulo= c.Id_Articulo and b.Talla = c.Talla
                 inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
             ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-            ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
             ->select(
                 DB::raw("isnull(z.Txt_Descripcion, Cat_Articulos.Txt_Descripcion) + ' ' + isnull(z.talla,'') as Producto"),
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo) as Codigo_Urvina"),
@@ -47,6 +46,10 @@ class ConsumoxEmpleadoSummarySheet implements FromCollection, WithHeadings, With
                 DB::raw("isnull(z.Txt_Codigo, Cat_Articulos.Txt_Codigo)")
             )
             ->orderByDesc('Total_Cantidad');
+
+        if ($this->idPlanta) {
+            $query->where('Cat_Empleados.Id_Planta', $this->idPlanta);
+        }
 
         // Apply Date Filters
         if ($this->request->filled('dateRange')) {
