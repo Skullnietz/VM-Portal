@@ -204,6 +204,9 @@
                             <td class="align-middle">${registro.Txt_Serie_Maquina}</td>
                             <td class="align-middle"><span class="badge badge-info">${registro.Txt_Tipo_Maquina}</span></td>
                             <td class="align-middle">
+                                <a href="corte/pre/${registro.Id_Maquina}" class="btn btn-info btn-sm btn-action">
+                                    <i class="fas fa-clipboard-check mr-1"></i> Generar Corte
+                                </a>
                                 <a href="stock/rellenar/${registro.Id_Maquina}" class="btn btn-success btn-sm btn-action">
                                     <i class="fas fa-box-open mr-1"></i> Rellenar
                                 </a>
