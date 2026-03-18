@@ -15,11 +15,11 @@
             <button onclick="window.print()" class="btn btn-primary btn-sm">
                 <i class="fas fa-print"></i> Imprimir
             </button>
-            <a href="/corte/pre/{{ $corte->Id_Corte }}/export" class="btn btn-success btn-sm">
+            <a href="/{{ app()->getLocale() }}/corte/pre/{{ $corte->Id_Corte }}/export" class="btn btn-success btn-sm safe-exit-temp">
                 <i class="fas fa-file-excel"></i> Excel
             </a>
             <a href="/{{ app()->getLocale() }}/stock/rellenar/{{ $corte->Id_Maquina }}?corte_pre={{ $corte->Id_Corte }}"
-                class="btn btn-warning btn-sm">
+                class="btn btn-warning btn-sm safe-exit">
                 <i class="fas fa-box-open"></i> Ir a Resurtir
             </a>
         </div>
@@ -129,6 +129,12 @@
             </table>
         </div>
     </div>
+
+    {{-- Botón Flotante de Resurtir --}}
+    <a href="/{{ app()->getLocale() }}/stock/rellenar/{{ $corte->Id_Maquina }}?corte_pre={{ $corte->Id_Corte }}"
+       class="btn btn-warning btn-lg shadow rounded-pill no-print btn-resurtir-flotante safe-exit" id="btnResurtirFlotante">
+       <i class="fas fa-box-open mr-2"></i> Ir a Resurtir
+    </a>
 </div>
 @stop
 
@@ -139,11 +145,61 @@
         .card, .card-body { border: none !important; box-shadow: none !important; }
         .info-box { box-shadow: none !important; border: 1px solid #ddd !important; }
     }
+    .btn-resurtir-flotante {
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        z-index: 1000;
+        font-size: 1.1rem;
+        padding: 12px 24px;
+        border: 2px solid #fff;
+        transition: transform 0.2s;
+    }
+    .btn-resurtir-flotante:hover {
+        transform: scale(1.05);
+    }
 </style>
 @stop
 
 @section('js')
 <script>
-    function goBack() { window.history.back(); }
+    let isSafeExit = false;
+
+    // Actions that normally leave the page to the correct flow
+    document.querySelectorAll('.safe-exit').forEach(btn => {
+        btn.addEventListener('click', () => { isSafeExit = true; });
+    });
+
+    // Actions that temporarily leave the page (like Excel download)
+    document.querySelectorAll('.safe-exit-temp').forEach(btn => {
+        btn.addEventListener('click', () => { 
+            isSafeExit = true; 
+            setTimeout(() => { isSafeExit = false; }, 2000); 
+        });
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+        if (!isSafeExit) {
+            var msj = 'La acción de pre-corte ya quedó registrada. ¿Seguro que desea salir sin resurtir?';
+            (e || window.event).returnValue = msj;
+            return msj;
+        }
+    });
+
+    function goBack() { 
+        Swal.fire({
+            title: '¿Seguro que desea salir?',
+            text: 'La acción de pre-corte ya quedó registrada. Aún no has ido a resurtir.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, salir',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                isSafeExit = true;
+                window.history.back();
+            }
+        });
+    }
 </script>
 @stop

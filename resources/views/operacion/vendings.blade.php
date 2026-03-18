@@ -204,13 +204,10 @@
                             <td class="align-middle">${registro.Txt_Serie_Maquina}</td>
                             <td class="align-middle"><span class="badge badge-info">${registro.Txt_Tipo_Maquina}</span></td>
                             <td class="align-middle">
-                                <a href="corte/pre/${registro.Id_Maquina}" class="btn btn-info btn-sm btn-action">
-                                    <i class="fas fa-clipboard-check mr-1"></i> Generar Corte
+                                <a href="corte/pre/${registro.Id_Maquina}" class="btn btn-primary btn-sm btn-action mb-1" title="Generar Corte">
+                                    <i class="fas fa-cut mr-1"></i> Corte
                                 </a>
-                                <a href="stock/rellenar/${registro.Id_Maquina}" class="btn btn-success btn-sm btn-action">
-                                    <i class="fas fa-box-open mr-1"></i> Rellenar
-                                </a>
-                                <button class="btn btn-warning btn-sm btn-action check-missing-btn" data-id="${registro.Id_Maquina}">
+                                <button class="btn btn-warning btn-sm btn-action check-missing-btn mb-1" data-id="${registro.Id_Maquina}">
                                     <i class="fas fa-clipboard-list mr-1"></i> Faltantes
                                 </button>
                             </td>

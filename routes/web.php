@@ -360,30 +360,30 @@ Route::group(['middleware' => 'checkSession'], function () {
 
     ////////////////////////////////////  CORTES DE RESURTIMIENTO  ///////////////////////////////
     // Corte PRE
-    Route::get('/corte/pre/{idMaquina}', [CorteResurtimientoController::class, 'generarCortePre'])->name('corte.pre.generar');
-    Route::get('/corte/pre/{idCorte}/ver', [CorteResurtimientoController::class, 'verCortePre'])->name('corte.pre.ver');
-    Route::get('/corte/pre/{idCorte}/export', [CorteResurtimientoController::class, 'exportCortePre'])->name('corte.pre.export');
+    Route::get('/{lang}/corte/pre/{idMaquina}', [CorteResurtimientoController::class, 'generarCortePre'])->name('corte.pre.generar');
+    Route::get('/{lang}/corte/pre/{idCorte}/ver', [CorteResurtimientoController::class, 'verCortePre'])->name('corte.pre.ver');
+    Route::get('/{lang}/corte/pre/{idCorte}/export', [CorteResurtimientoController::class, 'exportCortePre'])->name('corte.pre.export');
     // Corte POST
-    Route::post('/corte/post', [CorteResurtimientoController::class, 'generarCortePost'])->name('corte.post.generar');
-    Route::get('/corte/post/{idCorte}/ver', [CorteResurtimientoController::class, 'verCortePost'])->name('corte.post.ver');
+    Route::post('/{lang}/corte/post', [CorteResurtimientoController::class, 'generarCortePost'])->name('corte.post.generar');
+    Route::get('/{lang}/corte/post/{idCorte}/ver', [CorteResurtimientoController::class, 'verCortePost'])->name('corte.post.ver');
     // Historial de Cortes
-    Route::get('/corte/historial', [CorteResurtimientoController::class, 'historialCortes'])->name('corte.historial');
-    Route::get('/corte/historial/data', [CorteResurtimientoController::class, 'getHistorialCortesData'])->name('corte.historial.data');
+    Route::get('/{lang}/corte/historial', [CorteResurtimientoController::class, 'historialCortes'])->name('corte.historial');
+    Route::get('/{lang}/corte/historial/data', [CorteResurtimientoController::class, 'getHistorialCortesData'])->name('corte.historial.data');
     // Consumo entre Resurtimientos
-    Route::get('/reporte/consumo-entre-resurtimientos', [CorteResurtimientoController::class, 'consumoEntreResurtimientos'])->name('consumo.entre.resurtimientos');
-    Route::get('/reporte/consumo-entre-resurtimientos/data', [CorteResurtimientoController::class, 'getConsumoEntreResurtimientosData'])->name('consumo.entre.resurtimientos.data');
+    Route::get('/{lang}/reporte/consumo-entre-resurtimientos', [CorteResurtimientoController::class, 'consumoEntreResurtimientos'])->name('consumo.entre.resurtimientos');
+    Route::get('/{lang}/reporte/consumo-entre-resurtimientos/data', [CorteResurtimientoController::class, 'getConsumoEntreResurtimientosData'])->name('consumo.entre.resurtimientos.data');
     // Discrepancias
-    Route::get('/reporte/discrepancias', [CorteResurtimientoController::class, 'discrepancias'])->name('discrepancias.index');
-    Route::get('/reporte/discrepancias/data', [CorteResurtimientoController::class, 'getDiscrepanciasData'])->name('discrepancias.data');
-    Route::get('/reporte/discrepancias/export', [CorteResurtimientoController::class, 'exportDiscrepancias'])->name('discrepancias.export');
+    Route::get('/{lang}/reporte/discrepancias', [CorteResurtimientoController::class, 'discrepancias'])->name('discrepancias.index');
+    Route::get('/{lang}/reporte/discrepancias/data', [CorteResurtimientoController::class, 'getDiscrepanciasData'])->name('discrepancias.data');
+    Route::get('/{lang}/reporte/discrepancias/export', [CorteResurtimientoController::class, 'exportDiscrepancias'])->name('discrepancias.export');
     // Tendencias
-    Route::get('/reporte/tendencias', [CorteResurtimientoController::class, 'tendencias'])->name('tendencias.index');
-    Route::get('/reporte/tendencias/data', [CorteResurtimientoController::class, 'getTendenciasData'])->name('tendencias.data');
+    Route::get('/{lang}/reporte/tendencias', [CorteResurtimientoController::class, 'tendencias'])->name('tendencias.index');
+    Route::get('/{lang}/reporte/tendencias/data', [CorteResurtimientoController::class, 'getTendenciasData'])->name('tendencias.data');
     // Dashboard Operativo
-    Route::get('/dashboard-operativo', [CorteResurtimientoController::class, 'dashboard'])->name('dashboard.operativo');
-    Route::get('/dashboard-operativo/data', [CorteResurtimientoController::class, 'getDashboardData'])->name('dashboard.operativo.data');
+    Route::get('/{lang}/dashboard-operativo', [CorteResurtimientoController::class, 'dashboard'])->name('dashboard.operativo');
+    Route::get('/{lang}/dashboard-operativo/data', [CorteResurtimientoController::class, 'getDashboardData'])->name('dashboard.operativo.data');
     // Selector de máquinas por planta (compartido)
-    Route::get('/corte/maquinas', [CorteResurtimientoController::class, 'getMaquinasByPlanta'])->name('corte.maquinas');
+    Route::get('/{lang}/corte/maquinas', [CorteResurtimientoController::class, 'getMaquinasByPlanta'])->name('corte.maquinas');
 
 
 

@@ -190,7 +190,7 @@ class CorteResurtimientoController extends Controller
     /**
      * Exportar corte PRE a Excel.
      */
-    public function exportCortePre($idCorte)
+    public function exportCortePre($lang, $idCorte)
     {
         $ctx = $this->getUserContext();
         $corte = DB::table('Cortes_Resurtimiento')

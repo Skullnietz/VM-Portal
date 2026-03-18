@@ -334,9 +334,12 @@
                             </a>
                             </td>
                             <td class="align-middle text-center">
-                            <a href="Astock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm shadow-sm">
+                                <a href="Astock/rellenar/${registro.Id_Maquina}" class="btn btn-info btn-sm shadow-sm mb-1">
                                     <i class="fas fa-fill-drip mr-1"></i> Rellenar
-                            </a>
+                                </a>
+                                <a href="corte/pre/${registro.Id_Maquina}" class="btn btn-primary btn-sm shadow-sm mb-1" title="Generar Corte">
+                                    <i class="fas fa-cut mr-1"></i> Corte
+                                </a>
                             </td>
                             <td class="align-middle">${registro.Fecha_Alta}</td>
                             <td class="align-middle">
