@@ -161,7 +161,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-primary" onclick="printSummary()">Imprimir</button>
-                <button type="button" class="btn btn-success" id="confirmSaveBtn">Confirmar Guardado</button>
             </div>
         </div>
     </div>
@@ -364,13 +363,14 @@
             const cells = document.querySelectorAll('.droppable-cell');
             const summaryTableBody = document.getElementById('summaryTableBody');
             const aggregatedTableBody = document.getElementById('aggregatedTableBody');
-            summaryTableBody.innerHTML = '';
-            aggregatedTableBody.innerHTML = '';
-
+            
             let hasChanges = false;
+            const updatedStock = [];
+            const rowsHtml = [];
             const aggregatedData = {};
 
             cells.forEach(cell => {
+                const id = cell.getAttribute('data-id');
                 const charola = cell.getAttribute('data-charola');
                 const seleccion = cell.getAttribute('data-seleccion');
                 const stockInput = cell.querySelector('.Stock');
@@ -387,12 +387,13 @@
 
                     if (diff !== 0) {
                         hasChanges = true;
+                        updatedStock.push({ id: id, stock: currentStock });
 
                         const diffDisplay = diff > 0 ? `+${diff}` : `${diff}`;
                         const diffClass = diff > 0 ? 'text-success' : 'text-danger';
 
-                        // Add to summary table
-                        const row = `<tr>
+                        // Prepare summary table row
+                        rowsHtml.push(`<tr>
                             <td>${charola}</td>
                             <td>${seleccion}</td>
                             <td>${codigo}</td>
@@ -400,8 +401,7 @@
                             <td>${initialStock}</td>
                             <td>${currentStock}</td>
                             <td class="${diffClass}">${diffDisplay}</td>
-                        </tr>`;
-                        summaryTableBody.innerHTML += row;
+                        </tr>`);
 
                         // Aggregate data
                         const key = `${codigo}-${talla}`;
@@ -417,65 +417,12 @@
                 }
             });
 
-            // Populate aggregated table
-            for (const key in aggregatedData) {
-                const item = aggregatedData[key];
-                const totalDisplay = item.totalRefill > 0 ? `+${item.totalRefill}` : `${item.totalRefill}`;
-                const totalClass = item.totalRefill > 0 ? 'text-success' : (item.totalRefill < 0 ? 'text-danger' : '');
-
-                const row = `<tr>
-                    <td>${item.codigo}</td>
-                    <td>${item.talla}</td>
-                    <td class="${totalClass}">${totalDisplay}</td>
-                </tr>`;
-                aggregatedTableBody.innerHTML += row;
-            }
-
-            if (hasChanges) {
-                // Add headers dynamically if needed or ensure they exist in HTML
-                const summaryHeaderRow = document.querySelector('#summaryModal table thead tr');
-                if (summaryHeaderRow.children.length === 0) {
-                    summaryHeaderRow.innerHTML = `
-                        <th>Charola</th>
-                        <th>Selección</th>
-                        <th>Artículo</th>
-                        <th>Talla</th>
-                        <th>Stock Inicial</th>
-                        <th>Stock Final</th>
-                        <th>Rellenado</th>
-                    `;
-                }
-                $('#summaryModal').modal('show');
-            } else {
+            if (!hasChanges || updatedStock.length === 0) {
                 alert('No hay cambios para guardar (no se ha rellenado nada).');
-            }
-        });
-
-        document.getElementById('confirmSaveBtn').addEventListener('click', function () {
-            const cells = document.querySelectorAll('.droppable-cell');
-            const updatedStock = [];
-
-            cells.forEach(cell => {
-                const id = cell.getAttribute('data-id');
-                const stockInput = cell.querySelector('.Stock');
-
-                if (stockInput) {
-                    const stockValue = parseInt(stockInput.value) || 0;
-                    const initialStock = parseInt(stockInput.getAttribute('data-initial-stock')) || 0;
-
-                    // Only add to updatedStock if the value has changed
-                    if (stockValue !== initialStock) {
-                        updatedStock.push({ id: id, stock: stockValue });
-                    }
-                }
-            });
-
-            if (updatedStock.length === 0) {
-                alert('No hay cambios para guardar.');
-                $('#summaryModal').modal('hide');
                 return;
             }
 
+            // Immediately fetch to save records
             fetch('/update-stock', {
                 method: 'POST',
                 headers: {
@@ -485,8 +432,40 @@
                 body: JSON.stringify({ updatedStock })
             }).then(response => {
                 if (response.ok) {
-                    $('#summaryModal').modal('hide');
                     alert('Cambios guardados exitosamente');
+                    
+                    // Populate summary table
+                    summaryTableBody.innerHTML = rowsHtml.join('');
+                    
+                    // Populate aggregated table
+                    aggregatedTableBody.innerHTML = '';
+                    for (const key in aggregatedData) {
+                        const item = aggregatedData[key];
+                        const totalDisplay = item.totalRefill > 0 ? `+${item.totalRefill}` : `${item.totalRefill}`;
+                        const totalClass = item.totalRefill > 0 ? 'text-success' : (item.totalRefill < 0 ? 'text-danger' : '');
+
+                        const row = `<tr>
+                            <td>${item.codigo}</td>
+                            <td>${item.talla}</td>
+                            <td class="${totalClass}">${totalDisplay}</td>
+                        </tr>`;
+                        aggregatedTableBody.innerHTML += row;
+                    }
+
+                    // Add headers dynamically if needed or ensure they exist in HTML
+                    const summaryHeaderRow = document.querySelector('#summaryModal table thead tr');
+                    if (summaryHeaderRow.children.length === 0) {
+                        summaryHeaderRow.innerHTML = `
+                            <th>Charola</th>
+                            <th>Selección</th>
+                            <th>Artículo</th>
+                            <th>Talla</th>
+                            <th>Stock Inicial</th>
+                            <th>Stock Final</th>
+                            <th>Rellenado</th>
+                        `;
+                    }
+                    
                     // Update initial stock to current stock to prevent double counting if saved again without reload
                     cells.forEach(cell => {
                         const stockInput = cell.querySelector('.Stock');
@@ -494,6 +473,9 @@
                             stockInput.setAttribute('data-initial-stock', stockInput.value);
                         }
                     });
+
+                    // Show summary modal
+                    $('#summaryModal').modal('show');
                 } else {
                     alert('Hubo un error al guardar los cambios');
                 }

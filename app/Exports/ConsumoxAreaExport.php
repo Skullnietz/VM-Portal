@@ -39,7 +39,6 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
             right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
             inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
         ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-            ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
             ->select(
                 'Cat_Area.Txt_Nombre as Area',
                 DB::raw('SUM(Ctrl_Consumos.Cantidad) as Total_Consumo'),
@@ -59,6 +58,10 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
                 'Cat_Empleados.APaterno',
                 'Cat_Empleados.AMaterno'
             );
+
+        if ($this->idPlanta) {
+            $data->where('Cat_Empleados.Id_Planta', $this->idPlanta);
+        }
 
         // Aplicar filtros si están presentes
         if ($this->request->filled('area')) {

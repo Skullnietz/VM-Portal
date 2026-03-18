@@ -40,7 +40,6 @@ class ConsumoxVendingExport implements FromCollection, WithHeadings, WithEvents,
             right join Codigos_Clientes as c on b.Id_Articulo = c.Id_Articulo and b.Talla = c.Talla
             inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
         ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo')
-            ->where('Cat_Empleados.Id_Planta', $this->idPlanta)
             ->groupBy(
                 'Ctrl_Mquinas.Txt_Nombre', // Se agrupa por el nombre de la máquina
                 'Ctrl_Consumos.Id_Articulo',
@@ -59,6 +58,11 @@ class ConsumoxVendingExport implements FromCollection, WithHeadings, WithEvents,
                 'Cat_Area.Txt_Nombre as Area', // Nombre del área
                 DB::raw('MAX(Ctrl_Consumos.Fecha_Consumo) as Ultimo_Consumo') // Fecha del último consumo
             );
+
+        if ($this->idPlanta) {
+            $data->where('Cat_Empleados.Id_Planta', $this->idPlanta);
+        }
+
         // Aplicar filtros si están presentes
         if ($this->request->filled('area')) {
             $areas = $this->request->input('area');
