@@ -35,6 +35,83 @@ class ClientController extends Controller
         $Codigocliente = DB::table('Cat_Plantas')->select('Txt_Nombre_Planta', 'Txt_Sitio', 'Txt_Codigo_Cliente')->where('Id_Planta', $_SESSION['usuario']->Id_Planta)->get();
         return view('cliente.home', compact('unreadNotifications'))->with('Codigocliente', $Codigocliente);
     }
+    public function permisosGlobalesCliente()
+    {
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+        $areas = DB::table('Cat_Area')
+            ->where('Id_Planta', $idPlanta)
+            ->where('Txt_Estatus', 'Alta')
+            ->orderBy('Txt_Nombre')
+            ->get(['Id_Area', 'Txt_Nombre']);
+
+        return view('cliente.permisos-globales', compact('areas', 'idPlanta'));
+    }
+
+    public function getPermisosGlobalesClienteData(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+        $query = DB::table('Ctrl_Permisos_x_Area')
+            ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
+            ->select([
+                'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
+                'Cat_Area.Txt_Nombre as Area',
+                'Ctrl_Permisos_x_Area.Id_Area',
+                'Cat_Articulos.Txt_Descripcion as Articulo',
+                'Cat_Articulos.Txt_Codigo',
+                'Ctrl_Permisos_x_Area.Frecuencia',
+                'Ctrl_Permisos_x_Area.Cantidad',
+                'Ctrl_Permisos_x_Area.Status as Estatus',
+            ]);
+
+        if ($request->filled('filter_area')) {
+            $query->where('Ctrl_Permisos_x_Area.Id_Area', $request->filter_area);
+        }
+        if ($request->filled('filter_articulo')) {
+            $val = $request->filter_articulo;
+            if (is_numeric($val)) {
+                $query->where('Cat_Articulos.Id_Articulo', (int) $val);
+            } else {
+                $query->where('Cat_Articulos.Txt_Descripcion', 'like', '%' . $val . '%');
+            }
+        }
+        if ($request->filled('filter_status') && $request->filter_status !== 'Todos') {
+            $query->where('Ctrl_Permisos_x_Area.Status', $request->filter_status);
+        }
+
+        return DataTables::of($query)->make(true);
+    }
+
+    public function getArticulosFilterCliente(Request $request)
+    {
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $idPlanta = $_SESSION['usuario']->Id_Planta;
+
+        $q = trim($request->input('q', ''));
+
+        $query = DB::table('Ctrl_Permisos_x_Area')
+            ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->where('Ctrl_Permisos_x_Area.Id_Planta', $idPlanta)
+            ->select(
+                DB::raw('MIN(Cat_Articulos.Id_Articulo) as id'),
+                'Cat_Articulos.Txt_Descripcion as text'
+            )
+            ->groupBy('Cat_Articulos.Txt_Descripcion');
+
+        if ($q !== '') {
+            $query->where('Cat_Articulos.Txt_Descripcion', 'like', '%' . $q . '%');
+        }
+
+        $results = $query->orderBy('Cat_Articulos.Txt_Descripcion')->limit(80)->get();
+
+        return response()->json(['results' => $results]);
+    }
+
     // Tabla de Empleados con Opciones de Creación y Modificacion
     public function Empleados()
     {

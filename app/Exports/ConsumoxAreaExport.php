@@ -32,6 +32,7 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->leftJoin(DB::raw('(
             select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
             from Ctrl_Consumos as a
@@ -60,7 +61,7 @@ class ConsumoxAreaExport implements FromCollection, WithHeadings, WithEvents, Sh
             );
 
         if ($this->idPlanta) {
-            $data->where('Cat_Empleados.Id_Planta', $this->idPlanta);
+            $data->where('Ctrl_Mquinas.Id_Planta', $this->idPlanta);
         }
 
         // Aplicar filtros si están presentes

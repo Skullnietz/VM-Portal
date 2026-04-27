@@ -1166,14 +1166,24 @@ class AdminController extends Controller
         }
 
         $plantaId = $request->input('idPlanta');
+        $idArea   = $request->input('id_area');
 
-        // 1️⃣ Obtener todas las áreas activas de la planta
-        $areas = DB::table('Cat_Area')
+        if (empty($idArea)) {
+            return response()->json(['success' => false, 'message' => 'No se especificó el área.']);
+        }
+
+        // Verificar que el área pertenece a la planta
+        $area = DB::table('Cat_Area')
+            ->where('Id_Area', $idArea)
             ->where('Id_Planta', $plantaId)
             ->where('Txt_Estatus', 'Alta')
-            ->get();
+            ->first();
 
-        // 2️⃣ Obtener las máquinas vending de la planta
+        if (!$area) {
+            return response()->json(['success' => false, 'message' => 'Área no encontrada o dada de baja.']);
+        }
+
+        // Obtener máquinas vending de la planta
         $maquinas = DB::table('Ctrl_Mquinas')
             ->where('Id_Planta', $plantaId)
             ->pluck('Id_Maquina');
@@ -1182,62 +1192,61 @@ class AdminController extends Controller
             return response()->json(['success' => false, 'message' => 'No hay máquinas vending en esta planta.']);
         }
 
-        // 3️⃣ Obtener los artículos que están en esas máquinas (sin repetir y eliminando NULLs)
+        // Artículos configurados en las vending de la planta
         $articulos = DB::table('Configuracion_Maquina')
             ->whereIn('Id_Maquina', $maquinas)
-            ->whereNotNull('Id_Articulo') // ⚠️ Filtrar artículos NULL
+            ->whereNotNull('Id_Articulo')
             ->distinct()
             ->pluck('Id_Articulo')
-            ->filter() // ⚠️ Asegurar que no haya valores vacíos o NULL
-            ->toArray(); // Convertir a array para facilidad de manejo
+            ->filter()
+            ->toArray();
 
         if (empty($articulos)) {
             return response()->json(['success' => false, 'message' => 'No hay artículos en las máquinas vending de esta planta.']);
         }
 
-        // 4️⃣ Obtener permisos actuales para esta planta
+        // Permisos actuales del área
         $permisosActuales = DB::table('Ctrl_Permisos_x_Area')
             ->where('Id_Planta', $plantaId)
-            ->get(['Id_Area', 'Id_Articulo']);
+            ->where('Id_Area', $idArea)
+            ->get(['Id_Permiso', 'Id_Articulo']);
 
-        // Convertir a un array asociativo para fácil búsqueda
         $permisosExistentes = [];
         foreach ($permisosActuales as $permiso) {
-            $permisosExistentes[$permiso->Id_Area][$permiso->Id_Articulo] = true;
+            $permisosExistentes[$permiso->Id_Articulo] = $permiso->Id_Permiso;
         }
 
-        // 5️⃣ Insertar permisos faltantes
-        $permisosNuevos = [];
-        foreach ($areas as $area) {
-            foreach ($articulos as $idArticulo) {
-                if (!isset($permisosExistentes[$area->Id_Area][$idArticulo])) {
-                    $permisosNuevos[] = [
-                        'Id_Area' => $area->Id_Area,
-                        'Id_Articulo' => $idArticulo,
-                        'Frecuencia' => 0,
-                        'Cantidad' => 0,
-                        'Id_Planta' => $plantaId,
-                        'Status' => 'Alta',
-                    ];
-                }
+        // Insertar permisos faltantes para esta área (sin tocar los ya configurados)
+        $nuevos = [];
+        foreach ($articulos as $idArticulo) {
+            if (!isset($permisosExistentes[$idArticulo])) {
+                $nuevos[] = [
+                    'Id_Area'    => $idArea,
+                    'Id_Articulo'=> $idArticulo,
+                    'Frecuencia' => 0,
+                    'Cantidad'   => 0,
+                    'Id_Planta'  => $plantaId,
+                    'Status'     => 'Alta',
+                ];
             }
         }
 
-        if (!empty($permisosNuevos)) {
-            DB::table('Ctrl_Permisos_x_Area')->insert($permisosNuevos);
+        if (!empty($nuevos)) {
+            DB::table('Ctrl_Permisos_x_Area')->insert($nuevos);
         }
 
-        // 6️⃣ Eliminar permisos que ya no deberían existir
-        $permisosAEliminar = DB::table('Ctrl_Permisos_x_Area')
+        // Eliminar permisos de esta área para artículos que ya no están en las vending
+        $eliminados = DB::table('Ctrl_Permisos_x_Area')
             ->where('Id_Planta', $plantaId)
-            ->whereNotIn('Id_Articulo', $articulos) // Si el artículo no está en las máquinas vending
+            ->where('Id_Area', $idArea)
+            ->whereNotIn('Id_Articulo', $articulos)
             ->delete();
 
         return response()->json([
-            'success' => true,
-            'message' => 'Permisos actualizados correctamente.',
-            'nuevos' => count($permisosNuevos),
-            'eliminados' => $permisosAEliminar,
+            'success'    => true,
+            'message'    => 'Permisos del área actualizados correctamente.',
+            'nuevos'     => count($nuevos),
+            'eliminados' => $eliminados,
         ]);
     }
 
@@ -1288,39 +1297,24 @@ class AdminController extends Controller
             $permisosExistentes[$clave] = $permiso;
         }
 
-        // 5️⃣ Preparar nuevos, actualizables y claves válidas
+        // 5️⃣ Insertar solo los permisos que faltan (sin tocar los ya configurados)
         $nuevos = [];
-        $actualizar = [];
-        $clavesNuevas = [];
+        $clavesValidas = [];
 
         foreach ($areas as $area) {
             foreach ($articulos as $idArticulo) {
                 $clave = $area->Id_Area . '-' . $idArticulo;
-                $clavesNuevas[] = $clave;
+                $clavesValidas[$clave] = true;
 
                 if (!isset($permisosExistentes[$clave])) {
                     $nuevos[] = [
-                        'Id_Area' => $area->Id_Area,
-                        'Id_Articulo' => $idArticulo,
+                        'Id_Area'    => $area->Id_Area,
+                        'Id_Articulo'=> $idArticulo,
                         'Frecuencia' => 0,
-                        'Cantidad' => 0,
-                        'Id_Planta' => $plantaId,
-                        'Status' => 'Alta',
+                        'Cantidad'   => 0,
+                        'Id_Planta'  => $plantaId,
+                        'Status'     => 'Alta',
                     ];
-                } else {
-                    $perm = $permisosExistentes[$clave];
-                    if (
-                        $perm->Frecuencia != 0 ||
-                        $perm->Cantidad != 0 ||
-                        $perm->Status !== 'Alta'
-                    ) {
-                        $actualizar[] = [
-                            'Id_Permiso' => $perm->Id_Permiso,
-                            'Frecuencia' => 0,
-                            'Cantidad' => 0,
-                            'Status' => 'Alta',
-                        ];
-                    }
                 }
             }
         }
@@ -1328,30 +1322,14 @@ class AdminController extends Controller
         // 6️⃣ Insertar nuevos en chunks seguros (máx 300)
         $insertados = 0;
         if (!empty($nuevos)) {
-            $chunks = array_chunk($nuevos, 300);
-            foreach ($chunks as $chunk) {
+            foreach (array_chunk($nuevos, 300) as $chunk) {
                 DB::table('Ctrl_Permisos_x_Area')->insert($chunk);
                 $insertados += count($chunk);
             }
         }
 
-        // 7️⃣ Actualizar permisos existentes modificados
-        $actualizados = 0;
-        foreach ($actualizar as $item) {
-            DB::table('Ctrl_Permisos_x_Area')
-                ->where('Id_Permiso', $item['Id_Permiso'])
-                ->update([
-                    'Frecuencia' => $item['Frecuencia'],
-                    'Cantidad' => $item['Cantidad'],
-                    'Status' => $item['Status'],
-                ]);
-            $actualizados++;
-        }
-
-        // 8️⃣ Eliminar permisos obsoletos
-        $clavesValidas = array_flip($clavesNuevas);
+        // 7️⃣ Eliminar permisos de artículos que ya no están en las vending
         $aEliminar = [];
-
         foreach ($permisosExistentes as $clave => $perm) {
             if (!isset($clavesValidas[$clave])) {
                 $aEliminar[] = $perm->Id_Permiso;
@@ -1367,17 +1345,213 @@ class AdminController extends Controller
         }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Permisos sincronizados correctamente.',
+            'success'    => true,
+            'message'    => 'Permisos sincronizados correctamente.',
             'insertados' => $insertados,
-            'actualizados' => $actualizados,
             'eliminados' => $eliminados,
+        ]);
+    }
+
+    public function copyAreaPermissions(Request $request)
+    {
+        // Castear a enteros para evitar mismatch de tipos con claves de Collection
+        $idAreaOrigen   = (int) $request->input('id_area_origen');
+        $idsAreaDestino = array_map('intval', $request->input('ids_area_destino', []));
+        $idPlanta       = (int) $request->input('idPlanta');
+        $sobreescribir  = (bool) $request->input('sobreescribir', false);
+
+        if (!$idAreaOrigen || empty($idsAreaDestino) || !$idPlanta) {
+            return response()->json(['success' => false, 'message' => 'Datos incompletos.'], 422);
+        }
+
+        // Permisos del área origen (sin filtrar por Id_Planta — algunos registros pueden no tenerlo)
+        $permisosOrigen = DB::table('Ctrl_Permisos_x_Area')
+            ->where('Id_Area', $idAreaOrigen)
+            ->get();
+
+        if ($permisosOrigen->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'El área origen no tiene permisos configurados.']);
+        }
+
+        // Pre-cargar permisos existentes en las áreas destino, indexados por [Id_Area][Id_Articulo]
+        $permisosDestinoRaw = DB::table('Ctrl_Permisos_x_Area')
+            ->whereIn('Id_Area', $idsAreaDestino)
+            ->get();
+
+        $permisosDestino = [];
+        foreach ($permisosDestinoRaw as $p) {
+            $permisosDestino[(int)$p->Id_Area][(int)$p->Id_Articulo] = $p->Id_Permiso;
+        }
+
+        $insertados   = 0;
+        $actualizados = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($idsAreaDestino as $idAreaDestino) {
+                if ($idAreaDestino === $idAreaOrigen) continue;
+
+                $existentes = $permisosDestino[$idAreaDestino] ?? [];
+
+                $nuevos = [];
+                foreach ($permisosOrigen as $permiso) {
+                    $idArticulo = (int) $permiso->Id_Articulo;
+
+                    if (isset($existentes[$idArticulo])) {
+                        if ($sobreescribir) {
+                            DB::table('Ctrl_Permisos_x_Area')
+                                ->where('Id_Permiso', $existentes[$idArticulo])
+                                ->update([
+                                    'Frecuencia' => $permiso->Frecuencia,
+                                    'Cantidad'   => $permiso->Cantidad,
+                                    'Status'     => $permiso->Status,
+                                ]);
+                            $actualizados++;
+                        }
+                    } else {
+                        $nuevos[] = [
+                            'Id_Area'    => $idAreaDestino,
+                            'Id_Articulo'=> $idArticulo,
+                            'Frecuencia' => $permiso->Frecuencia,
+                            'Cantidad'   => $permiso->Cantidad,
+                            'Id_Planta'  => $idPlanta,
+                            'Status'     => $permiso->Status,
+                        ];
+                    }
+                }
+
+                if (!empty($nuevos)) {
+                    foreach (array_chunk($nuevos, 300) as $chunk) {
+                        DB::table('Ctrl_Permisos_x_Area')->insert($chunk);
+                        $insertados += count($chunk);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $msg = "Permisos copiados. Nuevos: $insertados";
+            if ($sobreescribir) $msg .= ", Actualizados: $actualizados";
+
+            return response()->json(['success' => true, 'message' => $msg]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al copiar permisos: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al copiar permisos: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function permisosGlobales($id)
+    {
+        $planta = DB::table('Cat_Plantas')->where('Id_Planta', $id)->first();
+        if (!$planta) abort(404);
+
+        $areas = DB::table('Cat_Area')
+            ->where('Id_Planta', $id)
+            ->where('Txt_Estatus', 'Alta')
+            ->orderBy('Txt_Nombre')
+            ->get(['Id_Area', 'Txt_Nombre']);
+
+        return view('administracion.plantas.permisos-globales', compact('planta', 'areas'));
+    }
+
+    public function getPermisosGlobalesData(Request $request, $id)
+    {
+        $query = DB::table('Ctrl_Permisos_x_Area')
+            ->join('Cat_Area', 'Ctrl_Permisos_x_Area.Id_Area', '=', 'Cat_Area.Id_Area')
+            ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->where('Ctrl_Permisos_x_Area.Id_Planta', $id)
+            ->select([
+                'Ctrl_Permisos_x_Area.Id_Permiso as Clave',
+                'Cat_Area.Txt_Nombre as Area',
+                'Ctrl_Permisos_x_Area.Id_Area',
+                'Cat_Articulos.Txt_Descripcion as Articulo',
+                'Cat_Articulos.Txt_Codigo',
+                'Ctrl_Permisos_x_Area.Frecuencia',
+                'Ctrl_Permisos_x_Area.Cantidad',
+                'Ctrl_Permisos_x_Area.Status as Estatus',
+            ]);
+
+        if ($request->filled('filter_area')) {
+            $query->where('Ctrl_Permisos_x_Area.Id_Area', $request->filter_area);
+        }
+        if ($request->filled('filter_articulo')) {
+            $val = $request->filter_articulo;
+            if (is_numeric($val)) {
+                $query->where('Cat_Articulos.Id_Articulo', (int) $val);
+            } else {
+                $query->where('Cat_Articulos.Txt_Descripcion', 'like', '%' . $val . '%');
+            }
+        }
+        if ($request->filled('filter_status') && $request->filter_status !== 'Todos') {
+            $query->where('Ctrl_Permisos_x_Area.Status', $request->filter_status);
+        }
+
+        return DataTables::of($query)->make(true);
+    }
+
+    public function getArticulosFilterAdmin(Request $request, $id)
+    {
+        $q = trim($request->input('q', ''));
+
+        $query = DB::table('Ctrl_Permisos_x_Area')
+            ->join('Cat_Articulos', 'Ctrl_Permisos_x_Area.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->where('Ctrl_Permisos_x_Area.Id_Planta', $id)
+            ->select(
+                DB::raw('MIN(Cat_Articulos.Id_Articulo) as id'),
+                'Cat_Articulos.Txt_Descripcion as text'
+            )
+            ->groupBy('Cat_Articulos.Txt_Descripcion');
+
+        if ($q !== '') {
+            $query->where('Cat_Articulos.Txt_Descripcion', 'like', '%' . $q . '%');
+        }
+
+        $results = $query->orderBy('Cat_Articulos.Txt_Descripcion')->limit(80)->get();
+
+        return response()->json(['results' => $results]);
+    }
+
+    public function bulkUpdatePermisos(Request $request)
+    {
+        $ids      = array_map('intval', $request->input('ids', []));
+        $idPlanta = (int) $request->input('idPlanta');
+
+        if (empty($ids) || !$idPlanta) {
+            return response()->json(['success' => false, 'message' => 'Datos incompletos.'], 422);
+        }
+
+        $updateData = [];
+        if ($request->input('frecuencia') !== null && $request->input('frecuencia') !== '') {
+            $updateData['Frecuencia'] = (int) $request->input('frecuencia');
+        }
+        if ($request->input('cantidad') !== null && $request->input('cantidad') !== '') {
+            $updateData['Cantidad'] = (int) $request->input('cantidad');
+        }
+        if (in_array($request->input('status'), ['Alta', 'Baja'])) {
+            $updateData['Status'] = $request->input('status');
+        }
+
+        if (empty($updateData)) {
+            return response()->json(['success' => false, 'message' => 'No hay valores para aplicar.']);
+        }
+
+        $actualizados = DB::table('Ctrl_Permisos_x_Area')
+            ->whereIn('Id_Permiso', $ids)
+            ->where('Id_Planta', $idPlanta)
+            ->update($updateData);
+
+        return response()->json([
+            'success'      => true,
+            'message'      => "Se actualizaron $actualizados permisos correctamente.",
+            'actualizados' => $actualizados,
         ]);
     }
 
     public function exportExcelAreas(Request $request)
     {
-        $idPlanta = $request->query('idPlanta'); // Obtener 'idPlanta' desde la URL
+        $idPlanta = $request->query('idPlanta');
         return Excel::download(new AreasExportAdmin($idPlanta), 'areas.xlsx');
     }
 
@@ -1640,173 +1814,245 @@ class AdminController extends Controller
 
     public function importCSV(Request $request)
     {
-        set_time_limit(0); // Permite ejecución ilimitada
+        set_time_limit(0);
 
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
 
-        $id_planta = $request->query('idPlanta'); // Obtener 'idPlanta' desde la URL
+        $id_planta = $request->query('idPlanta');
         $usuario = 1;
 
         $status = 'success';
         $message = 'Datos importados correctamente.';
 
-        if ($request->hasFile('csv_file')) {
-            $path = null;
+        if (!$request->hasFile('csv_file')) {
+            return redirect()->back()->with(['status' => 'error', 'message' => 'No se seleccionó ningún archivo.']);
+        }
+
+        $path = null;
+        try {
+            $file = $request->file('csv_file');
+
+            if (!$file->isValid()) {
+                throw new \Exception("Error en la subida del archivo: " . $file->getErrorMessage());
+            }
+
+            $filename = 'import_' . uniqid() . '.csv';
+            $path = $file->storeAs('temp_imports', $filename);
+            $fullPath = Storage::path($path);
+
+            if (($handle = fopen($fullPath, "r")) === FALSE) {
+                throw new \Exception("No se pudo abrir el archivo CSV.");
+            }
+
+            // Leer encabezados
+            fgetcsv($handle, 0, ",");
+
+            // Pre-cargar áreas de la planta en caché
+            $areasCache = DB::table('Cat_Area')
+                ->where('Id_Planta', $id_planta)
+                ->pluck('Id_Area', 'Txt_Nombre')
+                ->mapWithKeys(function ($id, $nombre) {
+                    return [strtolower($nombre) => $id];
+                })
+                ->toArray();
+
+            // Pre-cargar empleados existentes (No_Empleado => Txt_Estatus)
+            $empleadosExistentes = DB::table('Cat_Empleados')
+                ->where('Id_Planta', $id_planta)
+                ->pluck('Txt_Estatus', 'No_Empleado')
+                ->toArray();
+
+            // Pre-cargar tarjetas existentes (No_Tarjeta => No_Empleado)
+            $tarjetasExistentes = DB::table('Cat_Empleados')
+                ->whereNotNull('No_Tarjeta')
+                ->where('No_Tarjeta', '!=', '')
+                ->pluck('No_Empleado', 'No_Tarjeta')
+                ->toArray();
+
+            DB::beginTransaction();
+
+            $importErrors = [];
+            $createdAreas = [];
+            $rowsProcessed = 0;
+            $rowNumber = 1;
+
             try {
-                $file = $request->file('csv_file');
-                // Guardar en una ubicación temporal controlada dentro de storage
-                // Esto asegura que funcione tanto en local como en producción
-                $filename = 'import_' . uniqid() . '.csv';
-                $path = $file->storeAs('temp_imports', $filename);
+                while (($row = fgetcsv($handle, 0, ",")) !== FALSE) {
+                    $rowNumber++;
+                    if (array_filter($row) == [])
+                        continue;
 
-                // Obtener la ruta absoluta del archivo
-                $fullPath = Storage::path($path);
+                    $no_empleado = !empty($row[0]) ? trim($row[0]) : null;
+                    $nip         = !empty($row[1]) ? trim($row[1]) : '';
+                    $no_tarjeta  = !empty($row[2]) ? trim($this->sanitizeString($row[2])) : null;
+                    $nombre      = !empty($row[3]) ? trim($this->sanitizeString($row[3])) : null;
+                    $a_paterno   = !empty($row[4]) ? trim($this->sanitizeString($row[4])) : null;
+                    $a_materno   = !empty($row[5]) ? trim($this->sanitizeString($row[5])) : '';
+                    $n_area      = !empty($row[6]) ? trim($this->sanitizeString($row[6])) : null;
+                    $estatus     = !empty($row[7]) ? trim($this->sanitizeString($row[7])) : '';
 
-                if (($handle = fopen($fullPath, "r")) !== FALSE) {
-                    // Leer la primera fila (encabezados)
-                    $header = fgetcsv($handle, 1000, ",");
+                    // Validaciones
+                    if (empty($no_empleado) || !is_numeric($no_empleado)) {
+                        $importErrors[] = "Fila $rowNumber: 'No. Empleado' inválido o vacío. Debe ser numérico.";
+                        continue;
+                    }
+                    if (empty($nombre)) {
+                        $importErrors[] = "Fila $rowNumber: 'Nombre' es obligatorio.";
+                        continue;
+                    }
+                    if (empty($a_paterno)) {
+                        $importErrors[] = "Fila $rowNumber: 'Apellido Paterno' es obligatorio.";
+                        continue;
+                    }
+                    if (empty($n_area)) {
+                        $importErrors[] = "Fila $rowNumber: 'Área' es obligatoria.";
+                        continue;
+                    }
 
-                    // Aquí podrías validar los encabezados si es estricto
-                    // $expectedHeaders = ['No_Empleado', 'Nip', 'No_Tarjeta', 'Nombre', 'APaterno', 'AMaterno', 'NArea', 'Txt_Estatus'];
-                    // if ($header !== $expectedHeaders) { ... }
+                    // Manejo de área con caché
+                    $n_area_lower = strtolower($n_area);
+                    if (isset($areasCache[$n_area_lower])) {
+                        $id_area = $areasCache[$n_area_lower];
+                    } else {
+                        DB::table('Cat_Area')->insert([
+                            'Id_Planta'              => $id_planta,
+                            'Txt_Nombre'             => $n_area,
+                            'Txt_Estatus'            => 'Alta',
+                            'Fecha_Alta'             => now(),
+                            'Fecha_Modificacion'     => now(),
+                            'Id_Usuario_Alta'        => $usuario,
+                            'Id_Usuario_Modificacion'=> $usuario,
+                        ]);
 
-                    while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                        // Saltar filas vacías
-                        if (array_filter($row) == [])
+                        $id_area = DB::table('Cat_Area')
+                            ->where('Txt_Nombre', $n_area)
+                            ->where('Id_Planta', $id_planta)
+                            ->value('Id_Area');
+
+                        if (!$id_area) {
+                            $importErrors[] = "Fila $rowNumber: No se pudo crear el área '$n_area'.";
                             continue;
-
-                        $no_empleado = !empty($row[0]) ? $row[0] : null;
-                        $nip = !empty($row[1]) ? $row[1] : '1234';
-                        $no_tarjeta = !empty($row[2]) ? $this->sanitizeString($row[2]) : null;
-                        $nombre = !empty($row[3]) ? $this->sanitizeString($row[3]) : null;
-                        $a_paterno = !empty($row[4]) ? $this->sanitizeString($row[4]) : null;
-                        $a_materno = !empty($row[5]) ? $this->sanitizeString($row[5]) : '';
-                        $n_area = !empty($row[6]) ? $this->sanitizeString($row[6]) : null;
-                        $estatus = !empty($row[7]) ? $this->sanitizeString($row[7]) : 'Alta';
-
-                        if (is_null($no_empleado)) {
-                            $status = 'error';
-                            $message = "El campo No_Empleado está vacío. No se ha importado este registro.";
-                            break;
                         }
 
-                        if (empty($nombre) || empty($a_paterno)) {
-                            $status = 'error';
-                            $message = "El campo Nombre y/o Apellido Paterno está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
-                            break;
-                        }
-
-                        if (is_null($n_area)) {
-                            $status = 'error';
-                            $message = "El campo de área está vacío para el empleado '$no_empleado'. No se ha importado este registro.";
-                            break;
-                        } else {
-                            // Buscar el área por nombre y planta para evitar duplicados en la misma planta
-                            $id_area = DB::table('Cat_Area')
-                                ->where('Txt_Nombre', $n_area)
-                                ->where('Id_Planta', $id_planta)
-                                ->value('Id_Area');
-
-                            // Si no existe, crearla
-                            if (!$id_area) {
-                                try {
-                                    // Usamos insert() en lugar de insertGetId() para evitar problemas con triggers en SQL Server
-                                    DB::table('Cat_Area')->insert([
-                                        'Id_Planta' => $id_planta,
-                                        'Txt_Nombre' => $n_area,
-                                        'Txt_Estatus' => 'Alta',
-                                        'Fecha_Alta' => now(),
-                                        'Fecha_Modificacion' => now(),
-                                        'Id_Usuario_Alta' => $usuario,
-                                        'Id_Usuario_Modificacion' => $usuario,
-                                    ]);
-
-                                    // Recuperamos el ID consultando nuevamente
-                                    $id_area = DB::table('Cat_Area')
-                                        ->where('Txt_Nombre', $n_area)
-                                        ->where('Id_Planta', $id_planta)
-                                        ->value('Id_Area');
-
-                                    if (!$id_area) {
-                                        throw new \Exception("No se pudo recuperar el ID del área recién creada.");
-                                    }
-
-                                } catch (\Exception $e) {
-                                    $status = 'error';
-                                    $message = "No se pudo crear el área '$n_area' para el empleado '$no_empleado'. Error: " . $e->getMessage();
-                                    break;
-                                }
-                            }
-                        }
-
-                        $empleado = DB::table('Cat_Empleados')->where('No_Empleado', $no_empleado)->first();
-
-                        if ($empleado) {
-                            // Actualizar empleado existente
-                            DB::table('Cat_Empleados')
-                                ->where('No_Empleado', $no_empleado)
-                                ->update([
-                                    'Nip' => $nip,
-                                    'No_Tarjeta' => $no_tarjeta,
-                                    'Nombre' => $nombre,
-                                    'APaterno' => $a_paterno,
-                                    'AMaterno' => $a_materno,
-                                    'Id_Area' => $id_area,
-                                    'Fecha_Modificacion' => now(),
-                                    'Txt_Estatus' => $estatus,
-                                    'Id_Usuario_Modificacion' => $usuario,
-                                ]);
-                        } else {
-                            // Verificar si el No_Tarjeta ya existe antes de crear un nuevo registro
-                            if (!empty($no_tarjeta)) {
-                                $tarjeta_existente = DB::table('Cat_Empleados')->where('No_Tarjeta', $no_tarjeta)->first();
-
-                                if ($tarjeta_existente) {
-                                    $status = 'error';
-                                    $message = "El número de tarjeta '$no_tarjeta' ya está registrado para otro empleado. No se ha importado este registro.";
-                                    break;
-                                }
-                            }
-
-                            // Crear nuevo empleado
-                            DB::table('Cat_Empleados')->insert([
-                                'No_Empleado' => $no_empleado,
-                                'Nip' => $nip,
-                                'No_Tarjeta' => $no_tarjeta,
-                                'Nombre' => $nombre,
-                                'APaterno' => $a_paterno,
-                                'AMaterno' => $a_materno,
-                                'Id_Area' => $id_area,
-                                'Id_Planta' => $id_planta,
-                                'Fecha_alta' => now(),
-                                'Fecha_Modificacion' => now(),
-                                'Txt_Estatus' => 'Alta',
-                                'Tipo_Acceso' => 'E',
-                                'Id_Usuario_Alta' => $usuario,
-                                'Id_Usuario_Modificacion' => $usuario,
-                                'Id_Usuario_Baja' => NULL,
-                            ]);
+                        $areasCache[$n_area_lower] = $id_area;
+                        if (!in_array($n_area, $createdAreas)) {
+                            $createdAreas[] = $n_area;
                         }
                     }
-                    fclose($handle);
-                } else {
-                    throw new \Exception("No se pudo abrir el archivo CSV.");
+
+                    // Manejo de empleado
+                    if (isset($empleadosExistentes[$no_empleado])) {
+                        // UPDATE
+                        $currentStatus = $empleadosExistentes[$no_empleado];
+                        $finalEstatus = (!empty($estatus) && in_array($estatus, ['Alta', 'Baja'])) ? $estatus : $currentStatus;
+
+                        $updateData = [
+                            'Nombre'                 => $nombre,
+                            'APaterno'               => $a_paterno,
+                            'AMaterno'               => $a_materno,
+                            'Id_Area'                => $id_area,
+                            'Txt_Estatus'            => $finalEstatus,
+                            'Fecha_Modificacion'     => now(),
+                            'Id_Usuario_Modificacion'=> $usuario,
+                        ];
+
+                        if ($finalEstatus === 'Baja') {
+                            $updateData['Nip'] = '0000';
+                        } elseif ($finalEstatus === 'Alta' && $currentStatus === 'Baja') {
+                            $updateData['Nip'] = '1234';
+                        } elseif (!empty($nip)) {
+                            $updateData['Nip'] = $nip;
+                        } else {
+                            $updateData['Nip'] = '1234';
+                        }
+
+                        if (!empty($no_tarjeta)) {
+                            if (isset($tarjetasExistentes[$no_tarjeta]) && $tarjetasExistentes[$no_tarjeta] != $no_empleado) {
+                                $importErrors[] = "Fila $rowNumber: Tarjeta '$no_tarjeta' en uso por otro empleado.";
+                                continue;
+                            }
+                            $updateData['No_Tarjeta'] = $no_tarjeta;
+                            $tarjetasExistentes[$no_tarjeta] = $no_empleado;
+                        } else {
+                            $updateData['No_Tarjeta'] = null;
+                        }
+
+                        DB::table('Cat_Empleados')
+                            ->where('No_Empleado', $no_empleado)
+                            ->where('Id_Planta', $id_planta)
+                            ->update($updateData);
+
+                        $empleadosExistentes[$no_empleado] = $finalEstatus;
+
+                    } else {
+                        // INSERT
+                        if (!empty($no_tarjeta) && isset($tarjetasExistentes[$no_tarjeta])) {
+                            $importErrors[] = "Fila $rowNumber: Tarjeta '$no_tarjeta' en uso por otro empleado.";
+                            continue;
+                        }
+
+                        $finalEstatus = (!empty($estatus) && in_array($estatus, ['Alta', 'Baja'])) ? $estatus : 'Alta';
+                        $finalNip = $finalEstatus === 'Baja' ? '0000' : '1234';
+
+                        DB::table('Cat_Empleados')->insert([
+                            'No_Empleado'            => $no_empleado,
+                            'Nip'                    => $finalNip,
+                            'No_Tarjeta'             => empty($no_tarjeta) ? null : $no_tarjeta,
+                            'Nombre'                 => $nombre,
+                            'APaterno'               => $a_paterno,
+                            'AMaterno'               => $a_materno,
+                            'Id_Area'                => $id_area,
+                            'Id_Planta'              => $id_planta,
+                            'Fecha_alta'             => now(),
+                            'Fecha_Modificacion'     => now(),
+                            'Txt_Estatus'            => $finalEstatus,
+                            'Tipo_Acceso'            => 'E',
+                            'Id_Usuario_Alta'        => $usuario,
+                            'Id_Usuario_Modificacion'=> $usuario,
+                            'Id_Usuario_Baja'        => null,
+                        ]);
+
+                        $empleadosExistentes[$no_empleado] = $finalEstatus;
+                        if (!empty($no_tarjeta)) {
+                            $tarjetasExistentes[$no_tarjeta] = $no_empleado;
+                        }
+                    }
+
+                    $rowsProcessed++;
                 }
 
-            } catch (\Exception $e) {
-                $status = 'error';
-                $message = 'Error al procesar el archivo: ' . $e->getMessage();
-            } finally {
-                // Eliminar el archivo temporal
-                if ($path && Storage::exists($path)) {
-                    Storage::delete($path);
+                DB::commit();
+                fclose($handle);
+
+                $message = "Proceso completado. Registros procesados: $rowsProcessed.";
+                if (count($importErrors) > 0) {
+                    $status = 'warning';
+                    $message .= " Se encontraron " . count($importErrors) . " filas con errores.";
                 }
+
+                return redirect()->back()->with([
+                    'status'        => $status,
+                    'message'       => $message,
+                    'import_errors' => $importErrors,
+                    'created_areas' => $createdAreas,
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                if (is_resource($handle))
+                    fclose($handle);
+                throw $e;
             }
-        } else {
+
+        } catch (\Exception $e) {
             $status = 'error';
-            $message = 'No se seleccionó ningún archivo.';
+            $message = 'Error al procesar el archivo: ' . $e->getMessage();
+        } finally {
+            if ($path && Storage::exists($path)) {
+                Storage::delete($path);
+            }
         }
 
         return redirect()->back()->with(['status' => $status, 'message' => $message]);
@@ -1817,7 +2063,11 @@ class AdminController extends Controller
      */
     private function sanitizeString($string)
     {
-        return mb_convert_encoding(trim($string), 'UTF-8', 'auto');
+        if (!mb_detect_encoding($string, 'UTF-8', true)) {
+            $string = mb_convert_encoding($string, 'UTF-8', 'ISO-8859-1');
+        }
+        $string = preg_replace('/[\x00-\x1F\x7F]/u', '', $string);
+        return trim($string);
     }
 
     public function exportExcel(Request $request)

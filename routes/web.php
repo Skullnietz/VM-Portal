@@ -78,7 +78,7 @@ Route::group(['middleware' => 'checkSession'], function () {
         // DASHBOARD | INICIO
 
         //PERMISOS DE EMPLEADO
-        Route::get('/permisos-cli', 'ClientController@PermisosArticulos')->name('permisos-cli'); // Asignacion de permiso
+        Route::get('/permisos-cli', 'ClientController@permisosGlobalesCliente')->name('permisos-cli');
         // PERMISOS FILTRADO POR AREA
         Route::get('areas/permissions/{areaId}', 'ClientController@PermisosArticulosFilter')->name('permisos-cli'); // Asignacion de permiso
 
@@ -183,6 +183,11 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::post('/plantable/{id}', [AdminController::class, 'TablasPlant']);
     Route::post('/planta/areas/update-status', [AdminController::class, 'updateStatusArea'])->name('admin-areas.update-status');
     Route::post('/planta/areas/generate-permissions', [AdminController::class, 'generateMissingPermissions']);
+    Route::post('/planta/areas/copy-permissions', [AdminController::class, 'copyAreaPermissions'])->name('copy.area.permissions');
+    Route::get('/admin/planta/{id}/permisos-globales', [AdminController::class, 'permisosGlobales'])->name('permisos.globales');
+    Route::post('/admin/planta/{id}/permisos-globales/data', [AdminController::class, 'getPermisosGlobalesData'])->name('permisos.globales.data');
+    Route::get('/admin/planta/{id}/articulos-filter', [AdminController::class, 'getArticulosFilterAdmin'])->name('permisos.globales.articulos');
+    Route::post('/admin/permisos/bulk-update', [AdminController::class, 'bulkUpdatePermisos'])->name('permisos.bulk.update');
     Route::post('/admin/generar-permisos', [AdminController::class, 'generateAllMissingPermissions'])->name('generate.all.permissions');
     Route::post('/planta/areas/add', [AdminController::class, 'addArea']);
     Route::get('/planta/export-excel-areas', [AdminController::class, 'exportExcelAreas']);
@@ -317,6 +322,8 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('areas/data', 'ClientController@getAreas')->name('areas.data');
     Route::post('empleado/update/{id}', 'ClientController@updateemployee')->name('empleados.update');
     ///////////////////////////////////////// PERMISOS TOOLS ///////////////////////////////////////////////////
+    Route::post('/permisos-cli/data', [ClientController::class, 'getPermisosGlobalesClienteData'])->name('permisos-cli.data');
+    Route::get('/permisos-cli/articulos-filter', [ClientController::class, 'getArticulosFilterCliente'])->name('permisos-cli.articulos');
     Route::get('get-permisos-articulos', 'ClientController@getPermisosArticulos')->name('get.permisos.articulos'); // Asignacion de permisos
     Route::post('/delete-permiso-articulo/{id}', 'ClientController@deletePermisoArticulo')->name('delete.permiso.articulo');
     Route::post('/update-permiso-articulo/{id}', 'ClientController@updatePermisoArticulo')->name('update.permiso.articulo');

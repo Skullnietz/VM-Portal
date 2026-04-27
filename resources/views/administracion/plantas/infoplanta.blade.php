@@ -8,6 +8,58 @@
 
 
 @section('content')
+
+<!-- Modal Copiar Permisos -->
+<div class="modal fade" id="copyPermissionsModal" tabindex="-1" role="dialog" aria-labelledby="copyPermissionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="copyPermissionsModalLabel">
+                    <i class="fas fa-copy mr-2"></i> Copiar Permisos de Área
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Copiando permisos del área: <strong id="copy-source-name"></strong>
+                </div>
+
+                <div class="form-group">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="mb-0 font-weight-bold">Áreas destino:</label>
+                        <div>
+                            <button type="button" class="btn btn-xs btn-outline-secondary mr-1" id="copy-select-all">Seleccionar todas</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="copy-deselect-all">Deseleccionar</button>
+                        </div>
+                    </div>
+                    <div id="copy-areas-list" style="max-height: 280px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;">
+                        <p class="text-muted text-center mb-0" id="copy-areas-loading"><i class="fas fa-spinner fa-spin"></i> Cargando áreas...</p>
+                    </div>
+                </div>
+
+                <div class="form-group mb-0">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="copy-sobreescribir" checked>
+                        <label class="custom-control-label" for="copy-sobreescribir">
+                            Sobreescribir valores existentes (Frecuencia / Cantidad / Estatus)
+                        </label>
+                    </div>
+                    <small class="text-muted">Si está desactivado, solo se insertan permisos que aún no existan en el área destino.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info" id="copy-permissions-confirm">
+                    <i class="fas fa-copy mr-1"></i> Copiar Permisos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para agregar área -->
 <div class="modal fade" id="addAreaModal" tabindex="-1" role="dialog" aria-labelledby="addAreaModalLabel"
     aria-hidden="true">
@@ -406,6 +458,10 @@
                                             data-target="#addPermissionModal">
                                             Agregar Permiso &nbsp;&nbsp;&nbsp;<i class="fas fa-user-lock"></i>
                                         </button>
+                                        <a href="{{ route('permisos.globales', $planta->Id_Planta) }}"
+                                            type="button" class="btn btn-info">
+                                            <i class="fas fa-th-list mr-1"></i> Vista Global
+                                        </a>
                                         <a href="{{ url('/planta/export-excel-permissions?idPlanta=') }}{{$planta->Id_Planta}}"
                                             type="button" class="btn btn-success">
                                             Reporte <i class="fas fa-file-excel"></i>
@@ -509,27 +565,45 @@
 <script>
     $(document).ready(function () {
         $("#generar-permisos").click(function () {
-            let plantaId = {{ $planta->Id_Planta }}; // Asegúrate de tener el ID de la planta disponible en Blade
+            let plantaId = {{ $planta->Id_Planta }};
+            let $btn = $(this);
 
-            $.ajax({
-                url: "{{ route('generate.all.permissions') }}",
-                type: "POST",
-                data: {
-                    idPlanta: plantaId,
-                    _token: "{{ csrf_token() }}"
-                },
-                beforeSend: function () {
-                    $("#generar-permisos").prop("disabled", true).text("Generando...");
-                },
-                success: function (response) {
-                    alert(response.message); // Mostrar mensaje de éxito
-                },
-                error: function (xhr) {
-                    alert("Error: " + xhr.responseJSON.message);
-                },
-                complete: function () {
-                    $("#generar-permisos").prop("disabled", false).text("Permisos Actualizados");
-                }
+            Swal.fire({
+                title: 'Confirmar sincronización',
+                text: '¿Deseas sincronizar los permisos de todas las áreas con los artículos actuales de las vending?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, sincronizar',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+
+                $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Generando...');
+
+                $.ajax({
+                    url: "{{ route('generate.all.permissions') }}",
+                    type: "POST",
+                    data: {
+                        idPlanta: plantaId,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function (response) {
+                        Swal.fire(
+                            'Sincronizado',
+                            response.message + ' (Nuevos: ' + response.insertados + ', Eliminados: ' + response.eliminados + ')',
+                            'success'
+                        );
+                    },
+                    error: function (xhr) {
+                        let msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error desconocido.';
+                        Swal.fire('Error', msg, 'error');
+                    },
+                    complete: function () {
+                        $btn.prop("disabled", false).html('<i class="fas fa-lock mr-1"></i><i class="fas fa-sync-alt fa-xs"></i> Actualizar Permisos');
+                    }
+                });
             });
         });
     });
@@ -585,7 +659,9 @@
                 {
                     data: null,
                     render: function (data, type, row) {
-                        return '<button class="btn btn-sm btn-danger delete-area" data-id="' + row.Id_Area + '"><i class="fas fa-trash"></i></button> ' + ' <button class="btn btn-sm btn-warning refresh-permissions" data-idplanta="{{$planta->Id_Planta}}" data-id="' + row.Id_Area + '"><i class="fas fa-sync-alt"></i></button>';
+                        return '<button class="btn btn-sm btn-danger delete-area" data-id="' + row.Id_Area + '"><i class="fas fa-trash"></i></button> '
+                             + '<button class="btn btn-sm btn-warning refresh-permissions" data-idplanta="{{$planta->Id_Planta}}" data-id="' + row.Id_Area + '" title="Sincronizar permisos con vending"><i class="fas fa-sync-alt"></i></button> '
+                             + '<button class="btn btn-sm btn-primary copy-permissions" data-idplanta="{{$planta->Id_Planta}}" data-id="' + row.Id_Area + '" data-nombre="' + row.Txt_Nombre + '" title="Copiar permisos a otras áreas"><i class="fas fa-copy"></i></button>';
                     },
                     orderable: false,
                     searchable: false
@@ -716,6 +792,86 @@
                 }
             });
         });
+
+        // ── Copiar permisos ──────────────────────────────────────────────────────
+        var copySourceId   = null;
+        var copyPlantaId   = {{ $planta->Id_Planta }};
+
+        $('#areasTable').on('click', '.copy-permissions', function () {
+            copySourceId = $(this).data('id');
+            var sourceName = $(this).data('nombre');
+
+            $('#copy-source-name').text(sourceName);
+            $('#copy-sobreescribir').prop('checked', true);
+            $('#copy-areas-list').html('<p class="text-muted text-center mb-0"><i class="fas fa-spinner fa-spin"></i> Cargando áreas...</p>');
+            $('#copyPermissionsModal').modal('show');
+
+            $.get('{{ url("/areas/data") }}', { admin: 1, id_planta: copyPlantaId }, function (areas) {
+                var html = '';
+                $.each(areas, function (i, area) {
+                    if (area.Id_Area == copySourceId) return;
+                    html += '<div class="custom-control custom-checkbox py-1 border-bottom">'
+                          + '<input type="checkbox" class="custom-control-input copy-area-check" id="copy_area_' + area.Id_Area + '" value="' + area.Id_Area + '">'
+                          + '<label class="custom-control-label" for="copy_area_' + area.Id_Area + '">' + area.Txt_Nombre + '</label>'
+                          + '</div>';
+                });
+                $('#copy-areas-list').html(html || '<p class="text-muted text-center mb-0">No hay otras áreas disponibles.</p>');
+            }).fail(function () {
+                $('#copy-areas-list').html('<p class="text-danger text-center mb-0">Error al cargar las áreas.</p>');
+            });
+        });
+
+        $('#copy-select-all').on('click', function () {
+            $('.copy-area-check').prop('checked', true);
+        });
+
+        $('#copy-deselect-all').on('click', function () {
+            $('.copy-area-check').prop('checked', false);
+        });
+
+        $('#copy-permissions-confirm').on('click', function () {
+            var destinos = [];
+            $('.copy-area-check:checked').each(function () {
+                destinos.push($(this).val());
+            });
+
+            if (destinos.length === 0) {
+                Swal.fire('Atención', 'Selecciona al menos un área destino.', 'warning');
+                return;
+            }
+
+            var sobreescribir = $('#copy-sobreescribir').is(':checked') ? 1 : 0;
+            var $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Copiando...');
+
+            $.ajax({
+                url: '{{ route("copy.area.permissions") }}',
+                method: 'POST',
+                data: {
+                    id_area_origen:   copySourceId,
+                    ids_area_destino: destinos,
+                    idPlanta:         copyPlantaId,
+                    sobreescribir:    sobreescribir,
+                    _token:           '{{ csrf_token() }}'
+                },
+                success: function (response) {
+                    $('#copyPermissionsModal').modal('hide');
+                    if (response.success) {
+                        Swal.fire('Listo', response.message, 'success');
+                    } else {
+                        Swal.fire('Sin cambios', response.message, 'warning');
+                    }
+                },
+                error: function (xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error desconocido.';
+                    Swal.fire('Error', msg, 'error');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html('<i class="fas fa-copy mr-1"></i> Copiar Permisos');
+                }
+            });
+        });
+        // ─────────────────────────────────────────────────────────────────────────
 
         // Manejar la eliminación de un área
         $('#areasTable').on('click', '.delete-area', function () {

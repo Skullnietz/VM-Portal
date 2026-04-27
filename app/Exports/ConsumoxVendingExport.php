@@ -60,7 +60,7 @@ class ConsumoxVendingExport implements FromCollection, WithHeadings, WithEvents,
             );
 
         if ($this->idPlanta) {
-            $data->where('Cat_Empleados.Id_Planta', $this->idPlanta);
+            $data->where('Ctrl_Mquinas.Id_Planta', $this->idPlanta);
         }
 
         // Aplicar filtros si están presentes

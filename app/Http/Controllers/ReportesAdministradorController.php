@@ -12,6 +12,16 @@ use App\Exports\ConsumoxVendingExport;
 
 class ReportesAdministradorController extends Controller
 {
+    private function emptyDataTableResponse(Request $request)
+    {
+        return response()->json([
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => 0,
+            'recordsFiltered' => 0,
+            'data' => []
+        ]);
+    }
+
     public function ReporteConsumoEmpleado(Request $request)
     {
         if (session_status() == PHP_SESSION_NONE) {
@@ -62,25 +72,9 @@ class ReportesAdministradorController extends Controller
                 ->select('Id_Articulo', 'Txt_Descripcion')
                 ->get();
         } else {
-            $areas = DB::table('Cat_Area')
-                ->select('Id_Area', 'Txt_Nombre')
-                ->where('Txt_Estatus', 'Alta')
-                ->get();
-
-            $empleados = DB::table('Cat_Empleados')
-                ->select('Id_Empleado', 'Nombre', 'APaterno', 'AMaterno')
-                ->get();
-
-            $articulosIds = DB::table('Configuracion_Maquina')
-                ->whereNotNull('Id_Articulo')
-                ->distinct()
-                ->pluck('Id_Articulo')
-                ->toArray();
-
-            $productos = DB::table('Cat_Articulos')
-                ->whereIn('Id_Articulo', $articulosIds)
-                ->select('Id_Articulo', 'Txt_Descripcion')
-                ->get();
+            $areas = collect();
+            $empleados = collect();
+            $productos = collect();
         }
 
         return view('administracion.reportes.consumoxempleado', compact('plantas', 'areas', 'productos', 'empleados'));
@@ -92,15 +86,18 @@ class ReportesAdministradorController extends Controller
             session_start();
         }
 
+        if (!$request->filled('planta_id')) {
+            return $this->emptyDataTableResponse($request);
+        }
+
         // Consulta base para la DataTable
         $data = DB::table('Ctrl_Consumos')
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
-            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo');
+            ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina');
 
-        if ($request->has('planta_id') && $request->planta_id) {
-            $data->where('Cat_Empleados.Id_Planta', $request->planta_id);
-        }
+        $data->where('Ctrl_Mquinas.Id_Planta', $request->planta_id);
 
         $data->select(
             DB::raw("CONCAT(Cat_Empleados.Nombre, ' ', Cat_Empleados.APaterno, ' ', Cat_Empleados.AMaterno) as Nombre"),
@@ -168,6 +165,10 @@ class ReportesAdministradorController extends Controller
         }
         $idPlanta = $request->input('planta_id');
 
+        if (!$idPlanta) {
+            return redirect()->back()->with('error', 'Seleccione una planta antes de exportar.');
+        }
+
         return Excel::download(new ConsumoxEmpleadoExport($request, $idPlanta), 'reporte_consumos.xlsx');
     }
 
@@ -215,22 +216,8 @@ class ReportesAdministradorController extends Controller
                 ->select('Id_Articulo', 'Txt_Descripcion')
                 ->get();
         } else {
-            // Obtener las áreas de la tabla Cat_Area
-            $areas = DB::table('Cat_Area')
-                ->select('Id_Area', 'Txt_Nombre')
-                ->where('Txt_Estatus', 'Alta')
-                ->get();
-
-            $articulosIds = DB::table('Configuracion_Maquina')
-                ->whereNotNull('Id_Articulo')
-                ->distinct()
-                ->pluck('Id_Articulo')
-                ->toArray();
-
-            $productos = DB::table('Cat_Articulos')
-                ->whereIn('Id_Articulo', $articulosIds)
-                ->select('Id_Articulo', 'Txt_Descripcion')
-                ->get();
+            $areas = collect();
+            $productos = collect();
         }
 
         return view('administracion.reportes.consumoxarea', compact('plantas', 'areas', 'productos'));
@@ -242,11 +229,16 @@ class ReportesAdministradorController extends Controller
             session_start();
         }
 
+        if (!$request->filled('planta_id')) {
+            return $this->emptyDataTableResponse($request);
+        }
+
         // Consulta base para la DataTable enfocada en consumos por área
         $consumos = DB::table('Ctrl_Consumos')
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->leftJoin(DB::raw('(
                 select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
                 from Ctrl_Consumos as a
@@ -255,9 +247,7 @@ class ReportesAdministradorController extends Controller
                 inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
             ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo');
 
-        if ($request->has('planta_id') && $request->planta_id) {
-            $consumos->where('Cat_Empleados.Id_Planta', $request->planta_id);
-        }
+        $consumos->where('Ctrl_Mquinas.Id_Planta', $request->planta_id);
 
         $consumos->select(
             'Cat_Area.Txt_Nombre as Area',
@@ -335,6 +325,10 @@ class ReportesAdministradorController extends Controller
         }
         $idPlanta = $request->input('planta_id');
 
+        if (!$idPlanta) {
+            return redirect()->back()->with('error', 'Seleccione una planta antes de exportar.');
+        }
+
         return Excel::download(new ConsumoxAreaExport($request, $idPlanta), 'consumos-area.xlsx');
     }
 
@@ -381,25 +375,9 @@ class ReportesAdministradorController extends Controller
                 ->where('Id_Planta', $idPlanta)
                 ->get();
         } else {
-            $areas = DB::table('Cat_Area')
-                ->select('Id_Area', 'Txt_Nombre')
-                ->where('Txt_Estatus', 'Alta')
-                ->get();
-
-            $articulosIds = DB::table('Configuracion_Maquina')
-                ->whereNotNull('Id_Articulo')
-                ->distinct()
-                ->pluck('Id_Articulo')
-                ->toArray();
-
-            $productos = DB::table('Cat_Articulos')
-                ->whereIn('Id_Articulo', $articulosIds)
-                ->select('Id_Articulo', 'Txt_Descripcion')
-                ->get();
-
-            $maquinas = DB::table('Ctrl_Mquinas')
-                ->select('Id_Maquina', 'Txt_Nombre')
-                ->get();
+            $areas = collect();
+            $productos = collect();
+            $maquinas = collect();
         }
 
         return view('administracion.reportes.consumoxvending', compact('plantas', 'areas', 'productos', 'maquinas'));
@@ -409,6 +387,10 @@ class ReportesAdministradorController extends Controller
     {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
+        }
+
+        if (!$request->filled('planta_id')) {
+            return $this->emptyDataTableResponse($request);
         }
 
         $data = DB::table('Ctrl_Consumos')
@@ -424,9 +406,7 @@ class ReportesAdministradorController extends Controller
                 inner join Cat_Articulos as d on a.Id_Articulo = d.Id_Articulo 
             ) as z'), 'Ctrl_Consumos.Id_Consumo', '=', 'z.Id_Consumo');
 
-        if ($request->has('planta_id') && $request->planta_id) {
-            $data->where('Cat_Empleados.Id_Planta', $request->planta_id);
-        }
+        $data->where('Ctrl_Mquinas.Id_Planta', $request->planta_id);
 
         $data->groupBy(
             'Ctrl_Mquinas.Txt_Nombre',
@@ -502,6 +482,10 @@ class ReportesAdministradorController extends Controller
             session_start();
         }
         $idPlanta = $request->input('planta_id');
+
+        if (!$idPlanta) {
+            return redirect()->back()->with('error', 'Seleccione una planta antes de exportar.');
+        }
 
         return Excel::download(new ConsumoxVendingExport($request, $idPlanta), 'vending-consumos.xlsx');
     }

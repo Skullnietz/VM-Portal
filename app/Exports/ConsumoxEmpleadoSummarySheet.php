@@ -29,6 +29,7 @@ class ConsumoxEmpleadoSummarySheet implements FromCollection, WithHeadings, With
             ->join('Cat_Empleados', 'Ctrl_Consumos.Id_Empleado', '=', 'Cat_Empleados.Id_Empleado')
             ->join('Cat_Area', 'Cat_Empleados.Id_Area', '=', 'Cat_Area.Id_Area')
             ->join('Cat_Articulos', 'Ctrl_Consumos.Id_Articulo', '=', 'Cat_Articulos.Id_Articulo')
+            ->join('Ctrl_Mquinas', 'Ctrl_Consumos.Id_Maquina', '=', 'Ctrl_Mquinas.Id_Maquina')
             ->leftJoin(DB::raw('(
                 select b.Id_Maquina, b.Talla, c.Codigo_Clientte as Txt_Codigo_Cliente, a.Id_Articulo, a.Id_Consumo, d.Txt_Descripcion, d.Txt_Codigo 
                 from Ctrl_Consumos as a
@@ -48,7 +49,7 @@ class ConsumoxEmpleadoSummarySheet implements FromCollection, WithHeadings, With
             ->orderByDesc('Total_Cantidad');
 
         if ($this->idPlanta) {
-            $query->where('Cat_Empleados.Id_Planta', $this->idPlanta);
+            $query->where('Ctrl_Mquinas.Id_Planta', $this->idPlanta);
         }
 
         // Apply Date Filters
