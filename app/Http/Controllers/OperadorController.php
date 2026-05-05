@@ -277,6 +277,27 @@ class OperadorController extends Controller
         return Excel::download(new \App\Exports\MissingItemsExport($id), 'faltantes_vending_' . $id . '.xlsx');
     }
 
+    public function downloadMissingItemsByPlant($id)
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Verificar que la planta pertenece al operador
+        $plantasAccesoArray = explode(',', $_SESSION['usuario']->PlantasConAcceso);
+        if (!in_array((string) $id, $plantasAccesoArray)) {
+            abort(403);
+        }
+
+        if (ob_get_contents())
+            ob_end_clean();
+
+        return Excel::download(
+            new \App\Exports\PlantMissingItemsExport($id),
+            'faltantes_planta_' . $id . '.xlsx'
+        );
+    }
+
     public function indexConsumoEmpleado()
     {
         if (session_status() == PHP_SESSION_NONE) {

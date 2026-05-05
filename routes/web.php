@@ -354,6 +354,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('op/vendings/data', [OperadorController::class, 'getVendingsData'])->name('vendings.data');
     Route::get('/op/vending/missing-items/{id}', [OperadorController::class, 'getMissingItems'])->name('vending.missing_items');
     Route::get('/op/vending/download-missing-items/{id}', [OperadorController::class, 'downloadMissingItems'])->name('vending.download_missing_items');
+    Route::get('/op/plant/download-missing-items/{id}', [OperadorController::class, 'downloadMissingItemsByPlant'])->name('plant.download_missing_items');
 
     //////////////////////////////////// REPORTES OPERADOR ///////////////////////////////
     Route::post('/op/get-vendings-by-plant', [OperadorController::class, 'getVendingsByPlant'])->name('op.get_vendings_by_plant');

@@ -67,6 +67,8 @@
     .plant-header .stat-value { font-size: 1.1rem; font-weight: 700; display: block; }
     .plant-header .chevron { transition: transform .25s; }
     .plant-header.collapsed .chevron { transform: rotate(-90deg); }
+    .download-plant-btn { opacity: .9; white-space: nowrap; }
+    .download-plant-btn:hover { opacity: 1; }
 
     /* ── Vending card ────────────────────────────────────── */
     .vending-grid {
@@ -201,6 +203,13 @@ $(document).ready(function () {
                                     <span>Relleno</span>
                                 </div>
                             </div>
+                            <a href="/op/plant/download-missing-items/${planta.Id_Planta}"
+                               class="btn btn-sm btn-light ml-3 download-plant-btn"
+                               title="Descargar faltantes de la planta"
+                               onclick="event.stopPropagation()">
+                                <i class="fas fa-file-excel text-success mr-1"></i>
+                                <span class="d-none d-md-inline">Faltantes</span>
+                            </a>
                             <i class="fas fa-chevron-down chevron ml-2"></i>
                         </div>
                         <div class="vending-grid" id="pgrid-${idx}"></div>
