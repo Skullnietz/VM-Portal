@@ -272,6 +272,23 @@ class OperadorController extends Controller
 
     public function downloadMissingItems($id)
     {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $userId = $_SESSION['usuario']->Id_Operador ?? null;
+
+        DB::table('Cortes_Resurtimiento')->insert([
+            'Id_Maquina'   => $id,
+            'Tipo_Corte'   => 'CONSULTA',
+            'Fecha_Corte'  => now(),
+            'Id_Usuario'   => $userId,
+            'Tipo_Usuario' => 'Operador',
+            'Notas'        => 'Consulta de faltantes por vending',
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ]);
+
         if (ob_get_contents())
             ob_end_clean();
         return Excel::download(new \App\Exports\MissingItemsExport($id), 'faltantes_vending_' . $id . '.xlsx');
@@ -287,6 +304,32 @@ class OperadorController extends Controller
         $plantasAccesoArray = explode(',', $_SESSION['usuario']->PlantasConAcceso);
         if (!in_array((string) $id, $plantasAccesoArray)) {
             abort(403);
+        }
+
+        $userId  = $_SESSION['usuario']->Id_Operador ?? null;
+        $now     = now();
+
+        // Un registro CONSULTA por cada vending activa de la planta
+        $maquinas = DB::table('Ctrl_Mquinas')
+            ->where('Id_Planta', $id)
+            ->where('Txt_Estatus', 'Alta')
+            ->pluck('Id_Maquina');
+
+        $registros = $maquinas->map(function ($maqId) use ($userId, $now) {
+            return [
+                'Id_Maquina'   => $maqId,
+                'Tipo_Corte'   => 'CONSULTA',
+                'Fecha_Corte'  => $now,
+                'Id_Usuario'   => $userId,
+                'Tipo_Usuario' => 'Operador',
+                'Notas'        => 'Consulta de faltantes por planta',
+                'created_at'   => $now,
+                'updated_at'   => $now,
+            ];
+        })->all();
+
+        if (!empty($registros)) {
+            DB::table('Cortes_Resurtimiento')->insert($registros);
         }
 
         if (ob_get_contents())
