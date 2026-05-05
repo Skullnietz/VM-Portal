@@ -7,50 +7,30 @@
 
 @section('content_header')
 <div class="container">
-    <div class="row">
-        <div class=" col-md-9 col-9">
-            <h4><a href="#" onclick="goBack()" class="border rounded">&nbsp;<i
-                        class="fas fa-arrow-left"></i>&nbsp;</a>&nbsp;&nbsp;&nbsp;{{ __('Plantas de VMs') }}</h4>
+    <div class="row align-items-center">
+        <div class="col-9">
+            <h4>
+                <a href="#" onclick="goBack()" class="border rounded">&nbsp;<i class="fas fa-arrow-left"></i>&nbsp;</a>
+                &nbsp;&nbsp;&nbsp;{{ __('Plantas de VMs') }}
+            </h4>
         </div>
-        <div class="col-md-3 col-3 ml-auto">
-        </div>
-
-
     </div>
 </div>
 @stop
 
 @section('content')
-
-
-
-
 <div class="container">
-    <div class="row">
-        <div class="col">
-            <div class="card">
-
-                <div class="card-header">
-                    <h5 class="card-title">
-                        Vendings
-                    </h5>
-                    <div class="card-tools">
-
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <button type="button" class="btn btn-tool" data-card-widget="remove">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-
-                </div>
-                <div class="card-body">
-                    <div id="groupedVendingsContainer" class="accordion"></div>
-                </div>
-            </div>
-        </div>
+    <div id="loadingState" class="text-center py-5">
+        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+        <p class="mt-2 text-muted">Cargando vendings…</p>
     </div>
+
+    <div id="emptyState" class="text-center py-5" style="display:none;">
+        <i class="fas fa-store-slash fa-3x text-muted mb-3"></i>
+        <p class="text-muted">No hay vendings asignadas a tu cuenta.</p>
+    </div>
+
+    <div id="plantasContainer"></div>
 </div>
 @stop
 
@@ -58,212 +38,216 @@
 @stop
 
 @section('css')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
-<!-- Incluir CSS de Select2 -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
-    .card-h {
+    /* ── Plant header ────────────────────────────────────── */
+    .plant-header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        padding: 15px 20px;
-        background: linear-gradient(45deg, #007bff, #0056b3);
+        gap: 14px;
+        padding: 14px 18px;
+        background: linear-gradient(90deg, #1a3a5c 0%, #2d6a9f 100%);
         color: #fff;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        user-select: none;
     }
-
-    .card-h:hover {
-        background: linear-gradient(45deg, #0056b3, #004494);
-        transform: translateY(-1px);
-        transition: all 0.3s ease;
+    .plant-header:hover { filter: brightness(1.08); }
+    .plant-header img {
+        width: 46px; height: 46px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,.5);
+        flex-shrink: 0;
     }
+    .plant-header .plant-name { font-size: 1.05rem; font-weight: 700; flex: 1; }
+    .plant-header .plant-stats {
+        display: flex; gap: 16px; font-size: .78rem; opacity: .9;
+    }
+    .plant-header .stat-item { text-align: center; }
+    .plant-header .stat-value { font-size: 1.1rem; font-weight: 700; display: block; }
+    .plant-header .chevron { transition: transform .25s; }
+    .plant-header.collapsed .chevron { transform: rotate(-90deg); }
 
-    .card-bh {
-        padding: 20px;
-        background-color: #ffffff;
+    /* ── Vending card ────────────────────────────────────── */
+    .vending-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        gap: 16px;
+        padding: 18px;
+        background: #f4f6f9;
         border-radius: 0 0 8px 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
+    .vending-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,.08);
+        overflow: hidden;
+        transition: transform .2s, box-shadow .2s;
+    }
+    .vending-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,.13);
+    }
+    .vending-card-header {
+        padding: 12px 14px 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .vending-card-header .vm-name {
+        font-weight: 700; font-size: .95rem; color: #1a3a5c;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .vending-card-header .vm-series { font-size: .75rem; color: #888; }
+    .vending-card-body { padding: 10px 14px 6px; }
 
-    .grouped-table {
-        margin-left: auto;
+    /* Fill bar */
+    .fill-label {
+        display: flex; justify-content: space-between;
+        font-size: .75rem; color: #555; margin-bottom: 4px;
     }
+    .fill-bar { height: 8px; border-radius: 4px; background: #e9ecef; overflow: hidden; }
+    .fill-bar-inner {
+        height: 100%; border-radius: 4px;
+        transition: width .4s ease;
+        background: #28a745;
+    }
+    .fill-bar-inner.fill-warn  { background: #ffc107; }
+    .fill-bar-inner.fill-low   { background: #dc3545; }
 
-    .table-vending thead th {
-        background-color: #343a40;
-        color: white;
-        border: none;
+    /* Sync row */
+    .sync-row {
+        display: flex; align-items: center; gap: 6px;
+        font-size: .75rem; color: #666; margin-top: 8px;
     }
+    .badge-online  { background: #28a745; color:#fff; padding:2px 8px; border-radius:12px; font-size:.7rem; }
+    .badge-offline { background: #6c757d; color:#fff; padding:2px 8px; border-radius:12px; font-size:.7rem; }
 
-    .table-vending tbody tr:hover {
-        background-color: #f8f9fa;
-        transform: scale(1.01);
-        transition: transform 0.2s;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    /* Actions */
+    .vending-card-footer {
+        padding: 10px 14px;
+        display: flex; gap: 8px; border-top: 1px solid #f0f0f0;
     }
-
-    .btn-action {
-        margin: 0 2px;
-        border-radius: 20px;
-        padding: 5px 15px;
-        font-weight: 500;
-        transition: all 0.3s;
-    }
-
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
+    .vending-card-footer .btn { flex: 1; font-size: .78rem; border-radius: 20px; }
 </style>
 @stop
 
 @section('js')
-<!-- jQuery UI JS -->
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!-- Incluir JavaScript de Select2 -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $(document).ready(function () {
-        $('#plantas').select2({
-            placeholder: "Selecciona una planta",
-            allowClear: true
-        });
-        $('#disponibles').select2({
-            placeholder: "Selecciona un dispositivo",
-            allowClear: true
-        });
-        $('#editDispositivo').select2({
-            placeholder: "Selecciona un dispositivo",
-            allowClear: true
-        });
+function goBack() { window.history.back(); }
 
-        // Datos de ejemplo; en una aplicación real estos datos provendrían del backend
-        $.ajax({
-            url: '/op/vendings/data', // Ruta del controlador para obtener los datos
-            method: 'GET',
-            success: function (data) {
-                let container = $('#groupedVendingsContainer'); // El contenedor principal para los grupos de plantas
-                let index = 0;
+$(document).ready(function () {
 
-                $.each(data, function (planta, registros) {
-                    index++; // Incrementamos el índice para generar identificadores únicos
+    $.ajax({
+        url: '/op/vendings/data',
+        method: 'GET',
+        success: function (plantas) {
+            $('#loadingState').hide();
 
-                    // Tomar la imagen de la planta del primer registro
-                    const plantaImage = registros[0].Ruta_Imagen
-                        ? registros[0].Ruta_Imagen
-                        : '/Images/Plantas/default.png'; // Ruta al ícono por defecto
+            if (!plantas || plantas.length === 0) {
+                $('#emptyState').show();
+                return;
+            }
 
-                    // Creamos un grupo colapsable para cada planta
-                    const plantaGroup = $(`
-                    <div class="card mb-4 shadow-sm" style="border-radius: 8px; border: none;">
-                        <div class="card-header d-flex align-items-center text-white"
-                             id="heading${index}" data-toggle="collapse" data-target="#collapse${index}" 
-                             aria-expanded="false" aria-controls="collapse${index}" 
-                             style="cursor: pointer; background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%); border-radius: 8px;">
-                            <img src="${plantaImage}" alt="Planta" class="rounded-circle mr-3 border border-white" style="width: 45px; height: 45px; padding: 2px;">
-                            <h5 class="mb-0 font-weight-bold">
-                                ${planta}
-                            </h5>
-                            <i class="fas fa-chevron-down ml-auto"></i>
-                        </div>
-                        <div id="collapse${index}" class="collapse" aria-labelledby="heading${index}" data-parent="#groupedVendingsContainer">
-                            <div class="card-body bg-light">
-                                <table id="table${index}" class="display table table-hover table-vending" style="width:100%">
-                                    <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Serie</th>
-                                            <th>Tipo</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
+            const container = $('#plantasContainer');
+
+            plantas.forEach(function (planta, idx) {
+                const imgSrc  = planta.Ruta_Imagen || '/Images/Plantas/default.png';
+                const fillColor = planta.avg_fill_pct >= 60 ? '' : planta.avg_fill_pct >= 30 ? 'fill-warn' : 'fill-low';
+
+                // ── Plant block ──────────────────────────────────
+                const block = $(`
+                    <div class="mb-4">
+                        <div class="plant-header" id="phdr-${idx}">
+                            <img src="${imgSrc}" alt="${planta.Txt_Nombre_Planta}" onerror="this.src='/Images/Plantas/default.png'">
+                            <span class="plant-name">${planta.Txt_Nombre_Planta}</span>
+                            <div class="plant-stats d-none d-sm-flex">
+                                <div class="stat-item">
+                                    <span class="stat-value">${planta.total_vendings}</span>
+                                    <span>Vendings</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">${planta.online_count}</span>
+                                    <span>En línea</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">${planta.avg_fill_pct}%</span>
+                                    <span>Relleno</span>
+                                </div>
                             </div>
+                            <i class="fas fa-chevron-down chevron ml-2"></i>
                         </div>
+                        <div class="vending-grid" id="pgrid-${idx}"></div>
                     </div>
                 `);
 
-                    container.append(plantaGroup);
+                // Toggle collapse
+                block.find(`#phdr-${idx}`).on('click', function () {
+                    const grid = $(`#pgrid-${idx}`);
+                    const isVisible = grid.is(':visible');
+                    grid.slideToggle(200);
+                    $(this).toggleClass('collapsed', !isVisible);
+                });
 
-                    // Llenamos la tabla con los registros de esta planta
-                    registros.forEach((registro) => {
-                        $(`#table${index} tbody`).append(`
-                        <tr data-id="${registro.Id_Maquina}">
-                            <td class="align-middle font-weight-bold text-primary">${registro.Txt_Nombre}</td>
-                            <td class="align-middle">${registro.Txt_Serie_Maquina}</td>
-                            <td class="align-middle"><span class="badge badge-info">${registro.Txt_Tipo_Maquina}</span></td>
-                            <td class="align-middle">
-                                <a href="corte/pre/${registro.Id_Maquina}" class="btn btn-primary btn-sm btn-action mb-1" title="Generar Corte">
-                                    <i class="fas fa-cut mr-1"></i> Corte
+                // ── Vending cards ────────────────────────────────
+                const grid = block.find(`#pgrid-${idx}`);
+
+                planta.vendings.forEach(function (vm) {
+                    const fillClass = vm.fill_pct >= 60 ? '' : vm.fill_pct >= 30 ? 'fill-warn' : 'fill-low';
+                    const statusBadge = vm.sync_status === 'online'
+                        ? '<span class="badge-online"><i class="fas fa-circle mr-1" style="font-size:.5rem"></i>En línea</span>'
+                        : '<span class="badge-offline"><i class="fas fa-circle mr-1" style="font-size:.5rem"></i>Sin conexión</span>';
+
+                    const card = $(`
+                        <div class="vending-card">
+                            <div class="vending-card-header">
+                                <div class="vm-name" title="${vm.Txt_Nombre}">${vm.Txt_Nombre}</div>
+                                <div class="vm-series">${vm.Txt_Serie_Maquina} &bull; <span class="badge badge-info badge-sm" style="font-size:.65rem">${vm.Txt_Tipo_Maquina}</span></div>
+                            </div>
+                            <div class="vending-card-body">
+                                <div class="fill-label">
+                                    <span>Relleno</span>
+                                    <span>${vm.fill_pct}% &bull; ${vm.total_stock}/${vm.total_capacity}</span>
+                                </div>
+                                <div class="fill-bar">
+                                    <div class="fill-bar-inner ${fillClass}" style="width:${vm.fill_pct}%"></div>
+                                </div>
+                                <div class="sync-row">
+                                    ${statusBadge}
+                                    <span class="text-muted">${vm.sync_ago}</span>
+                                </div>
+                            </div>
+                            <div class="vending-card-footer">
+                                <a href="corte/pre/${vm.Id_Maquina}" class="btn btn-sm btn-primary" title="Generar Corte">
+                                    <i class="fas fa-cut mr-1"></i>Corte
                                 </a>
-                                <button class="btn btn-warning btn-sm btn-action check-missing-btn mb-1" data-id="${registro.Id_Maquina}">
-                                    <i class="fas fa-clipboard-list mr-1"></i> Faltantes
+                                <button class="btn btn-sm btn-warning check-missing-btn" data-id="${vm.Id_Maquina}" title="Descargar Faltantes">
+                                    <i class="fas fa-clipboard-list mr-1"></i>Faltantes
                                 </button>
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     `);
-                    });
 
-                    // Inicializamos DataTables
-                    $(`#table${index}`).DataTable({
-                        searching: true,
-                        columnDefs: [
-                            { targets: [0, 2], searchable: true }, // Buscar por Id de máquina y Nombre
-                            { targets: '_all', searchable: false } // Deshabilitar búsqueda en otras columnas
-                        ],
-                        responsive: true,
-                        scrollX: true,
-                        language: {
-                            search: "Buscar:",
-                            lengthMenu: "Mostrar _MENU_ registros por página",
-                            zeroRecords: "No se encontraron coincidencias",
-                            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                            infoEmpty: "No hay registros disponibles",
-                            infoFiltered: "(filtrado de _MAX_ registros totales)",
-                            paginate: {
-                                first: "Primero",
-                                last: "Último",
-                                next: "Siguiente",
-                                previous: "Anterior"
-                            },
-                        }
-                    });
-
-                    // Ajustar columnas al mostrar el acordeón
-                    $(`#collapse${index}`).on('shown.bs.collapse', function () {
-                        $(this).find('table').DataTable().columns.adjust().draw();
-                    });
-
-                    // Evento para alternar el icono del header al colapsar
-                    $('.card-header').on('click', function () {
-                        const icon = $(this).find('i.fas.fa-chevron-down, i.fas.fa-chevron-up');
-                        icon.toggleClass('fa-chevron-down fa-chevron-up');
-                    });
+                    grid.append(card);
                 });
 
-                // Event listener for "Faltantes" button
-                $(document).on('click', '.check-missing-btn', function () {
-                    const idMaquina = $(this).data('id');
-                    window.location.href = `/op/vending/download-missing-items/${idMaquina}`;
-                });
-            }
-        });
+                container.append(block);
+            });
+
+            // Faltantes download handler
+            $(document).on('click', '.check-missing-btn', function () {
+                window.location.href = `/op/vending/download-missing-items/${$(this).data('id')}`;
+            });
+        },
+        error: function () {
+            $('#loadingState').hide();
+            $('#plantasContainer').html(`
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Error al cargar los datos. Intenta recargar la página.
+                </div>
+            `);
+        }
     });
-</script>
-<script>
-    function goBack() {
-        window.history.back();
-    }
+});
 </script>
 @stop

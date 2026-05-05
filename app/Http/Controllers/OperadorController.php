@@ -62,47 +62,107 @@ class OperadorController extends Controller
 
     public function getVendingsData()
     {
-        // Comprobamos si la sesión está activa
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
 
-        // Obtenemos el Id_Operador desde la sesión
-        $userId = $_SESSION['usuario']->Id_Operador;
+        $plantasAccesoArray = explode(',', $_SESSION['usuario']->PlantasConAcceso);
 
-        // Obtenemos la cadena de IDs de plantas con acceso para el operador
-        $plantasAccesoString = $_SESSION['usuario']->PlantasConAcceso;
-
-        // Convertimos la cadena en un array de IDs
-        $plantasAccesoArray = explode(',', $plantasAccesoString);
-
-        // Consulta para obtener los datos de las máquinas que pertenecen a las plantas con acceso y tienen estatus "Alta"
-        $vendingsData = DB::table('Ctrl_Mquinas')
+        // Máquinas activas con porcentaje de relleno calculado desde Configuracion_Maquina
+        $vendings = DB::table('Ctrl_Mquinas')
             ->join('Cat_Plantas', 'Ctrl_Mquinas.Id_Planta', '=', 'Cat_Plantas.Id_Planta')
+            ->leftJoin(DB::raw('(
+                SELECT Id_Maquina,
+                       SUM(Stock)                                                        AS total_stock,
+                       SUM(Cantidad_Max)                                                 AS total_capacity,
+                       SUM(CASE WHEN Cantidad_Max > Stock THEN Cantidad_Max - Stock ELSE 0 END) AS total_missing
+                FROM Configuracion_Maquina
+                GROUP BY Id_Maquina
+            ) AS cm'), 'Ctrl_Mquinas.Id_Maquina', '=', 'cm.Id_Maquina')
             ->select([
+                'Cat_Plantas.Id_Planta',
                 'Cat_Plantas.Txt_Nombre_Planta',
+                'Cat_Plantas.Ruta_Imagen',
                 'Ctrl_Mquinas.Id_Maquina',
-                'Ctrl_Mquinas.Id_Dispositivo',
                 'Ctrl_Mquinas.Txt_Nombre',
                 'Ctrl_Mquinas.Txt_Serie_Maquina',
                 'Ctrl_Mquinas.Txt_Tipo_Maquina',
-                'Ctrl_Mquinas.Txt_Estatus',
-                'Ctrl_Mquinas.Capacidad',
-                'Ctrl_Mquinas.Fecha_Alta',
-                'Ctrl_Mquinas.Fecha_Modificacion',
-                'Ctrl_Mquinas.Fecha_Baja',
-                'Ctrl_Mquinas.Id_Usuario_Admon_Alta',
-                'Ctrl_Mquinas.Id_Usuario_Admon_Modificacion',
-                'Ctrl_Mquinas.Id_Usuario_Admon_Baja',
-                'Cat_Plantas.Ruta_Imagen'
+                DB::raw('ISNULL(cm.total_stock, 0)    AS total_stock'),
+                DB::raw('ISNULL(cm.total_capacity, 0) AS total_capacity'),
+                DB::raw('ISNULL(cm.total_missing, 0)  AS total_missing'),
+                DB::raw('CASE WHEN ISNULL(cm.total_capacity, 0) > 0
+                              THEN ROUND(CAST(ISNULL(cm.total_stock, 0) AS FLOAT) / cm.total_capacity * 100, 1)
+                              ELSE 0 END AS fill_pct'),
             ])
             ->whereIn('Ctrl_Mquinas.Id_Planta', $plantasAccesoArray)
             ->where('Ctrl_Mquinas.Txt_Estatus', 'Alta')
-            ->get()
-            ->groupBy('Txt_Nombre_Planta'); // Agrupamos por el nombre de la planta
+            ->get();
 
-        // Devolvemos los datos como JSON para que AJAX los consuma
-        return response()->json($vendingsData);
+        // Última sincronización por máquina desde SP_Consulta_Sincronizacion
+        $syncByMachine = [];
+        try {
+            DB::statement('SET NOCOUNT ON');
+            $rows = DB::select('EXEC dbo.SP_Consulta_Sincronizacion');
+            foreach ($rows as $r) {
+                $maqId = $r->Id_Maquina ?? $r->ID_Maquina ?? $r->Maquina ?? null;
+                $ultima = $r->Ultima_Sincronizacion ?? $r->UltimaSincronizacion ?? null;
+                if ($maqId !== null) {
+                    $syncByMachine[(int) $maqId] = $ultima ? Carbon::parse($ultima) : null;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('SP_Consulta_Sincronizacion error en getVendingsData', ['msg' => $e->getMessage()]);
+        }
+
+        $now = Carbon::now();
+
+        // Enriquecer cada máquina con estado y texto de sincronización
+        $vendings = $vendings->map(function ($v) use ($syncByMachine, $now) {
+            $dt = $syncByMachine[(int) $v->Id_Maquina] ?? null;
+
+            if ($dt) {
+                $minutes = (int) $now->diffInMinutes($dt);
+                $v->ultima_sync  = $dt->format('Y-m-d H:i:s');
+                $v->sync_minutes = $minutes;
+                $v->sync_status  = $minutes <= 60 ? 'online' : 'offline';
+
+                if ($minutes < 1) {
+                    $v->sync_ago = 'ahora';
+                } elseif ($minutes < 60) {
+                    $v->sync_ago = "hace {$minutes} min";
+                } else {
+                    $h = (int) floor($minutes / 60);
+                    $m = $minutes % 60;
+                    $v->sync_ago = $m ? "hace {$h}h {$m}m" : "hace {$h}h";
+                }
+            } else {
+                $v->ultima_sync  = null;
+                $v->sync_minutes = null;
+                $v->sync_status  = 'offline';
+                $v->sync_ago     = 'Sin sincronización';
+            }
+
+            return $v;
+        });
+
+        // Agrupar por planta con estadísticas del header
+        $grouped = $vendings->groupBy('Txt_Nombre_Planta')->map(function ($plantaVendings) {
+            $first      = $plantaVendings->first();
+            $avgFill    = $plantaVendings->avg('fill_pct');
+            $onlineCount = $plantaVendings->where('sync_status', 'online')->count();
+
+            return [
+                'Id_Planta'        => $first->Id_Planta,
+                'Txt_Nombre_Planta' => $first->Txt_Nombre_Planta,
+                'Ruta_Imagen'      => $first->Ruta_Imagen,
+                'total_vendings'   => $plantaVendings->count(),
+                'online_count'     => $onlineCount,
+                'avg_fill_pct'     => round($avgFill, 1),
+                'vendings'         => $plantaVendings->values(),
+            ];
+        })->values();
+
+        return response()->json($grouped);
     }
 
     public function Surtir(Request $request, $lang, $id)
