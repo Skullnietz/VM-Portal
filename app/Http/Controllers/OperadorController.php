@@ -99,66 +99,44 @@ class OperadorController extends Controller
             ->get();
 
         // Última sincronización por máquina desde SP_Consulta_Sincronizacion
+        // Solo se extrae el string formateado; el cálculo de minutos y tiempo-relativo
+        // se hace en JS (igual que el dashboard admin) para evitar desfases de timezone.
         $syncByMachine = [];
         try {
             DB::statement('SET NOCOUNT ON');
             $rows = DB::select('EXEC dbo.SP_Consulta_Sincronizacion');
             foreach ($rows as $r) {
-                $maqId = $r->Id_Maquina ?? $r->ID_Maquina ?? $r->Maquina ?? null;
+                $maqId  = $r->Id_Maquina ?? $r->ID_Maquina ?? $r->Maquina ?? null;
                 $ultima = $r->Ultima_Sincronizacion ?? $r->UltimaSincronizacion ?? null;
                 if ($maqId !== null) {
-                    $syncByMachine[(int) $maqId] = $ultima ? Carbon::parse($ultima) : null;
+                    $syncByMachine[(int) $maqId] = $ultima
+                        ? Carbon::parse($ultima)->format('Y-m-d H:i:s')
+                        : null;
                 }
             }
         } catch (\Throwable $e) {
             Log::error('SP_Consulta_Sincronizacion error en getVendingsData', ['msg' => $e->getMessage()]);
         }
 
-        $now = Carbon::now();
-
-        // Enriquecer cada máquina con estado y texto de sincronización
-        $vendings = $vendings->map(function ($v) use ($syncByMachine, $now) {
-            $dt = $syncByMachine[(int) $v->Id_Maquina] ?? null;
-
-            if ($dt) {
-                $minutes = (int) $now->diffInMinutes($dt);
-                $v->ultima_sync  = $dt->format('Y-m-d H:i:s');
-                $v->sync_minutes = $minutes;
-                $v->sync_status  = $minutes <= 60 ? 'online' : 'offline';
-
-                if ($minutes < 1) {
-                    $v->sync_ago = 'ahora';
-                } elseif ($minutes < 60) {
-                    $v->sync_ago = "hace {$minutes} min";
-                } else {
-                    $h = (int) floor($minutes / 60);
-                    $m = $minutes % 60;
-                    $v->sync_ago = $m ? "hace {$h}h {$m}m" : "hace {$h}h";
-                }
-            } else {
-                $v->ultima_sync  = null;
-                $v->sync_minutes = null;
-                $v->sync_status  = 'offline';
-                $v->sync_ago     = 'Sin sincronización';
-            }
-
+        // Enriquecer cada máquina: solo adjuntar ultima_sync y fill_pct redondeado.
+        // sync_status / sync_ago se calculan en el cliente (JS).
+        $vendings = $vendings->map(function ($v) use ($syncByMachine) {
+            $v->ultima_sync = $syncByMachine[(int) $v->Id_Maquina] ?? null;
+            $v->fill_pct    = round((float) $v->fill_pct, 1);
             return $v;
         });
 
         // Agrupar por planta con estadísticas del header
         $grouped = $vendings->groupBy('Txt_Nombre_Planta')->map(function ($plantaVendings) {
-            $first      = $plantaVendings->first();
-            $avgFill    = $plantaVendings->avg('fill_pct');
-            $onlineCount = $plantaVendings->where('sync_status', 'online')->count();
+            $first = $plantaVendings->first();
 
             return [
-                'Id_Planta'        => $first->Id_Planta,
+                'Id_Planta'         => $first->Id_Planta,
                 'Txt_Nombre_Planta' => $first->Txt_Nombre_Planta,
-                'Ruta_Imagen'      => $first->Ruta_Imagen,
-                'total_vendings'   => $plantaVendings->count(),
-                'online_count'     => $onlineCount,
-                'avg_fill_pct'     => round($avgFill, 1),
-                'vendings'         => $plantaVendings->values(),
+                'Ruta_Imagen'       => $first->Ruta_Imagen,
+                'total_vendings'    => $plantaVendings->count(),
+                'avg_fill_pct'      => round((float) $plantaVendings->avg('fill_pct'), 1),
+                'vendings'          => $plantaVendings->values(),
             ];
         })->values();
 

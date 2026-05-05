@@ -135,6 +135,33 @@
 <script>
 function goBack() { window.history.back(); }
 
+// ── Helpers de sincronización (misma lógica que dashboard admin) ──────────────
+// Umbral: ≤60 min = En línea, >60 min = Sin conexión
+const SYNC_ONLINE_MIN = 60;
+
+function parseDate(s) { return new Date(s.replace(' ', 'T')); }
+function minutesDiff(d) { return Math.floor((new Date() - d) / 60000); }
+
+function timeAgoES(min) {
+    if (min < 1)  return 'ahora';
+    if (min < 60) return `hace ${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m ? `hace ${h}h ${m}m` : `hace ${h}h`;
+}
+
+function syncInfo(ultima_sync) {
+    if (!ultima_sync) return { status: 'offline', ago: 'Sin sincronización', minutes: null };
+    const dt  = parseDate(ultima_sync);
+    const min = minutesDiff(dt);
+    return {
+        status:  min <= SYNC_ONLINE_MIN ? 'online' : 'offline',
+        ago:     timeAgoES(min),
+        minutes: min,
+    };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 $(document).ready(function () {
 
     $.ajax({
@@ -152,7 +179,7 @@ $(document).ready(function () {
 
             plantas.forEach(function (planta, idx) {
                 const imgSrc  = planta.Ruta_Imagen || '/Images/Plantas/default.png';
-                const fillColor = planta.avg_fill_pct >= 60 ? '' : planta.avg_fill_pct >= 30 ? 'fill-warn' : 'fill-low';
+                const avgFill = parseFloat(planta.avg_fill_pct).toFixed(1);
 
                 // ── Plant block ──────────────────────────────────
                 const block = $(`
@@ -166,11 +193,11 @@ $(document).ready(function () {
                                     <span>Vendings</span>
                                 </div>
                                 <div class="stat-item">
-                                    <span class="stat-value">${planta.online_count}</span>
+                                    <span class="stat-value" id="online-count-${idx}">—</span>
                                     <span>En línea</span>
                                 </div>
                                 <div class="stat-item">
-                                    <span class="stat-value">${planta.avg_fill_pct}%</span>
+                                    <span class="stat-value">${avgFill}%</span>
                                     <span>Relleno</span>
                                 </div>
                             </div>
@@ -190,10 +217,16 @@ $(document).ready(function () {
 
                 // ── Vending cards ────────────────────────────────
                 const grid = block.find(`#pgrid-${idx}`);
+                let onlineCount = 0;
 
                 planta.vendings.forEach(function (vm) {
+                    const fillPct   = parseFloat(vm.fill_pct).toFixed(1);
                     const fillClass = vm.fill_pct >= 60 ? '' : vm.fill_pct >= 30 ? 'fill-warn' : 'fill-low';
-                    const statusBadge = vm.sync_status === 'online'
+                    const sync      = syncInfo(vm.ultima_sync);
+
+                    if (sync.status === 'online') onlineCount++;
+
+                    const statusBadge = sync.status === 'online'
                         ? '<span class="badge-online"><i class="fas fa-circle mr-1" style="font-size:.5rem"></i>En línea</span>'
                         : '<span class="badge-offline"><i class="fas fa-circle mr-1" style="font-size:.5rem"></i>Sin conexión</span>';
 
@@ -206,14 +239,14 @@ $(document).ready(function () {
                             <div class="vending-card-body">
                                 <div class="fill-label">
                                     <span>Relleno</span>
-                                    <span>${vm.fill_pct}% &bull; ${vm.total_stock}/${vm.total_capacity}</span>
+                                    <span>${fillPct}% &bull; ${vm.total_stock}/${vm.total_capacity}</span>
                                 </div>
                                 <div class="fill-bar">
-                                    <div class="fill-bar-inner ${fillClass}" style="width:${vm.fill_pct}%"></div>
+                                    <div class="fill-bar-inner ${fillClass}" style="width:${fillPct}%"></div>
                                 </div>
                                 <div class="sync-row">
                                     ${statusBadge}
-                                    <span class="text-muted">${vm.sync_ago}</span>
+                                    <span class="text-muted">${sync.ago}</span>
                                 </div>
                             </div>
                             <div class="vending-card-footer">
@@ -229,6 +262,9 @@ $(document).ready(function () {
 
                     grid.append(card);
                 });
+
+                // Actualizar contador En línea en el header de la planta
+                block.find(`#online-count-${idx}`).text(onlineCount);
 
                 container.append(block);
             });
