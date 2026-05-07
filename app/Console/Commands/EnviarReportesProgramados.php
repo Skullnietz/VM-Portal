@@ -169,14 +169,12 @@ class EnviarReportesProgramados extends Command
         return Command::SUCCESS;
     }
 
-    private function debeProcesar(string $frecuencia, int $diaSemana, int $diaMes): bool
+    private function debeProcesar($frecuencia, $diaSemana, $diaMes)
     {
-        return match ($frecuencia) {
-            'diario'   => true,
-            'semanal'  => $diaSemana === 1,
-            'mensual'  => $diaMes === 1,
-            default    => false,
-        };
+        if ($frecuencia === 'diario') return true;
+        if ($frecuencia === 'semanal') return $diaSemana === 1;
+        if ($frecuencia === 'mensual') return $diaMes === 1;
+        return false;
     }
 
     private function getRangoFechas(string $frecuencia): array

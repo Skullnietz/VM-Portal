@@ -16,13 +16,13 @@ class ReporteConsumoService
      * Example:
      *   'reporte_toyota' => \App\Services\Reporte\ReporteToyotaPlant::class,
      */
-    private array $registry = [
+    private $registry = [
         'consumo_general' => ReporteGeneralPlant::class,
     ];
 
-    public function resolver(?string $plantilla): ReportePlantInterface
+    public function resolver($plantilla)
     {
-        $key = $plantilla ?? 'consumo_general';
+        $key = $plantilla ?: 'consumo_general';
 
         if (isset($this->registry[$key])) {
             return app($this->registry[$key]);
@@ -31,13 +31,12 @@ class ReporteConsumoService
         return app(ReporteGeneralPlant::class);
     }
 
-    /**
-     * Returns all registered report types as [slug => name] for UI selectors.
-     */
-    public function tiposDisponibles(): array
+    public function tiposDisponibles()
     {
-        return collect($this->registry)
-            ->map(fn($class) => app($class)->getNombre())
-            ->all();
+        $result = [];
+        foreach ($this->registry as $slug => $class) {
+            $result[$slug] = app($class)->getNombre();
+        }
+        return $result;
     }
 }
