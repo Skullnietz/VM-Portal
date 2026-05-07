@@ -20,9 +20,12 @@ class EnviarReportesProgramados extends Command
 
     protected $description = 'Envía reportes de consumos según la configuración de alertas de cada usuario';
 
-    public function __construct(private ReporteConsumoService $reporteService)
+    protected $reporteService;
+
+    public function __construct(ReporteConsumoService $reporteService)
     {
         parent::__construct();
+        $this->reporteService = $reporteService;
     }
 
     public function handle(): int
