@@ -42,6 +42,8 @@
                         <option value="">Todos</option>
                         <option value="PRE">PRE</option>
                         <option value="POST">POST</option>
+                        <option value="RELLENO">RELLENO</option>
+                        <option value="CONSULTA">CONSULTA</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -122,7 +124,7 @@ $(document).ready(function () {
             {
                 data: 'Tipo_Corte',
                 render: function(data) {
-                    var badge = data === 'PRE' ? 'badge-info' : 'badge-success';
+                    var badge = data === 'PRE' ? 'badge-info' : (data === 'POST' ? 'badge-success' : (data === 'RELLENO' ? 'badge-warning' : 'badge-secondary'));
                     return '<span class="badge ' + badge + '">' + data + '</span>';
                 }
             },
@@ -140,8 +142,11 @@ $(document).ready(function () {
             {
                 data: null,
                 render: function(data) {
-                    var tipo = data.Tipo_Corte === 'PRE' ? 'pre' : 'post';
-                    return '<a href="/' + lang + '/corte/' + tipo + '/' + data.Id_Corte + '/ver" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> Ver</a>';
+                    if (data.Tipo_Corte === 'PRE' || data.Tipo_Corte === 'POST') {
+                        var tipo = data.Tipo_Corte === 'PRE' ? 'pre' : 'post';
+                        return '<a href="/' + lang + '/corte/' + tipo + '/' + data.Id_Corte + '/ver" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> Ver</a>';
+                    }
+                    return '<span class="text-muted">—</span>';
                 },
                 orderable: false,
                 searchable: false

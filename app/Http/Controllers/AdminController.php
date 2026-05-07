@@ -1790,11 +1790,10 @@ class AdminController extends Controller
             foreach ($empleados as $empleado) {
                 $area = DB::table('Cat_Area')->where('Id_Area', $empleado->Id_Area)->value('Txt_Nombre');
 
-                // Convertir los valores numéricos a cadenas con ceros a la izquierda
                 $data = array(
-                    (string) $empleado->No_Empleado,  // Respetar ceros a la izquierda
-                    (string) $empleado->Nip,
-                    (string) $empleado->No_Tarjeta,
+                    "\t" . $empleado->No_Empleado,
+                    "\t" . $empleado->Nip,
+                    "\t" . $empleado->No_Tarjeta,
                     $empleado->Nombre,
                     $empleado->APaterno,
                     $empleado->AMaterno,
@@ -2845,6 +2844,7 @@ class AdminController extends Controller
 
         DB::beginTransaction();
         try {
+            $maquinasRellenadas = [];
             foreach ($updatedStock as $stock) {
                 $config = DB::table('Configuracion_Maquina')
                     ->where('Id_Configuracion', $stock['id'])
@@ -2869,12 +2869,25 @@ class AdminController extends Controller
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
+                        $maquinasRellenadas[$config->Id_Maquina] = true;
                     }
 
                     DB::table('Configuracion_Maquina')
                         ->where('Id_Configuracion', $stock['id'])
                         ->update(['Stock' => $stock['stock']]);
                 }
+            }
+            foreach (array_keys($maquinasRellenadas) as $idMaquina) {
+                DB::table('Cortes_Resurtimiento')->insert([
+                    'Id_Maquina'   => $idMaquina,
+                    'Tipo_Corte'   => 'RELLENO',
+                    'Fecha_Corte'  => now(),
+                    'Id_Usuario'   => $userId,
+                    'Tipo_Usuario' => $userType,
+                    'Notas'        => 'Relleno manual',
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
             }
             DB::commit();
             return response()->json(['message' => 'Stock actualizado correctamente']);

@@ -18,13 +18,6 @@
 @stop
 
 @section('content')
-<div id="floatingActions"
-    style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; background-color: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;">
-    <button id="saveChangesBtn" class="btn btn-success mb-2" style="width: 100%;">Guardar Cambios</button>
-    <button id="fillMaxFloatingBtn" class="btn btn-primary" style="width: 100%;">Rellenar Máximos</button>
-</div>
-
-
 <div class="container-fluid"> <!-- Changed to container-fluid for more width -->
     <div class="row">
         <div class="col">
@@ -116,6 +109,11 @@
         </div>
     </div>
 </div>
+<div id="floatingActions"
+    style="width: 100%; max-width: 400px; margin: 20px auto; background-color: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;">
+    <button id="saveChangesBtn" class="btn btn-success mb-2" style="width: 100%;">Guardar Cambios</button>
+    <button id="fillMaxFloatingBtn" class="btn btn-primary" style="width: 100%;">Rellenar Máximos</button>
+</div>
 <!-- Modal de Resumen -->
 <div class="modal fade" id="summaryModal" tabindex="-1" role="dialog" aria-labelledby="summaryModalLabel"
     aria-hidden="true">
@@ -201,19 +199,6 @@
         max-width: 180px;
         background-color: #fff;
         /* Ensure background is white */
-    }
-
-    floatingActions {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
-        background-color: white;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 15px;
-        width: 200px;
     }
 
     #floatingActions button {

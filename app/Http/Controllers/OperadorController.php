@@ -209,6 +209,7 @@ class OperadorController extends Controller
         $userId = null;
         $userType = 'Operador';
         $resumen = [];
+        $maquinasRellenadas = [];
 
         if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']->Id_Operador)) {
             $userId = $_SESSION['usuario']->Id_Operador;
@@ -242,6 +243,7 @@ class OperadorController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                    $maquinasRellenadas[$config->Id_Maquina] = true;
 
                     $resumen[] = [
                         'Articulo' => $config->Articulo ?? 'Desconocido',
@@ -255,6 +257,19 @@ class OperadorController extends Controller
                     ->where('Id_Configuracion', $stock['id'])
                     ->update(['Stock' => $stock['stock']]);
             }
+        }
+
+        foreach (array_keys($maquinasRellenadas) as $idMaquina) {
+            DB::table('Cortes_Resurtimiento')->insert([
+                'Id_Maquina'   => $idMaquina,
+                'Tipo_Corte'   => 'RELLENO',
+                'Fecha_Corte'  => now(),
+                'Id_Usuario'   => $userId,
+                'Tipo_Usuario' => $userType,
+                'Notas'        => 'Relleno manual',
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ]);
         }
 
         return response()->json(['message' => 'Stock actualizado correctamente', 'resumen' => $resumen]);
