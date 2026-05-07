@@ -109,10 +109,15 @@
         </div>
     </div>
 </div>
-<div id="floatingActions"
-    style="width: 100%; max-width: 400px; margin: 20px auto; background-color: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;">
-    <button id="saveChangesBtn" class="btn btn-success mb-2" style="width: 100%;">Guardar Cambios</button>
-    <button id="fillMaxFloatingBtn" class="btn btn-primary" style="width: 100%;">Rellenar Máximos</button>
+<div id="floatingActions">
+    <div class="actions-inner">
+        <button id="saveChangesBtn" class="btn btn-success btn-action-primary">
+            <i class="fas fa-save"></i> Guardar Cambios
+        </button>
+        <button id="fillMaxFloatingBtn" class="btn btn-outline-primary btn-action-secondary">
+            <i class="fas fa-fill-drip"></i> Rellenar Máximos
+        </button>
+    </div>
 </div>
 <!-- Modal de Resumen -->
 <div class="modal fade" id="summaryModal" tabindex="-1" role="dialog" aria-labelledby="summaryModalLabel"
@@ -201,8 +206,56 @@
         /* Ensure background is white */
     }
 
-    #floatingActions button {
-        margin-bottom: 10px;
+    #floatingActions {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-top: 1px solid #e0e0e0;
+        padding: 12px 16px;
+        margin-top: 20px;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    #floatingActions .actions-inner {
+        display: flex;
+        gap: 10px;
+        max-width: 600px;
+        margin: 0 auto;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #floatingActions .btn-action-primary {
+        flex: 1;
+        max-width: 220px;
+        font-weight: 600;
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+
+    #floatingActions .btn-action-secondary {
+        flex: 1;
+        max-width: 200px;
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+
+    @media (max-width: 576px) {
+        #floatingActions .actions-inner {
+            flex-direction: column;
+        }
+
+        #floatingActions .btn-action-primary,
+        #floatingActions .btn-action-secondary {
+            max-width: 100%;
+            width: 100%;
+        }
     }
 </style>
 @stop

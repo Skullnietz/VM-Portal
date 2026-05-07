@@ -111,18 +111,27 @@
     </div>
 </div>
 </div>
-<div id="floatingActions"
-    style="width: 100%; max-width: 400px; margin: 20px auto; background-color: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;">
-    <button id="saveChangesBtn" class="btn btn-success mb-2" style="width: 100%;">Guardar Cambios</button>
-    <button id="fillMaxFloatingBtn" class="btn btn-primary" style="width: 100%;">Rellenar Máximos</button>
-    <a href="{{ route('ArellenarPrint', ['id' => request()->route('id')]) }}" target="_blank" class="btn btn-info mt-2"
-        style="width: 100%;">
-        <i class="fas fa-print"></i> Imprimir Planograma
-    </a>
-    <a href="{{ route('ArellenarLabels', ['id' => request()->route('id')]) }}" target="_blank"
-        class="btn btn-warning mt-2" style="width: 100%;">
-        <i class="fas fa-tags"></i> Imprimir Etiquetas
-    </a>
+<div id="floatingActions">
+    <div class="actions-inner">
+        <div class="actions-row actions-primary">
+            <button id="saveChangesBtn" class="btn btn-success btn-action-primary">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
+            <button id="fillMaxFloatingBtn" class="btn btn-outline-primary btn-action-secondary">
+                <i class="fas fa-fill-drip"></i> Rellenar Máximos
+            </button>
+        </div>
+        <div class="actions-row actions-tertiary">
+            <a href="{{ route('ArellenarPrint', ['id' => request()->route('id')]) }}" target="_blank"
+                class="btn btn-outline-info btn-action-tertiary">
+                <i class="fas fa-print"></i> Planograma
+            </a>
+            <a href="{{ route('ArellenarLabels', ['id' => request()->route('id')]) }}" target="_blank"
+                class="btn btn-outline-warning btn-action-tertiary">
+                <i class="fas fa-tags"></i> Etiquetas
+            </a>
+        </div>
+    </div>
 </div>
 <!-- Modal de Resumen -->
 <div class="modal fade" id="summaryModal" tabindex="-1" role="dialog" aria-labelledby="summaryModalLabel"
@@ -210,8 +219,71 @@
         background-color: #fff;
     }
 
-    #floatingActions button {
-        margin-bottom: 10px;
+    #floatingActions {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-top: 1px solid #e0e0e0;
+        padding: 12px 16px;
+        margin-top: 20px;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    #floatingActions .actions-inner {
+        max-width: 700px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #floatingActions .actions-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #floatingActions .btn-action-primary {
+        flex: 1;
+        max-width: 220px;
+        font-weight: 600;
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+
+    #floatingActions .btn-action-secondary {
+        flex: 1;
+        max-width: 200px;
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+
+    #floatingActions .btn-action-tertiary {
+        flex: 1;
+        max-width: 180px;
+        padding: 6px 14px;
+        font-size: 0.82rem;
+        border-radius: 6px;
+    }
+
+    @media (max-width: 576px) {
+        #floatingActions .actions-row {
+            flex-direction: column;
+        }
+
+        #floatingActions .btn-action-primary,
+        #floatingActions .btn-action-secondary,
+        #floatingActions .btn-action-tertiary {
+            max-width: 100%;
+            width: 100%;
+        }
     }
 </style>
 
