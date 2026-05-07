@@ -3032,9 +3032,9 @@ class AdminController extends Controller
     public function getConfiguracionesReportes()
     {
         $configuraciones = DB::table('Configuracion_Reportes as cr')
-            ->join('Cat_Usuarios as u', 'cr.Id_Usuario', '=', 'u.Id_Usuario') // Relación con usuarios
-            ->leftJoin('Cat_Usuarios_Administradores as ua', 'cr.Id_Usuario_Admon', '=', 'ua.Id_Usuario_Admon') // Relación con administradores, usando leftJoin
-            ->join('Cat_Plantas as p', 'u.Id_Planta', '=', 'p.Id_Planta') // Relación con plantas, usando Id_Planta desde Cat_Usuarios
+            ->join('Cat_Usuarios as u', 'cr.Id_Usuario', '=', 'u.Id_Usuario')
+            ->leftJoin('Cat_Usuarios_Administradores as ua', 'cr.Id_Usuario_Admon', '=', 'ua.Id_Usuario_Admon')
+            ->join('Cat_Plantas as p', 'u.Id_Planta', '=', 'p.Id_Planta')
             ->select(
                 'cr.Id',
                 'cr.Id_Usuario',
@@ -3045,7 +3045,11 @@ class AdminController extends Controller
                 'cr.created_at',
                 'cr.updated_at',
                 'cr.Email',
-                'cr.Recibir_Notificaciones'
+                'cr.Recibir_Notificaciones',
+                'cr.Tipo_Reporte',
+                'cr.Ultimo_Envio',
+                'cr.Activo',
+                'cr.Plantilla'
             )
             ->get();
 
@@ -3069,10 +3073,12 @@ class AdminController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'Id_Usuario' => 'required|exists:Cat_Usuarios,Id_Usuario',
-            'Frecuencia' => 'required|in:diario,semanal,mensual',
-            'Email' => 'required|email',
-            'Recibir_Notificaciones' => 'boolean'
+            'Id_Usuario'             => 'required|exists:Cat_Usuarios,Id_Usuario',
+            'Frecuencia'             => 'required|in:diario,semanal,mensual',
+            'Email'                  => 'required|email',
+            'Recibir_Notificaciones' => 'boolean',
+            'Activo'                 => 'boolean',
+            'Plantilla'              => 'nullable|string|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -3081,20 +3087,24 @@ class AdminController extends Controller
 
         $idAdmin = $_SESSION['usuario']->Id_Usuario_Admon;
 
-        // Check if user already has an alert configuration
         $exists = DB::table('Configuracion_Reportes')->where('Id_Usuario', $request->Id_Usuario)->exists();
         if ($exists) {
             return response()->json(['error' => 'El usuario ya tiene una configuración de alertas.'], 400);
         }
 
+        $plantilla = $request->Plantilla ?: 'consumo_general';
+
         DB::table('Configuracion_Reportes')->insert([
-            'Id_Usuario' => $request->Id_Usuario,
-            'Id_Usuario_Admon' => $idAdmin,
-            'Frecuencia' => $request->Frecuencia,
-            'Email' => $request->Email,
+            'Id_Usuario'             => $request->Id_Usuario,
+            'Id_Usuario_Admon'       => $idAdmin,
+            'Frecuencia'             => $request->Frecuencia,
+            'Email'                  => $request->Email,
             'Recibir_Notificaciones' => $request->Recibir_Notificaciones ? 1 : 0,
-            'created_at' => now(),
-            'updated_at' => now()
+            'Tipo_Reporte'           => $plantilla,
+            'Activo'                 => $request->has('Activo') ? ($request->Activo ? 1 : 0) : 1,
+            'Plantilla'              => $plantilla,
+            'created_at'             => now(),
+            'updated_at'             => now(),
         ]);
 
         return response()->json(['success' => 'Alerta creada correctamente.']);
@@ -3116,25 +3126,51 @@ class AdminController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'Frecuencia' => 'required|in:diario,semanal,mensual',
-            'Email' => 'required|email',
-            'Recibir_Notificaciones' => 'boolean'
+            'Frecuencia'             => 'required|in:diario,semanal,mensual',
+            'Email'                  => 'required|email',
+            'Recibir_Notificaciones' => 'boolean',
+            'Activo'                 => 'boolean',
+            'Plantilla'              => 'nullable|string|max:100',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // $idAdmin = $_SESSION['usuario']->Id_Usuario_Admon; // Optional: track who updated it
+        $plantilla = $request->Plantilla ?: 'consumo_general';
 
         DB::table('Configuracion_Reportes')->where('Id', $id)->update([
-            'Frecuencia' => $request->Frecuencia,
-            'Email' => $request->Email,
+            'Frecuencia'             => $request->Frecuencia,
+            'Email'                  => $request->Email,
             'Recibir_Notificaciones' => $request->Recibir_Notificaciones ? 1 : 0,
-            'updated_at' => now()
+            'Activo'                 => $request->has('Activo') ? ($request->Activo ? 1 : 0) : 1,
+            'Tipo_Reporte'           => $plantilla,
+            'Plantilla'              => $plantilla,
+            'updated_at'             => now(),
         ]);
 
         return response()->json(['success' => 'Alerta actualizada correctamente.']);
+    }
+
+    public function enviarAhora($id)
+    {
+        $config = DB::table('Configuracion_Reportes')->where('Id', $id)->first();
+        if (!$config) {
+            return response()->json(['error' => 'Configuración no encontrada.'], 404);
+        }
+
+        try {
+            \Artisan::call('reportes:enviar', [
+                '--frecuencia' => $config->Frecuencia,
+                '--planta'     => DB::table('Cat_Usuarios')
+                    ->where('Id_Usuario', $config->Id_Usuario)
+                    ->value('Id_Planta'),
+            ]);
+
+            return response()->json(['success' => 'Reporte enviado correctamente.']);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Error al enviar: ' . $e->getMessage()], 500);
+        }
     }
 
     public function destroyAlerta($id)

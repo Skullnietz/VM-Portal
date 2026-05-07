@@ -245,6 +245,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/admin/alertas/{id}', [AdminController::class, 'getAlerta'])->name('alertas.show');
     Route::post('/admin/alertas/update/{id}', [AdminController::class, 'UpdateAlertaAdmin'])->name('alertas.update');
     Route::delete('/admin/alertas/{id}', [AdminController::class, 'destroyAlerta'])->name('alertas.destroy');
+    Route::post('/admin/alertas/{id}/enviar-ahora', [AdminController::class, 'enviarAhora'])->name('alertas.enviar_ahora');
     Route::post('/reportes/guardar-configuracion', [ReportesClienteController::class, 'guardarConfiguracion'])->name('reportes.guardar_configuracion');
 
     // REPORTES ADMINISTRADOR

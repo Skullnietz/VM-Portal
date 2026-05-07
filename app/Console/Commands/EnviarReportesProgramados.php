@@ -2,33 +2,49 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\FalloSincronizacionMail;
+use App\Mail\MaquinaDesactualizadaUsuarioMail;
+use App\Mail\ReporteEmpleadosMail;
+use App\Services\ReporteConsumoService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ReporteEmpleadosMail;
-use App\Mail\FalloSincronizacionMail;
-use App\Mail\MaquinaDesactualizadaUsuarioMail;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ConsumoxEmpleadoMultiExport;
-use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class EnviarReportesProgramados extends Command
 {
-    protected $signature = 'reportes:enviar';
-    protected $description = 'Envía reportes de empleados según configuración del usuario';
+    protected $signature = 'reportes:enviar
+                            {--frecuencia= : Procesar solo esta frecuencia (diario|semanal|mensual)}
+                            {--planta=    : Procesar solo la planta con este Id_Planta}
+                            {--test       : Modo prueba: genera el Excel pero no envía emails}';
 
-    public function handle()
+    protected $description = 'Envía reportes de consumos según la configuración de alertas de cada usuario';
+
+    public function __construct(private ReporteConsumoService $reporteService)
     {
-        $hoy = Carbon::now();
-        $diaSemana = $hoy->dayOfWeekIso;
-        $diaMes = $hoy->day;
+        parent::__construct();
+    }
 
-        // Validar sincronización por planta (alerta general a admins)
-        $plantas = DB::table('Cat_Plantas')->where('Txt_Estatus', 'Alta')->get();
+    public function handle(): int
+    {
+        $hoy        = Carbon::now();
+        $diaSemana  = $hoy->dayOfWeekIso;
+        $diaMes     = $hoy->day;
+        $soloPlanta = $this->option('planta') ? (int) $this->option('planta') : null;
+        $test       = (bool) $this->option('test');
 
-        foreach ($plantas as $planta) {
-            $plantaId = $planta->Id_Planta;
+        if ($test) {
+            $this->warn('⚙️  Modo prueba activo — no se enviarán emails.');
+        }
+
+        // ── Alerta global: máquinas sin sincronización por planta ────────────
+        $plantasQuery = DB::table('Cat_Plantas')->where('Txt_Estatus', 'Alta');
+        if ($soloPlanta) {
+            $plantasQuery->where('Id_Planta', $soloPlanta);
+        }
+
+        foreach ($plantasQuery->get() as $planta) {
+            $plantaId    = $planta->Id_Planta;
             $nombrePlanta = $planta->Txt_Nombre_Planta;
 
             $todas = DB::table('Ctrl_Mquinas')
@@ -37,176 +53,174 @@ class EnviarReportesProgramados extends Command
                 ->pluck('Id_Maquina')
                 ->toArray();
 
-            $sincronizadas = collect(DB::select("SET NOCOUNT ON;EXEC SP_Consulta_Sincronizacion_x_Planta ?", [$plantaId]))
+            $sincronizadas = collect(DB::select('SET NOCOUNT ON;EXEC SP_Consulta_Sincronizacion_x_Planta ?', [$plantaId]))
                 ->pluck('Id_Maquina')
                 ->toArray();
 
             $faltantes = array_diff($todas, $sincronizadas);
 
             if (count($faltantes) > 0) {
-                $maquinasFaltantes = DB::table('Ctrl_Mquinas')
-                    ->whereIn('Id_Maquina', $faltantes)
-                    ->get();
+                $maquinasFaltantes = DB::table('Ctrl_Mquinas')->whereIn('Id_Maquina', $faltantes)->get();
+                $adminEmails       = DB::table('Cat_Usuarios_Administradores')->whereNotNull('Email')->pluck('Email');
 
-                $adminEmails = DB::table('Cat_Usuarios_Administradores')
-                    ->whereNotNull('Email')
-                    ->pluck('Email');
-
-                foreach ($adminEmails as $correo) {
-                    Mail::to($correo)->send(new FalloSincronizacionMail($maquinasFaltantes, $nombrePlanta));
+                if (!$test) {
+                    foreach ($adminEmails as $correo) {
+                        Mail::to($correo)->send(new FalloSincronizacionMail($maquinasFaltantes, $nombrePlanta));
+                    }
                 }
 
-                $this->warn("❌ Planta $plantaId tiene máquinas sin sincronizar. Se notificó a los administradores.");
+                $this->warn("❌ Planta {$plantaId} ({$nombrePlanta}): máquinas sin sincronizar.");
             }
         }
 
-        // Evaluar reportes por usuario
-        $usuarios = DB::table('Configuracion_Reportes')->get();
+        // ── Reportes por usuario ─────────────────────────────────────────────
+        $query = DB::table('Configuracion_Reportes')->where('Activo', 1);
 
-        foreach ($usuarios as $config) {
-            $debeEnviar = false;
+        if ($this->option('frecuencia')) {
+            $query->where('Frecuencia', $this->option('frecuencia'));
+        }
 
-            if ($config->Frecuencia === 'diario') {
-                $debeEnviar = true;
-            } elseif ($config->Frecuencia === 'semanal' && $diaSemana === 1) {
-                $debeEnviar = true;
-            } elseif ($config->Frecuencia === 'mensual' && $diaMes === 1) {
-                $debeEnviar = true;
+        foreach ($query->get() as $config) {
+            if (!$this->debeProcesar($config->Frecuencia, $diaSemana, $diaMes)) {
+                continue;
             }
 
-            if ($debeEnviar) {
-                $this->info("📤 Evaluando envío para usuario ID: {$config->Id_Usuario}");
+            $this->info("📤 Evaluando usuario ID: {$config->Id_Usuario}");
 
-                if ($config->Email) {
-                    $usuario = DB::table('Cat_Usuarios')->where('Id_Usuario', $config->Id_Usuario)->first();
-                    $idPlanta = $usuario ? $usuario->Id_Planta : null;
+            if (!$config->Email) {
+                $this->warn("⚠️  Usuario {$config->Id_Usuario}: sin email configurado.");
+                continue;
+            }
 
-                    if (!$idPlanta) {
-                        $this->warn("⚠️ No se encontró planta para el usuario {$config->Id_Usuario}");
-                        continue;
+            $usuario = DB::table('Cat_Usuarios')->where('Id_Usuario', $config->Id_Usuario)->first();
+            $idPlanta = $usuario->Id_Planta ?? null;
+
+            if (!$idPlanta) {
+                $this->warn("⚠️  Usuario {$config->Id_Usuario}: no tiene planta asignada.");
+                continue;
+            }
+
+            if ($soloPlanta && $idPlanta !== $soloPlanta) {
+                continue;
+            }
+
+            [$start, $end] = $this->getRangoFechas($config->Frecuencia);
+
+            if (!$start || !$end) {
+                $this->info("📭 Omitido (frecuencia {$config->Frecuencia}, día no aplica).");
+                continue;
+            }
+
+            $desactualizadas = $this->maquinasDesactualizadas($idPlanta, $end);
+
+            if ($desactualizadas->isNotEmpty()) {
+                $this->warn("❌ Usuario {$config->Id_Usuario}: máquinas desactualizadas, no se envía el reporte.");
+
+                if (!$test) {
+                    Mail::to($config->Email)->send(new MaquinaDesactualizadaUsuarioMail($desactualizadas, $start, $end));
+
+                    $adminEmails = DB::table('Cat_Usuarios_Administradores')->whereNotNull('Email')->pluck('Email');
+                    foreach ($adminEmails as $adminCorreo) {
+                        Mail::to($adminCorreo)->send(new MaquinaDesactualizadaUsuarioMail($desactualizadas, $start, $end));
                     }
 
-                    [$start, $end] = $this->getRangoFechas($config->Frecuencia);
-
-                    if (!$start || !$end) {
-                        $this->info("📭 Reporte omitido para usuario ID: {$config->Id_Usuario} (frecuencia: {$config->Frecuencia}, día no válido)");
-                        continue;
+                    $now = Carbon::now();
+                    foreach ($desactualizadas as $maquina) {
+                        DB::table('vending_notifications')->insert([
+                            'Id_Planta'   => $maquina->Id_Planta,
+                            'Id_Maquina'  => $maquina->Id_Maquina,
+                            'Txt_Nombre'  => $maquina->Txt_Nombre,
+                            'Txt_Estatus' => $maquina->Txt_Estatus,
+                            'description' => 'La máquina no tiene sincronización reciente para generar el reporte.',
+                            'Fecha'       => $now,
+                            'Fecha_Reg'   => $now,
+                            'read_at'     => null,
+                            'User_Id'     => $usuario->Id_Usuario,
+                        ]);
                     }
-
-                    $desactualizadas = $this->maquinasDesactualizadas($idPlanta, $end);
-
-                    if (count($desactualizadas) > 0) {
-                        $this->warn("❌ Usuario {$config->Id_Usuario}: máquinas desactualizadas, no se envía el reporte.");
-
-                        // Notificar por correo al usuario
-                        Mail::to($config->Email)->send(new MaquinaDesactualizadaUsuarioMail($desactualizadas, $start, $end));
-
-                        // Notificar a administradores
-                        $adminEmails = DB::table('Cat_Usuarios_Administradores')
-                            ->whereNotNull('Email')
-                            ->pluck('Email');
-
-                        foreach ($adminEmails as $adminCorreo) {
-                            Mail::to($adminCorreo)->send(new MaquinaDesactualizadaUsuarioMail($desactualizadas, $start, $end));
-                        }
-
-                        // Registrar notificación por cada máquina
-                        $currentDateTime = Carbon::now();
-
-                        foreach ($desactualizadas as $maquina) {
-                            DB::table('vending_notifications')->insert([
-                                'Id_Planta'     => $maquina->Id_Planta,
-                                'Id_Maquina'    => $maquina->Id_Maquina,
-                                'Txt_Nombre'    => $maquina->Txt_Nombre,
-                                'Txt_Estatus'   => $maquina->Txt_Estatus,
-                                'description'   => 'La máquina no tiene sincronización reciente para generar el reporte.',
-                                'Fecha'         => $currentDateTime,
-                                'Fecha_Reg'     => $currentDateTime,
-                                'read_at'       => null,
-                                'User_Id'       => $usuario->Id_Usuario,
-                            ]);
-                        }
-
-                        continue;
-                    }
-
-                    // Si pasa validación, generar y enviar el reporte
-                    $filename = $this->generarExcelDesdeRango($idPlanta, $start, $end, $config->Frecuencia);
-
-                    Mail::to($config->Email)->send(new ReporteEmpleadosMail(
-                        "Este reporte cubre el periodo del {$start->format('d/m/Y')} al {$end->format('d/m/Y')}.",
-                        $filename,
-                        $start,
-                        $end
-                    ));
-                } else {
-                    $this->warn("⚠️ El usuario {$config->Id_Usuario} no tiene correo configurado.");
                 }
+
+                continue;
             }
+
+            // Resolve plant-specific or general report strategy
+            $reporte  = $this->reporteService->resolver($config->Plantilla ?? null);
+            $filename = $reporte->generar($start, $end, $idPlanta, $config->Frecuencia);
+
+            $this->info("✅ Excel generado: {$filename} via [{$reporte->getNombre()}]");
+
+            if (!$test) {
+                Mail::to($config->Email)->send(new ReporteEmpleadosMail(
+                    "Este reporte cubre el periodo del {$start->format('d/m/Y')} al {$end->format('d/m/Y')}.",
+                    $filename,
+                    $start,
+                    $end
+                ));
+            }
+
+            DB::table('Configuracion_Reportes')
+                ->where('Id', $config->Id)
+                ->update(['Ultimo_Envio' => Carbon::now(), 'updated_at' => Carbon::now()]);
         }
 
         return Command::SUCCESS;
     }
 
-    private function getRangoFechas($frecuencia)
+    private function debeProcesar(string $frecuencia, int $diaSemana, int $diaMes): bool
+    {
+        return match ($frecuencia) {
+            'diario'   => true,
+            'semanal'  => $diaSemana === 1,
+            'mensual'  => $diaMes === 1,
+            default    => false,
+        };
+    }
+
+    private function getRangoFechas(string $frecuencia): array
     {
         switch ($frecuencia) {
             case 'diario':
-                $hoy = Carbon::now();
-                $dia = $hoy->dayOfWeekIso; // 1 = lunes, 7 = domingo
-
+                $dia = Carbon::now()->dayOfWeekIso;
                 if ($dia === 1) {
-                    // Lunes → enviar viernes, sábado y domingo
-                    $start = Carbon::now()->subDays(3)->startOfDay(); // viernes
-                    $end = Carbon::now()->subDay()->endOfDay();       // domingo
-                } elseif (in_array($dia, [6, 7])) {
-                    // Sábado y domingo → no se envía
-                    return [null, null];
-                } else {
-                    // Martes a viernes → día anterior
-                    $start = Carbon::yesterday()->startOfDay();
-                    $end = Carbon::yesterday()->endOfDay();
+                    return [Carbon::now()->subDays(3)->startOfDay(), Carbon::now()->subDay()->endOfDay()];
                 }
-                break;
+                if (in_array($dia, [6, 7])) {
+                    return [null, null];
+                }
+                return [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()];
 
             case 'semanal':
-                $start = Carbon::now()->subWeek()->startOfWeek(Carbon::MONDAY);
-                $end = Carbon::now()->subWeek()->endOfWeek(Carbon::SUNDAY);
-                break;
+                return [
+                    Carbon::now()->subWeek()->startOfWeek(Carbon::MONDAY),
+                    Carbon::now()->subWeek()->endOfWeek(Carbon::SUNDAY),
+                ];
 
             case 'mensual':
-                $start = Carbon::now()->subMonthNoOverflow()->startOfMonth();
-                $end = Carbon::now()->subMonthNoOverflow()->endOfMonth();
-                break;
+                return [
+                    Carbon::now()->subMonthNoOverflow()->startOfMonth(),
+                    Carbon::now()->subMonthNoOverflow()->endOfMonth(),
+                ];
 
             default:
-                $start = Carbon::yesterday()->startOfDay();
-                $end = Carbon::yesterday()->endOfDay();
-                break;
+                return [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()];
         }
-
-        return [$start, $end];
     }
 
-
-    private function maquinasDesactualizadas($idPlanta, Carbon $hasta)
+    private function maquinasDesactualizadas(int $idPlanta, Carbon $hasta)
     {
-        // Todas las máquinas activas de la planta
         $todasMaquinas = DB::table('Ctrl_Mquinas')
             ->where('Id_Planta', $idPlanta)
             ->where('Txt_Estatus', 'Alta')
             ->get()
             ->keyBy('Id_Maquina');
 
-        // Datos del SP con última sincronización
-        $sincronizadas = collect(DB::select("SET NOCOUNT ON;EXEC SP_Consulta_Sincronizacion_x_Planta ?", [$idPlanta]))
+        $sincronizadas = collect(DB::select('SET NOCOUNT ON;EXEC SP_Consulta_Sincronizacion_x_Planta ?', [$idPlanta]))
             ->keyBy('Id_Maquina');
 
         $desactualizadas = [];
 
         foreach ($todasMaquinas as $id => $maquina) {
             if (!isset($sincronizadas[$id])) {
-                // No ha sincronizado en absoluto
                 $maquina->Ultima_Sincronizacion = null;
                 $desactualizadas[] = $maquina;
             } else {
@@ -219,21 +233,5 @@ class EnviarReportesProgramados extends Command
         }
 
         return collect($desactualizadas);
-    }
-
-
-    private function generarExcelDesdeRango($idPlanta, Carbon $start, Carbon $end, $frecuencia)
-    {
-        $fakeRequest = new Request([
-            'area' => [],
-            'product' => [],
-            'employee' => [],
-            'dateRange' => $start->format('Y-m-d') . ' - ' . $end->format('Y-m-d'),
-        ]);
-
-        $filename = 'reporte_consumos_' . $frecuencia . '_' . date('Ymd_His') . '.xlsx';
-        Excel::store(new ConsumoxEmpleadoMultiExport($fakeRequest, $idPlanta), $filename, 'local');
-
-        return $filename;
     }
 }
