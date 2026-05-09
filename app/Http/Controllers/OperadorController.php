@@ -499,8 +499,7 @@ class OperadorController extends Controller
             return redirect()->back()->with('error', 'Acceso no autorizado a esta planta.');
         }
 
-        // Trigger export with Censored = true
-        return Excel::download(new ConsumoxEmpleadoExport($request, $requestedPlantId, true, $vendingId), 'ConsumoPorEmpleado_Censurado.xlsx');
+        return Excel::download(new ConsumoxEmpleadoExport($request, $requestedPlantId, false, $vendingId), 'ConsumoPorEmpleado.xlsx');
     }
 
     public function Profile()
