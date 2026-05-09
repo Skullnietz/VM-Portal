@@ -193,22 +193,26 @@ class AdminController extends Controller
 
     public function getPlantasInfo()
     {
-        $plantas = DB::table('Cat_Plantas as plta')
-            ->select(
-                'plta.Id_Planta as id',
-                'plta.Txt_Nombre_Planta',
-                'plta.Txt_Codigo_Cliente',
-                'plta.Txt_Sitio',
-                'plta.Txt_Estatus',
-                'plta.Fecha_Alta',
-                'plta.Fecha_Modificacion',
-                'Fecha_Baja',
-                'Ruta_Imagen',
-                DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = plta.Id_Usuario_Admon_Alta) as UsuarioAlta"),
-                DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = plta.Id_Usuario_Admon_Modificacion) as UsuarioModificacion"),
-                DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = plta.Id_Usuario_Admon_Baja) as UsuarioBaja")
-            )->get();
-        return DataTables::of($plantas)->make(true);
+        try {
+            $plantas = DB::table('Cat_Plantas as plta')
+                ->select(
+                    'plta.Id_Planta as id',
+                    'plta.Txt_Nombre_Planta',
+                    'plta.Txt_Codigo_Cliente',
+                    'plta.Txt_Sitio',
+                    'plta.Txt_Estatus',
+                    'plta.Fecha_Alta',
+                    'plta.Fecha_Modificacion',
+                    'plta.Fecha_Baja',
+                    'plta.Ruta_Imagen',
+                    DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = plta.Id_Usuario_Admon_Alta) as UsuarioAlta"),
+                    DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = plta.Id_Usuario_Admon_Modificacion) as UsuarioModificacion"),
+                    DB::raw("(SELECT Nick FROM Cat_Usuarios_Administradores WHERE Id_Usuario_Admon = plta.Id_Usuario_Admon_Baja) as UsuarioBaja")
+                )->get();
+            return DataTables::of($plantas)->make(true);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function eliminarUsuario($id)
