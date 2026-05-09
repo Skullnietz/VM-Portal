@@ -431,12 +431,10 @@
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         }
     });
-    function escapeAttr(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    var empleadosData = {};
 
-    $(document).ready(function () { = $('#empleados-table').DataTable({
+    $(document).ready(function () {
+        var table = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
             ajax: {
@@ -467,7 +465,8 @@
                     data: null,
                     name: 'Editar',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${escapeAttr(row.Nombre)}" data-apaterno="${escapeAttr(row.APaterno)}" data-amaterno="${escapeAttr(row.AMaterno || '')}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
+                        empleadosData[row.Id_Empleado] = row;
+                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
                     }
                 },
                 {
@@ -475,7 +474,7 @@
                     name: 'Eliminar',
                     className: 'd-none',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-danger delete-empleado-btn" data-id="${row.Id_Empleado}" data-nombre="${escapeAttr(row.Nombre + ' ' + row.APaterno + ' ' + (row.AMaterno || ''))}">Eliminar <i class="fas fa-trash"></i></button>`;
+                        return `<button class="btn btn-xs btn-danger delete-empleado-btn" data-id="${row.Id_Empleado}">Eliminar <i class="fas fa-trash"></i></button>`;
                     }
                 },
                 {
@@ -525,7 +524,12 @@
         });
 
         $('#empleados-table').on('click', '.delete-empleado-btn', function() {
-            confirmDelete($(this).data('id'), $(this).data('nombre'));
+            var id = $(this).data('id');
+            var row = empleadosData[id];
+            if (row) {
+                var fullName = (row.Nombre || '') + ' ' + (row.APaterno || '') + ' ' + (row.AMaterno || '');
+                confirmDelete(id, fullName);
+            }
         });
 
         window.toggleStatus = function (employeeId) {
@@ -647,13 +651,10 @@
 
         $('#empleados-table').on('click', '.edit-btn', function () {
             var id = $(this).data('id');
-            var nip = $(this).data('nip');
-            var notarjeta = $(this).data('notarjeta');
-            var nombre = $(this).data('nombre');
-            var apaterno = $(this).data('apaterno');
-            var amaterno = $(this).data('amaterno');
-            var area = $(this).data('area');
-            openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, area);
+            var row = empleadosData[id];
+            if (row) {
+                openEditModal(row.Id_Empleado, row.Nip, row.No_Tarjeta, row.Nombre, row.APaterno, row.AMaterno, row.Id_Area);
+            }
         });
 
         function actualizarLuzEstatus() {

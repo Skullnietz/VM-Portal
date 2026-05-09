@@ -169,10 +169,7 @@
 
 
 <script>
-    function escapeAttr(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    var plantasData = {};
 
     $(document).ready(function () {
         $('#plantasTable').DataTable({
@@ -185,6 +182,67 @@
                     d._token = '{{ csrf_token() }}';
                 }
             },
+            columns: [
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        plantasData[row.id] = row;
+                        const imagen = row.Ruta_Imagen ? row.Ruta_Imagen : 'https://cdn-icons-png.flaticon.com/512/72/72734.png';
+                        const div = document.createElement('div');
+                        const img = document.createElement('img');
+                        img.src = imagen;
+                        img.alt = 'Imagen';
+                        img.style.width = '50px';
+                        img.style.height = '50px';
+                        div.appendChild(img);
+                        return div.innerHTML;
+                    }
+                },
+                { data: 'Txt_Nombre_Planta', name: 'Txt_Nombre_Planta' },
+                { data: 'Txt_Codigo_Cliente', name: 'Txt_Codigo_Cliente' },
+                { data: 'Txt_Sitio', name: 'Txt_Sitio' },
+                {
+                    data: 'estatus_icon',
+                    name: 'estatus_icon',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        let iconClass = row.Txt_Estatus === 'Alta' ? 'fa-toggle-on fa-2x text-success' : 'fa-toggle-off fa-2x text-danger';
+                        let nuevoEstatus = row.Txt_Estatus === 'Alta' ? 'Baja' : 'Alta';
+
+                        return `
+                            <i id="estatus-icon-${row.id}" 
+                                class="fas ${iconClass}" 
+                                style="cursor: pointer;"
+                                onclick="toggleEstatus(${row.id}, '${nuevoEstatus}')"></i>
+                        `;
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        return `
+                            <div class="btn-group" role="group">
+                                <a class="btn btn-secondary btn-sm" href="/admin/plantas/PlantaView/${row.id}" title="Mostrar Planta">
+                                    <i class="fas fa-eye fa-2x"></i>
+                                </a>
+                                <button class="btn btn-info btn-sm edit-planta-btn" data-id="${row.id}" title="Editar">
+                                    <i class="fas fa-edit fa-2x"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteAdmin(${row.id})" title="Eliminar">
+                                    <i class="fas fa-trash fa-2x"></i>
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="releaseRelatedRecords(${row.id})" title="Liberar registros">
+                                    <i class="fas fa-folder-open fa-2x"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
+                },
             columns: [
                 {
                     data: null,
@@ -296,7 +354,11 @@
         });
 
         $('#plantasTable').on('click', '.edit-planta-btn', function() {
-            editAdmin($(this).data('id'), $(this).data('nombre'), $(this).data('codigo'), $(this).data('sitio'), $(this).data('ruta'));
+            var id = $(this).data('id');
+            var row = plantasData[id];
+            if (row) {
+                editAdmin(row.id, row.Txt_Nombre_Planta, row.Txt_Codigo_Cliente, row.Txt_Sitio, row.Ruta_Imagen);
+            }
         });
 
         

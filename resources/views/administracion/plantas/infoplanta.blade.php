@@ -563,10 +563,7 @@
 <!-- Incluir JavaScript de Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    function escapeAttr(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    var empleadosData = {};
 
     $(document).ready(function () {
         $("#generar-permisos").click(function () {
@@ -646,7 +643,14 @@
                 {
                     data: 'Txt_Nombre',
                     render: function (data, type, row) {
-                        return '<input type="text" style="width:250px" class="form-control editable-name" data-id="' + row.Id_Area + '" value="' + escapeAttr(data) + '" disabled>';
+                        var input = document.createElement('input');
+                        input.type = 'text';
+                        input.style.width = '250px';
+                        input.className = 'form-control editable-name';
+                        input.setAttribute('data-id', row.Id_Area);
+                        input.value = data;
+                        input.disabled = true;
+                        return input.outerHTML;
                     }
                 },
                 {
@@ -1481,14 +1485,15 @@
                     data: null,
                     name: 'Editar',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${escapeAttr(row.Nombre)}" data-apaterno="${escapeAttr(row.APaterno)}" data-amaterno="${escapeAttr(row.AMaterno || '')}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
+                        empleadosData[row.Id_Empleado] = row;
+                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
                     }
                 },
                 {
                     data: null,
                     name: 'Eliminar',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-danger delete-empleado-btn" data-id="${row.Id_Empleado}" data-nombre="${escapeAttr(row.Nombre + ' ' + row.APaterno + ' ' + (row.AMaterno || ''))}">Eliminar <i class="fas fa-trash"></i></button>`;
+                        return `<button class="btn btn-xs btn-danger delete-empleado-btn" data-id="${row.Id_Empleado}">Eliminar <i class="fas fa-trash"></i></button>`;
                     }
                 },
                 {
@@ -1531,7 +1536,12 @@
 
 
         $('#empleados-table').on('click', '.delete-empleado-btn', function() {
-            confirmDelete($(this).data('id'), $(this).data('nombre'));
+            var id = $(this).data('id');
+            var row = empleadosData[id];
+            if (row) {
+                var fullName = (row.Nombre || '') + ' ' + (row.APaterno || '') + ' ' + (row.AMaterno || '');
+                confirmDelete(id, fullName);
+            }
         });
 
         window.toggleStatus = function (employeeId) {
@@ -1673,14 +1683,10 @@
         // Función para abrir el modal de edición
         $('#empleados-table').on('click', '.edit-btn', function () {
             var id = $(this).data('id');
-            var nip = $(this).data('nip');
-            var notarjeta = $(this).data('notarjeta');
-            var nombre = $(this).data('nombre');
-            var apaterno = $(this).data('apaterno');
-            var amaterno = $(this).data('amaterno');
-            var area = $(this).data('area');
-
-            openEditModal(id, nip, notarjeta, nombre, apaterno, amaterno, area);
+            var row = empleadosData[id];
+            if (row) {
+                openEditModal(row.Id_Empleado, row.Nip, row.No_Tarjeta, row.Nombre, row.APaterno, row.AMaterno, row.Id_Area);
+            }
         });
 
         // Detectar el clic en el botón de permisos
