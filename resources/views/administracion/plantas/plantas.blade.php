@@ -257,11 +257,11 @@
                 $(row).find('td').eq(7).addClass('modificacion');
                 $(row).find('td').eq(9).addClass('baja');
             },
-            order: [[0, 'asc']],
+            order: [[1, 'asc']],
             responsive: true,
             scrollX: true,
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.19/i18n/Spanish.json"
+                url: "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
             }
         });
 
