@@ -360,7 +360,7 @@
                     selectEdit.empty();
 
                     $.each(data, function(index, planta) {
-                        selectEdit.append(`<option value="${planta.Id_Planta}">${planta.Txt_Nombre_Planta} (${planta.Id_Planta})</option>`);
+                        selectEdit.append(new Option(`${planta.Txt_Nombre_Planta} (${planta.Id_Planta})`, planta.Id_Planta));
                     });
 
                     if (choicesInstanceEdit) choicesInstanceEdit.destroy();
@@ -433,7 +433,7 @@
                 dataType: 'json',
                 success: function(data) {
                     $.each(data, function(key, planta) {
-                        plantasSelect.append(`<option value="${planta.Id_Planta}">${planta.Txt_Nombre_Planta} (${planta.Id_Planta})</option>`);
+                        plantasSelect.append(new Option(`${planta.Txt_Nombre_Planta} (${planta.Id_Planta})`, planta.Id_Planta));
                     });
                     $('#OpTable').DataTable().ajax.reload();
                     if (choicesInstanceAdd) choicesInstanceAdd.destroy();

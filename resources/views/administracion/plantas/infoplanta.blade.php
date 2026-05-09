@@ -563,6 +563,11 @@
 <!-- Incluir JavaScript de Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+    function escapeAttr(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     $(document).ready(function () {
         $("#generar-permisos").click(function () {
             let plantaId = {{ $planta->Id_Planta }};
@@ -641,7 +646,7 @@
                 {
                     data: 'Txt_Nombre',
                     render: function (data, type, row) {
-                        return '<input type="text" style="width:250px" class="form-control editable-name" data-id="' + row.Id_Area + '" value="' + data + '" disabled>';
+                        return '<input type="text" style="width:250px" class="form-control editable-name" data-id="' + row.Id_Area + '" value="' + escapeAttr(data) + '" disabled>';
                     }
                 },
                 {
@@ -1476,14 +1481,14 @@
                     data: null,
                     name: 'Editar',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${row.Nombre}" data-apaterno="${row.APaterno}" data-amaterno="${row.AMaterno}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
+                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${escapeAttr(row.Nombre)}" data-apaterno="${escapeAttr(row.APaterno)}" data-amaterno="${escapeAttr(row.AMaterno || '')}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
                     }
                 },
                 {
                     data: null,
                     name: 'Eliminar',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-danger" onclick="confirmDelete(${row.Id_Empleado}, '${row.Nombre} ${row.APaterno} ${row.AMaterno}')">Eliminar <i class="fas fa-trash"></i></button>`;
+                        return `<button class="btn btn-xs btn-danger delete-empleado-btn" data-id="${row.Id_Empleado}" data-nombre="${escapeAttr(row.Nombre + ' ' + row.APaterno + ' ' + (row.AMaterno || ''))}">Eliminar <i class="fas fa-trash"></i></button>`;
                     }
                 },
                 {
@@ -1524,6 +1529,10 @@
 
         });
 
+
+        $('#empleados-table').on('click', '.delete-empleado-btn', function() {
+            confirmDelete($(this).data('id'), $(this).data('nombre'));
+        });
 
         window.toggleStatus = function (employeeId) {
             $.ajax({

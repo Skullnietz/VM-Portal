@@ -431,8 +431,12 @@
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         }
     });
-    $(document).ready(function () {
-        var table = $('#empleados-table').DataTable({
+    function escapeAttr(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    $(document).ready(function () { = $('#empleados-table').DataTable({
             processing: true,
             serverSide: true,
             ajax: {
@@ -463,7 +467,7 @@
                     data: null,
                     name: 'Editar',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${row.Nombre}" data-apaterno="${row.APaterno}" data-amaterno="${row.AMaterno}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
+                        return `<button class="btn btn-xs btn-warning edit-btn" data-id="${row.Id_Empleado}" data-nip="${row.Nip}" data-notarjeta="${row.No_Tarjeta}" data-nombre="${escapeAttr(row.Nombre)}" data-apaterno="${escapeAttr(row.APaterno)}" data-amaterno="${escapeAttr(row.AMaterno || '')}" data-area="${row.Id_Area}">&nbsp;&nbsp; Editar &nbsp;&nbsp; <i class="fas fa-user-edit"></i></button>`;
                     }
                 },
                 {
@@ -471,7 +475,7 @@
                     name: 'Eliminar',
                     className: 'd-none',
                     render: function (data, type, row) {
-                        return `<button class="btn btn-xs btn-danger" onclick="confirmDelete(${row.Id_Empleado}, '${row.Nombre} ${row.APaterno} ${row.AMaterno}')">Eliminar <i class="fas fa-trash"></i></button>`;
+                        return `<button class="btn btn-xs btn-danger delete-empleado-btn" data-id="${row.Id_Empleado}" data-nombre="${escapeAttr(row.Nombre + ' ' + row.APaterno + ' ' + (row.AMaterno || ''))}">Eliminar <i class="fas fa-trash"></i></button>`;
                     }
                 },
                 {
@@ -518,6 +522,10 @@
                     sortDescending: ": activar para ordenar la columna de manera descendente"
                 }
             }
+        });
+
+        $('#empleados-table').on('click', '.delete-empleado-btn', function() {
+            confirmDelete($(this).data('id'), $(this).data('nombre'));
         });
 
         window.toggleStatus = function (employeeId) {

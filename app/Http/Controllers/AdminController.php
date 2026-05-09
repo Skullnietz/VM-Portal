@@ -883,15 +883,16 @@ class AdminController extends Controller
                 Log::info('Se ha detectado una imagen para actualizar.');
 
                 // Eliminar la imagen anterior si existe
-                if ($planta && $planta->Ruta_Imagen && file_exists(public_path('/Images/Plantas/' . $planta->Ruta_Imagen))) {
+                if ($planta && $planta->Ruta_Imagen && file_exists(public_path($planta->Ruta_Imagen))) {
                     Log::info('Eliminando la imagen anterior: ' . $planta->Ruta_Imagen);
-                    unlink(public_path('/Images/Plantas/' . $planta->Ruta_Imagen)); // Eliminar la imagen anterior
+                    unlink(public_path($planta->Ruta_Imagen));
                 } else {
                     Log::info('No se encontró una imagen anterior para eliminar.');
                 }
 
                 // Guardar la nueva imagen en el directorio 'public/Images/Plantas'
-                $imagePath = $request->file('image')->move(public_path('/Images/Plantas'), $request->file('image')->getClientOriginalName());
+                $newImageName = $planta->Id_Planta . '.' . $request->file('image')->getClientOriginalExtension();
+                $imagePath = $request->file('image')->move(public_path('/Images/Plantas'), $newImageName);
                 Log::info('Imagen guardada con éxito en: ' . $imagePath);
             }
 
@@ -907,7 +908,7 @@ class AdminController extends Controller
 
             // Si se cargó una nueva imagen, agregar la ruta de la imagen al array de datos
             if ($imagePath) {
-                $dataToUpdate['Ruta_Imagen'] = '/Images/Plantas/' . $request->file('image')->getClientOriginalName();
+                $dataToUpdate['Ruta_Imagen'] = '/Images/Plantas/' . $newImageName;
                 Log::info('Ruta de la imagen añadida a los datos para actualizar: ' . $dataToUpdate['Ruta_Imagen']);
             }
 
