@@ -29,24 +29,18 @@
 @section('content')
 <div class="container">
     <div class="row mb-2">
-
         <div class="card w-100">
             <div class="card-header">
-                <h5 class="card-title">Filtros</h5>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                </div>
+                <h5 class="card-title"><i class="fas fa-filter mr-1"></i> Selección de Planta</h5>
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.consumoxarea.index') }}" id="plant-form">
-                    <div class="row">
+                    <div class="row align-items-end">
                         <div class="col-md-4">
-                            <label for="planta_id">Planta:</label>
+                            <label for="planta_id"><strong>Planta:</strong></label>
                             <select id="planta_id" name="planta_id" class="form-control select2"
                                 onchange="this.form.submit()">
-                                <option value="">Todas las plantas</option>
+                                <option value="">-- Seleccione una planta --</option>
                                 @foreach($plantas as $planta)
                                     <option value="{{ $planta->Id_Planta }}" {{ request('planta_id') == $planta->Id_Planta ? 'selected' : '' }}>
                                         {{ $planta->Nombre }}
@@ -54,12 +48,42 @@
                                 @endforeach
                             </select>
                         </div>
+                        @if(request('planta_id'))
+                        <div class="col-md-2">
+                            <a href="{{ route('admin.consumoxarea.index') }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times mr-1"></i> Limpiar planta
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
 
-                <hr>
+    @if(!request('planta_id'))
+    <div class="row">
+        <div class="col">
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-industry fa-3x mb-3 d-block"></i>
+                <h5>Selecciona una planta para cargar el reporte</h5>
+                <p class="mb-0 text-muted">Usa el selector de arriba para elegir la planta que deseas consultar.</p>
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="row mb-2">
+        <div class="card w-100">
+            <div class="card-header">
+                <h5 class="card-title">Filtros adicionales</h5>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
                 <div class="row">
-                    <!-- Inputs para el rango de fechas -->
                     <div class="col-md-3">
                         <label for="startDate">Fecha Inicio:</label>
                         <input type="text" id="startDate" class="form-control" placeholder="AAAA-MM-DD">
@@ -70,7 +94,6 @@
                     </div>
                     <div class="col-md-3">
                         <label for="filterArea">Área:</label>
-                        <!-- Select para las áreas -->
                         <select id="filterArea" name="area[]" class="form-control select2" multiple>
                             <option value="">Seleccione área(s)</option>
                             @foreach($areas as $area)
@@ -90,73 +113,68 @@
                 </div>
             </div>
         </div>
-
     </div>
-</div>
 
-<div class="row">
-    <div class="col">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Tabla de Consumos por Area</h5>
-            </div>
-            <div class="card-body">
-                <table id="consumptionReport" class="table table-striped table-bordered" style="width:100%">
-                    <thead>
-                        <tr>
-                            <th>Área</th>
-                            <th>Total Consumo</th>
-                            <th>No.Empleados</th>
-                            <th>Imagen</th>
-                            <th>Producto</th>
-                            <th>Código Urvina</th>
-                            <th>Código Cliente</th>
-                            <th>Último Consumo</th>
-                        </tr>
-                    </thead>
-                </table>
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Tabla de Consumos por Area</h5>
+                </div>
+                <div class="card-body">
+                    <table id="consumptionReport" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Área</th>
+                                <th>Total Consumo</th>
+                                <th>No.Empleados</th>
+                                <th>Imagen</th>
+                                <th>Producto</th>
+                                <th>Código Urvina</th>
+                                <th>Código Cliente</th>
+                                <th>Último Consumo</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Nuevo Card para las Gráficas -->
-<div class="row mt-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Gráficas de Consumo</h5>
-            </div>
+    <div class="row mt-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Gráficas de Consumo</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="consumptionTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="employee-tab" data-toggle="tab" href="#employeeChart" role="tab"
+                                aria-controls="employeeChart" aria-selected="false">Grafica de Producto Mas
+                                Consumido por Area</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="chart-tab" data-toggle="tab" href="#chartContent" role="tab"
+                                aria-controls="chartContent" aria-selected="true">Gráfica de Empleados Consumiendo
+                                Productos por Area</a>
+                        </li>
+                    </ul>
 
-            <div class="card-body">
-                <!-- Nav tabs -->
-                <ul class="nav nav-tabs" id="consumptionTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="employee-tab" data-toggle="tab" href="#employeeChart" role="tab"
-                            aria-controls="employeeChart" aria-selected="false">Grafica de Producto Mas
-                            Consumido por Area</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="chart-tab" data-toggle="tab" href="#chartContent" role="tab"
-                            aria-controls="chartContent" aria-selected="true">Gráfica de Empleados Consumiendo
-                            Productos por Area</a>
-                    </li>
-                </ul>
-
-                <!-- Tab content -->
-                <div class="tab-content">
-                    <div class="tab-pane fade active show" id="employeeChart" role="tabpanel"
-                        aria-labelledby="employee-tab">
-                        <canvas id="productConsumptionChart"></canvas>
-                    </div>
-                    <div class="tab-pane fade" id="chartContent" role="tabpanel" aria-labelledby="chart-tab">
-                        <canvas id="employeeConsumptionChart"></canvas>
+                    <div class="tab-content">
+                        <div class="tab-pane fade active show" id="employeeChart" role="tabpanel"
+                            aria-labelledby="employee-tab">
+                            <canvas id="productConsumptionChart"></canvas>
+                        </div>
+                        <div class="tab-pane fade" id="chartContent" role="tabpanel" aria-labelledby="chart-tab">
+                            <canvas id="employeeConsumptionChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+    @endif
 </div>
 
 @stop
@@ -228,6 +246,13 @@
         window.history.back();
     }
 </script>
+<script>
+    $(document).ready(function () {
+        $('#planta_id').select2({ width: '100%' });
+    });
+</script>
+
+@if(request('planta_id'))
 <script>
     $(document).ready(function () {
         // Inicializa Select2 en el selector de Planta
@@ -483,5 +508,6 @@
     });
 
 </script>
+@endif
 
 @stop

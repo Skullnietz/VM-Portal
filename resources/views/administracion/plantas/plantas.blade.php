@@ -169,11 +169,6 @@
 
 
 <script>
-    function escapeAttr(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
     $(document).ready(function () {
         $('#plantasTable').DataTable({
             processing: true,
@@ -196,8 +191,9 @@
                         
                         return `
                             <div>
-                                <img src="${escapeAttr(imagen)}" alt="Imagen" style="width: 50px; height: 50px;" />
+                                <img src="${imagen}" alt="Imagen" style="width: 50px; height: 50px;" />
                             </div>
+                            
                         `;
                     }
                 },
@@ -231,7 +227,7 @@
                                 <a class="btn btn-secondary btn-sm" href="/admin/plantas/PlantaView/${row.id}" title="Mostrar Planta">
                                     <i class="fas fa-eye fa-2x"></i>
                                 </a>
-                                <button class="btn btn-info btn-sm edit-planta-btn" data-id="${row.id}" data-nombre="${escapeAttr(row.Txt_Nombre_Planta)}" data-codigo="${escapeAttr(row.Txt_Codigo_Cliente)}" data-sitio="${escapeAttr(row.Txt_Sitio)}" data-ruta="${escapeAttr(row.Ruta_Imagen || '')}" title="Editar">
+                                <button class="btn btn-info btn-sm" onclick="editAdmin(${row.id}, '${row.Txt_Nombre_Planta}', '${row.Txt_Codigo_Cliente}', '${row.Txt_Sitio}')" title="Editar">
                                     <i class="fas fa-edit fa-2x"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteAdmin(${row.id})" title="Eliminar">
@@ -292,11 +288,6 @@
             error: function (xhr) {
                 console.error('Error al cargar las plantas:', xhr);
             }
-        });
-
-
-        $('#plantasTable').on('click', '.edit-planta-btn', function() {
-            editAdmin($(this).data('id'), $(this).data('nombre'), $(this).data('codigo'), $(this).data('sitio'), $(this).data('ruta'));
         });
 
         
@@ -382,7 +373,7 @@ function resetImagePreview() {
     
     // Si existe imagen, mostrarla, de lo contrario, mantener la imagen por defecto
     if (rutaImagen) {
-        $('#imagePreview').html(`<img src="${escapeAttr(rutaImagen)}" alt="Vista previa" class="img-fluid rounded mt-2" />`);
+        $('#imagePreview').html(`<img src="${rutaImagen}" alt="Vista previa" class="img-fluid rounded mt-2" />`);
     } else {
         resetImagePreview(); // Limpiar cualquier imagen previa
     }

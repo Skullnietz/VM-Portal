@@ -18,21 +18,6 @@
 @stop
 
 @section('content')
-<div id="floatingActions"
-    style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; background-color: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;">
-    <button id="saveChangesBtn" class="btn btn-success mb-2" style="width: 100%;">Guardar Cambios</button>
-    <button id="fillMaxFloatingBtn" class="btn btn-primary" style="width: 100%;">Rellenar Máximos</button>
-    <a href="{{ route('ArellenarPrint', ['id' => request()->route('id')]) }}" target="_blank" class="btn btn-info mt-2"
-        style="width: 100%;">
-        <i class="fas fa-print"></i> Imprimir Planograma
-    </a>
-    <a href="{{ route('ArellenarLabels', ['id' => request()->route('id')]) }}" target="_blank"
-        class="btn btn-warning mt-2" style="width: 100%;">
-        <i class="fas fa-tags"></i> Imprimir Etiquetas
-    </a>
-</div>
-
-
 <div class="container-fluid"> <!-- Changed to container-fluid for more width -->
     <div class="row">
         <div class="col">
@@ -126,6 +111,28 @@
     </div>
 </div>
 </div>
+<div id="floatingActions">
+    <div class="actions-inner">
+        <div class="actions-row actions-primary">
+            <button id="saveChangesBtn" class="btn btn-success btn-action-primary">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
+            <button id="fillMaxFloatingBtn" class="btn btn-outline-primary btn-action-secondary">
+                <i class="fas fa-fill-drip"></i> Rellenar Máximos
+            </button>
+        </div>
+        <div class="actions-row actions-tertiary">
+            <a href="{{ route('ArellenarPrint', ['id' => request()->route('id')]) }}" target="_blank"
+                class="btn btn-outline-info btn-action-tertiary">
+                <i class="fas fa-print"></i> Planograma
+            </a>
+            <a href="{{ route('ArellenarLabels', ['id' => request()->route('id')]) }}" target="_blank"
+                class="btn btn-outline-warning btn-action-tertiary">
+                <i class="fas fa-tags"></i> Etiquetas
+            </a>
+        </div>
+    </div>
+</div>
 <!-- Modal de Resumen -->
 <div class="modal fade" id="summaryModal" tabindex="-1" role="dialog" aria-labelledby="summaryModalLabel"
     aria-hidden="true">
@@ -171,7 +178,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-primary" onclick="printSummary()">Imprimir</button>
-                <button type="button" class="btn btn-success" id="confirmSaveBtn">Confirmar Guardado</button>
             </div>
         </div>
     </div>
@@ -213,21 +219,71 @@
         background-color: #fff;
     }
 
-    floatingActions {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
-        background-color: white;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 15px;
-        width: 200px;
+    #floatingActions {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-top: 1px solid #e0e0e0;
+        padding: 12px 16px;
+        margin-top: 20px;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
     }
 
-    #floatingActions button {
-        margin-bottom: 10px;
+    #floatingActions .actions-inner {
+        max-width: 700px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #floatingActions .actions-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #floatingActions .btn-action-primary {
+        flex: 1;
+        max-width: 220px;
+        font-weight: 600;
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+
+    #floatingActions .btn-action-secondary {
+        flex: 1;
+        max-width: 200px;
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+
+    #floatingActions .btn-action-tertiary {
+        flex: 1;
+        max-width: 180px;
+        padding: 6px 14px;
+        font-size: 0.82rem;
+        border-radius: 6px;
+    }
+
+    @media (max-width: 576px) {
+        #floatingActions .actions-row {
+            flex-direction: column;
+        }
+
+        #floatingActions .btn-action-primary,
+        #floatingActions .btn-action-secondary,
+        #floatingActions .btn-action-tertiary {
+            max-width: 100%;
+            width: 100%;
+        }
     }
 </style>
 
@@ -373,13 +429,14 @@
             const cells = document.querySelectorAll('.droppable-cell');
             const summaryTableBody = document.getElementById('summaryTableBody');
             const aggregatedTableBody = document.getElementById('aggregatedTableBody');
-            summaryTableBody.innerHTML = '';
-            aggregatedTableBody.innerHTML = '';
-
+            
             let hasChanges = false;
+            const updatedStock = [];
+            const rowsHtml = [];
             const aggregatedData = {};
 
             cells.forEach(cell => {
+                const id = cell.getAttribute('data-id');
                 const charola = cell.getAttribute('data-charola');
                 const seleccion = cell.getAttribute('data-seleccion');
                 const stockInput = cell.querySelector('.Stock');
@@ -396,12 +453,13 @@
 
                     if (diff !== 0) {
                         hasChanges = true;
+                        updatedStock.push({ id: id, stock: currentStock });
 
                         const diffDisplay = diff > 0 ? `+${diff}` : `${diff}`;
                         const diffClass = diff > 0 ? 'text-success' : 'text-danger';
 
-                        // Add to summary table
-                        const row = `<tr>
+                        // Prepare summary table row
+                        rowsHtml.push(`<tr>
                             <td>${charola}</td>
                             <td>${seleccion}</td>
                             <td>${codigo}</td>
@@ -409,8 +467,7 @@
                             <td>${initialStock}</td>
                             <td>${currentStock}</td>
                             <td class="${diffClass}">${diffDisplay}</td>
-                        </tr>`;
-                        summaryTableBody.innerHTML += row;
+                        </tr>`);
 
                         // Aggregate data
                         const key = `${codigo}-${talla}`;
@@ -426,65 +483,12 @@
                 }
             });
 
-            // Populate aggregated table
-            for (const key in aggregatedData) {
-                const item = aggregatedData[key];
-                const totalDisplay = item.totalRefill > 0 ? `+${item.totalRefill}` : `${item.totalRefill}`;
-                const totalClass = item.totalRefill > 0 ? 'text-success' : (item.totalRefill < 0 ? 'text-danger' : '');
-
-                const row = `<tr>
-                    <td>${item.codigo}</td>
-                    <td>${item.talla}</td>
-                    <td class="${totalClass}">${totalDisplay}</td>
-                </tr>`;
-                aggregatedTableBody.innerHTML += row;
-            }
-
-            if (hasChanges) {
-                // Add headers dynamically if needed or ensure they exist in HTML
-                const summaryHeaderRow = document.querySelector('#summaryModal thead tr');
-                if (summaryHeaderRow.children.length === 0) {
-                    summaryHeaderRow.innerHTML = `
-                        <th>Charola</th>
-                        <th>Selección</th>
-                        <th>Artículo</th>
-                        <th>Talla</th>
-                        <th>Stock Inicial</th>
-                        <th>Stock Final</th>
-                        <th>Diferencia</th>
-                    `;
-                }
-                $('#summaryModal').modal('show');
-            } else {
+            if (!hasChanges || updatedStock.length === 0) {
                 alert('No hay cambios para guardar.');
-            }
-        });
-
-        document.getElementById('confirmSaveBtn').addEventListener('click', function () {
-            const cells = document.querySelectorAll('.droppable-cell');
-            const updatedStock = [];
-
-            cells.forEach(cell => {
-                const id = cell.getAttribute('data-id');
-                const stockInput = cell.querySelector('.Stock');
-
-                if (stockInput) {
-                    const stockValue = parseInt(stockInput.value) || 0;
-                    const initialStock = parseInt(stockInput.getAttribute('data-initial-stock')) || 0;
-
-                    // Only add to updatedStock if the value has changed
-                    if (stockValue !== initialStock) {
-                        updatedStock.push({ id: id, stock: stockValue });
-                    }
-                }
-            });
-
-            if (updatedStock.length === 0) {
-                alert('No hay cambios para guardar.');
-                $('#summaryModal').modal('hide');
                 return;
             }
 
+            // Immediately fetch to save records
             fetch('/update-stock', {
                 method: 'POST',
                 headers: {
@@ -494,8 +498,40 @@
                 body: JSON.stringify({ updatedStock })
             }).then(response => {
                 if (response.ok) {
-                    $('#summaryModal').modal('hide');
                     alert('Cambios guardados exitosamente');
+                    
+                    // Populate summary table
+                    summaryTableBody.innerHTML = rowsHtml.join('');
+                    
+                    // Populate aggregated table
+                    aggregatedTableBody.innerHTML = '';
+                    for (const key in aggregatedData) {
+                        const item = aggregatedData[key];
+                        const totalDisplay = item.totalRefill > 0 ? `+${item.totalRefill}` : `${item.totalRefill}`;
+                        const totalClass = item.totalRefill > 0 ? 'text-success' : (item.totalRefill < 0 ? 'text-danger' : '');
+
+                        const row = `<tr>
+                            <td>${item.codigo}</td>
+                            <td>${item.talla}</td>
+                            <td class="${totalClass}">${totalDisplay}</td>
+                        </tr>`;
+                        aggregatedTableBody.innerHTML += row;
+                    }
+
+                    // Add headers dynamically if needed or ensure they exist in HTML
+                    const summaryHeaderRow = document.querySelector('#summaryModal thead tr');
+                    if (summaryHeaderRow.children.length === 0) {
+                        summaryHeaderRow.innerHTML = `
+                            <th>Charola</th>
+                            <th>Selección</th>
+                            <th>Artículo</th>
+                            <th>Talla</th>
+                            <th>Stock Inicial</th>
+                            <th>Stock Final</th>
+                            <th>Diferencia</th>
+                        `;
+                    }
+                    
                     // Update initial stock to current stock to prevent double counting if saved again without reload
                     cells.forEach(cell => {
                         const stockInput = cell.querySelector('.Stock');
@@ -503,6 +539,30 @@
                             stockInput.setAttribute('data-initial-stock', stockInput.value);
                         }
                     });
+
+                    // Show summary modal
+                    $('#summaryModal').modal('show');
+
+                    // Generar Corte POST si hay un corte_pre en el URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const cortePreId = urlParams.get('corte_pre');
+                    if (cortePreId) {
+                        var lang = window.location.pathname.split('/')[1] || 'es';
+                        fetch('/' + lang + '/corte/post', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ id_corte_pre: cortePreId })
+                        }).then(resp => resp.json()).then(data => {
+                            if (data.id_corte_post) {
+                                if (confirm('Corte POST generado. ¿Desea ver el comparativo Planeado vs Real?')) {
+                                    window.location.href = '/' + lang + '/corte/post/' + data.id_corte_post + '/ver';
+                                }
+                            }
+                        }).catch(err => console.error('Error generando corte POST:', err));
+                    }
                 } else {
                     alert('Hubo un error al guardar los cambios');
                 }

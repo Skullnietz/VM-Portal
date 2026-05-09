@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportesClienteController;
 use App\Http\Controllers\ReportesAdministradorController;
+use App\Http\Controllers\CorteResurtimientoController;
 use Illuminate\Http\Request;
 
 
@@ -77,7 +78,7 @@ Route::group(['middleware' => 'checkSession'], function () {
         // DASHBOARD | INICIO
 
         //PERMISOS DE EMPLEADO
-        Route::get('/permisos-cli', 'ClientController@PermisosArticulos')->name('permisos-cli'); // Asignacion de permiso
+        Route::get('/permisos-cli', 'ClientController@permisosGlobalesCliente')->name('permisos-cli');
         // PERMISOS FILTRADO POR AREA
         Route::get('areas/permissions/{areaId}', 'ClientController@PermisosArticulosFilter')->name('permisos-cli'); // Asignacion de permiso
 
@@ -182,6 +183,11 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::post('/plantable/{id}', [AdminController::class, 'TablasPlant']);
     Route::post('/planta/areas/update-status', [AdminController::class, 'updateStatusArea'])->name('admin-areas.update-status');
     Route::post('/planta/areas/generate-permissions', [AdminController::class, 'generateMissingPermissions']);
+    Route::post('/planta/areas/copy-permissions', [AdminController::class, 'copyAreaPermissions'])->name('copy.area.permissions');
+    Route::get('/admin/planta/{id}/permisos-globales', [AdminController::class, 'permisosGlobales'])->name('permisos.globales');
+    Route::post('/admin/planta/{id}/permisos-globales/data', [AdminController::class, 'getPermisosGlobalesData'])->name('permisos.globales.data');
+    Route::get('/admin/planta/{id}/articulos-filter', [AdminController::class, 'getArticulosFilterAdmin'])->name('permisos.globales.articulos');
+    Route::post('/admin/permisos/bulk-update', [AdminController::class, 'bulkUpdatePermisos'])->name('permisos.bulk.update');
     Route::post('/admin/generar-permisos', [AdminController::class, 'generateAllMissingPermissions'])->name('generate.all.permissions');
     Route::post('/planta/areas/add', [AdminController::class, 'addArea']);
     Route::get('/planta/export-excel-areas', [AdminController::class, 'exportExcelAreas']);
@@ -239,6 +245,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/admin/alertas/{id}', [AdminController::class, 'getAlerta'])->name('alertas.show');
     Route::post('/admin/alertas/update/{id}', [AdminController::class, 'UpdateAlertaAdmin'])->name('alertas.update');
     Route::delete('/admin/alertas/{id}', [AdminController::class, 'destroyAlerta'])->name('alertas.destroy');
+    Route::post('/admin/alertas/{id}/enviar-ahora', [AdminController::class, 'enviarAhora'])->name('alertas.enviar_ahora');
     Route::post('/reportes/guardar-configuracion', [ReportesClienteController::class, 'guardarConfiguracion'])->name('reportes.guardar_configuracion');
 
     // REPORTES ADMINISTRADOR
@@ -316,6 +323,8 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('areas/data', 'ClientController@getAreas')->name('areas.data');
     Route::post('empleado/update/{id}', 'ClientController@updateemployee')->name('empleados.update');
     ///////////////////////////////////////// PERMISOS TOOLS ///////////////////////////////////////////////////
+    Route::post('/permisos-cli/data', [ClientController::class, 'getPermisosGlobalesClienteData'])->name('permisos-cli.data');
+    Route::get('/permisos-cli/articulos-filter', [ClientController::class, 'getArticulosFilterCliente'])->name('permisos-cli.articulos');
     Route::get('get-permisos-articulos', 'ClientController@getPermisosArticulos')->name('get.permisos.articulos'); // Asignacion de permisos
     Route::post('/delete-permiso-articulo/{id}', 'ClientController@deletePermisoArticulo')->name('delete.permiso.articulo');
     Route::post('/update-permiso-articulo/{id}', 'ClientController@updatePermisoArticulo')->name('update.permiso.articulo');
@@ -346,6 +355,7 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('op/vendings/data', [OperadorController::class, 'getVendingsData'])->name('vendings.data');
     Route::get('/op/vending/missing-items/{id}', [OperadorController::class, 'getMissingItems'])->name('vending.missing_items');
     Route::get('/op/vending/download-missing-items/{id}', [OperadorController::class, 'downloadMissingItems'])->name('vending.download_missing_items');
+    Route::get('/op/plant/download-missing-items/{id}', [OperadorController::class, 'downloadMissingItemsByPlant'])->name('plant.download_missing_items');
 
     //////////////////////////////////// REPORTES OPERADOR ///////////////////////////////
     Route::post('/op/get-vendings-by-plant', [OperadorController::class, 'getVendingsByPlant'])->name('op.get_vendings_by_plant');
@@ -356,6 +366,33 @@ Route::group(['middleware' => 'checkSession'], function () {
     Route::get('/op/perfil', [OperadorController::class, 'Profile'])->name('op.profile');
     Route::post('/op/perfil/update', [OperadorController::class, 'updateProfile'])->name('op.profile.update');
     Route::post('/op/perfil/password', [OperadorController::class, 'updatePassword'])->name('op.profile.password');
+
+    ////////////////////////////////////  CORTES DE RESURTIMIENTO  ///////////////////////////////
+    // Corte PRE
+    Route::get('/{lang}/corte/pre/{idMaquina}', [CorteResurtimientoController::class, 'generarCortePre'])->name('corte.pre.generar');
+    Route::get('/{lang}/corte/pre/{idCorte}/ver', [CorteResurtimientoController::class, 'verCortePre'])->name('corte.pre.ver');
+    Route::get('/{lang}/corte/pre/{idCorte}/export', [CorteResurtimientoController::class, 'exportCortePre'])->name('corte.pre.export');
+    // Corte POST
+    Route::post('/{lang}/corte/post', [CorteResurtimientoController::class, 'generarCortePost'])->name('corte.post.generar');
+    Route::get('/{lang}/corte/post/{idCorte}/ver', [CorteResurtimientoController::class, 'verCortePost'])->name('corte.post.ver');
+    // Historial de Cortes
+    Route::get('/{lang}/corte/historial', [CorteResurtimientoController::class, 'historialCortes'])->name('corte.historial');
+    Route::get('/{lang}/corte/historial/data', [CorteResurtimientoController::class, 'getHistorialCortesData'])->name('corte.historial.data');
+    // Consumo entre Resurtimientos
+    Route::get('/{lang}/reporte/consumo-entre-resurtimientos', [CorteResurtimientoController::class, 'consumoEntreResurtimientos'])->name('consumo.entre.resurtimientos');
+    Route::get('/{lang}/reporte/consumo-entre-resurtimientos/data', [CorteResurtimientoController::class, 'getConsumoEntreResurtimientosData'])->name('consumo.entre.resurtimientos.data');
+    // Discrepancias
+    Route::get('/{lang}/reporte/discrepancias', [CorteResurtimientoController::class, 'discrepancias'])->name('discrepancias.index');
+    Route::get('/{lang}/reporte/discrepancias/data', [CorteResurtimientoController::class, 'getDiscrepanciasData'])->name('discrepancias.data');
+    Route::get('/{lang}/reporte/discrepancias/export', [CorteResurtimientoController::class, 'exportDiscrepancias'])->name('discrepancias.export');
+    // Tendencias
+    Route::get('/{lang}/reporte/tendencias', [CorteResurtimientoController::class, 'tendencias'])->name('tendencias.index');
+    Route::get('/{lang}/reporte/tendencias/data', [CorteResurtimientoController::class, 'getTendenciasData'])->name('tendencias.data');
+    // Dashboard Operativo
+    Route::get('/{lang}/dashboard-operativo', [CorteResurtimientoController::class, 'dashboard'])->name('dashboard.operativo');
+    Route::get('/{lang}/dashboard-operativo/data', [CorteResurtimientoController::class, 'getDashboardData'])->name('dashboard.operativo.data');
+    // Selector de máquinas por planta (compartido)
+    Route::get('/{lang}/corte/maquinas', [CorteResurtimientoController::class, 'getMaquinasByPlanta'])->name('corte.maquinas');
 
 
 

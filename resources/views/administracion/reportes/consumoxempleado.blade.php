@@ -14,7 +14,7 @@
         <div class="col text-right">
             <!-- Export form placeholder - can be implemented later -->
             <!--
-            <form id="export-form" action="{{ route('export.consumoxempleado') }}" method="GET">
+            <form id="export-form" action="{{ route('admin.export.consumoxempleado') }}" method="GET">
                 <input type="hidden" name="area[]" id="filter-area" value="{{ request()->input('area') }}">
                 <input type="hidden" name="product[]" id="filter-product" value="{{ request()->input('product') }}">
                 <input type="hidden" name="employee" id="filter-employee" value="{{ request()->input('employee') }}">
@@ -34,21 +34,16 @@
     <div class="row mb-2">
         <div class="card w-100">
             <div class="card-header">
-                <h5 class="card-title">Filtros</h5>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                </div>
+                <h5 class="card-title"><i class="fas fa-filter mr-1"></i> Selección de Planta</h5>
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.consumoxempleado.index') }}" id="plant-form">
-                    <div class="row">
+                    <div class="row align-items-end">
                         <div class="col-md-4">
-                            <label for="planta_id">Planta:</label>
+                            <label for="planta_id"><strong>Planta:</strong></label>
                             <select id="planta_id" name="planta_id" class="form-control select2"
                                 onchange="this.form.submit()">
-                                <option value="">Todas las plantas</option>
+                                <option value="">-- Seleccione una planta --</option>
                                 @foreach($plantas as $planta)
                                     <option value="{{ $planta->Id_Planta }}" {{ request('planta_id') == $planta->Id_Planta ? 'selected' : '' }}>
                                         {{ $planta->Nombre }}
@@ -56,12 +51,42 @@
                                 @endforeach
                             </select>
                         </div>
+                        @if(request('planta_id'))
+                        <div class="col-md-2">
+                            <a href="{{ route('admin.consumoxempleado.index') }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times mr-1"></i> Limpiar planta
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
 
-                <hr>
+    @if(!request('planta_id'))
+    <div class="row">
+        <div class="col">
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-industry fa-3x mb-3 d-block"></i>
+                <h5>Selecciona una planta para cargar el reporte</h5>
+                <p class="mb-0 text-muted">Usa el selector de arriba para elegir la planta que deseas consultar.</p>
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="row mb-2">
+        <div class="card w-100">
+            <div class="card-header">
+                <h5 class="card-title">Filtros adicionales</h5>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
                 <div class="row">
-                    <!-- Inputs para el rango de fechas -->
                     <div class="col-md-2">
                         <label for="startDate">Fecha Inicio:</label>
                         <input type="text" id="startDate" class="form-control" placeholder="AAAA-MM-DD">
@@ -138,7 +163,6 @@
                     <h5 class="card-title">Gráficas de Consumo</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Nav tabs -->
                     <ul class="nav nav-tabs" id="consumptionTabs" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link active" id="employee-tab" data-toggle="tab" href="#employeeChart"
@@ -155,7 +179,6 @@
                         </li>
                     </ul>
 
-                    <!-- Tab content -->
                     <div class="tab-content">
                         <div class="tab-pane fade active show" id="employeeChart" role="tabpanel"
                             aria-labelledby="employee-tab">
@@ -173,6 +196,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 @stop
 
@@ -202,15 +226,19 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+    $('.select2').select2({ width: '100%' });
+    function goBack() { window.history.back(); }
+</script>
+
+@if(request('planta_id'))
+<script>
     function renderImagen(data, type, row) {
         if (!data) return '<span class="text-muted" style="font-size:10px;">Sin imagen</span>';
         return `<img src="/Images/Catalogo/${data}.jpg" alt="${data}" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.onerror=null;this.src='/Images/product.png';">`;
     }
 
     $(document).ready(function () {
-        $('.select2').select2({
-            width: '100%'
-        });
+        $('.select2').select2({ width: '100%' });
 
         // Datepicker initialization
         $("#startDate, #endDate").datepicker({
@@ -327,4 +355,5 @@
         window.history.back();
     }
 </script>
+@endif
 @stop
