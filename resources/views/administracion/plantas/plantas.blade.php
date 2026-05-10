@@ -379,7 +379,7 @@ function resetImagePreview() {
     
     // Si existe imagen, mostrarla, de lo contrario, mantener la imagen por defecto
     if (rutaImagen) {
-        $('#imagePreview').html(`<img src="${escapeAttr(rutaImagen)}" alt="Vista previa" class="img-fluid rounded mt-2" />`);
+        $('#imagePreview').html($('<img>').attr('src', rutaImagen).attr('alt', 'Vista previa').addClass('img-fluid rounded mt-2'));
     } else {
         resetImagePreview(); // Limpiar cualquier imagen previa
     }
