@@ -827,9 +827,9 @@ class AdminController extends Controller
 
             // Insertar el nuevo registro en la base de datos sin la imagen
             $idPlanta = DB::table('Cat_Plantas')->insertGetId([
-                'Txt_Nombre_Planta' => $request->txtNombrePlanta,
-                'Txt_Codigo_Cliente' => $request->txtCodigoCliente,
-                'Txt_Sitio' => $request->txtSitio,
+                'Txt_Nombre_Planta' => html_entity_decode($request->txtNombrePlanta, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                'Txt_Codigo_Cliente' => html_entity_decode($request->txtCodigoCliente, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                'Txt_Sitio' => html_entity_decode($request->txtSitio, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'Txt_Estatus' => "Alta",
                 'Fecha_Alta' => now(),
                 'Id_Usuario_Admon_Alta' => $_SESSION['usuario']->Id_Usuario_Admon,
@@ -902,9 +902,9 @@ class AdminController extends Controller
 
             // Datos para actualizar
             $dataToUpdate = [
-                'Txt_Nombre_Planta' => $request->txtNombrePlanta,
-                'Txt_Codigo_Cliente' => $request->txtCodigoCliente,
-                'Txt_Sitio' => $request->txtSitio,
+                'Txt_Nombre_Planta' => html_entity_decode($request->txtNombrePlanta, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                'Txt_Codigo_Cliente' => html_entity_decode($request->txtCodigoCliente, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                'Txt_Sitio' => html_entity_decode($request->txtSitio, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'Txt_Estatus' => "Alta",
                 'Fecha_Modificacion' => now(),
                 'Id_Usuario_Admon_Modificacion' => $_SESSION['usuario']->Id_Usuario_Admon,

@@ -169,6 +169,13 @@
 
 
 <script>
+    function decodeHtml(str) {
+        if (!str) return '';
+        var txt = document.createElement('textarea');
+        txt.innerHTML = str;
+        return txt.value;
+    }
+
     function escapeAttr(str) {
         if (!str) return '';
         return String(str)
@@ -224,7 +231,7 @@
                                 <a class="btn btn-secondary btn-sm" href="/admin/plantas/PlantaView/${row.id}" title="Mostrar Planta">
                                     <i class="fas fa-eye fa-2x"></i>
                                 </a>
-                                <button class="btn btn-info btn-sm edit-planta-btn" data-id="${row.id}" data-nombre="${escapeAttr(row.Txt_Nombre_Planta)}" data-codigo="${escapeAttr(row.Txt_Codigo_Cliente)}" data-sitio="${escapeAttr(row.Txt_Sitio)}" data-ruta="${escapeAttr(row.Ruta_Imagen || '')}" title="Editar">
+                                <button class="btn btn-info btn-sm edit-planta-btn" data-id="${row.id}" data-nombre="${escapeAttr(decodeHtml(row.Txt_Nombre_Planta))}" data-codigo="${escapeAttr(decodeHtml(row.Txt_Codigo_Cliente))}" data-sitio="${escapeAttr(decodeHtml(row.Txt_Sitio))}" data-ruta="${escapeAttr(row.Ruta_Imagen || '')}" title="Editar">
                                     <i class="fas fa-edit fa-2x"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteAdmin(${row.id})" title="Eliminar">
